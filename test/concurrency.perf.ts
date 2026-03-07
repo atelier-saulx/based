@@ -2,15 +2,10 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { italy } from './shared/examples.js'
 import { setTimeout as setTimeoutAsync } from 'timers/promises'
+import { testDb } from './shared/index.js'
 
 await test('concurrency', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -88,7 +83,7 @@ await test('many instances', async (t) => {
         path: t.tmp,
       })
       await db.start({ clean: true })
-      t.after(() => t.backup(db))
+      t.after(() => t.backup(db.server))
       return db
     }),
   )

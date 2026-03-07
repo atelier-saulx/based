@@ -1,18 +1,10 @@
 import { convertToTimestamp } from '../../src/utils/index.js'
-import { BasedDb } from '../../src/index.js'
 import { throws } from '../shared/assert.js'
 import test from '../shared/test.js'
+import { testDb } from '../shared/index.js'
 
 await test('simple min / max validation', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: { en: {}, de: {} },
     types: {
       user: {
@@ -137,15 +129,7 @@ await test('simple min / max validation', async (t) => {
 })
 
 await test('step validation', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => db.destroy())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: { en: {}, de: {} },
     types: {
       user: {
@@ -222,15 +206,7 @@ await test('step validation', async (t) => {
 })
 
 await test('min / max validation on reference edges', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       thing: {},
       edgeUser: {
@@ -534,15 +510,7 @@ await test('min / max validation on reference edges', async (t) => {
 })
 
 await test('step validation on reference edges', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       thing: {},
       edgeUser: {
@@ -708,20 +676,11 @@ await test('step validation on reference edges', async (t) => {
 })
 
 await test('min / max / step validation on reference edges timestamp + string format', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => db.destroy())
-
   const minDateStr = '01/01/2000'
   const minTs = convertToTimestamp(minDateStr)
   const maxOffsetSeconds = 10
   const stepMs = 1 // 1 second
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       thing: {},
       edgeUser: {

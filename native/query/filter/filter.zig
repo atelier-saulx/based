@@ -4,10 +4,12 @@ const utils = @import("../../utils.zig");
 const Node = @import("../../selva/node.zig");
 const Schema = @import("../../selva/schema.zig");
 const Fields = @import("../../selva/fields.zig");
+const Selva = @import("../../selva/selva.zig");
 const t = @import("../../types.zig");
-const Compare = @import("compare.zig");
-const Select = @import("select.zig");
-const Instruction = @import("instruction.zig");
+const Fixed = @import("fixed.zig");
+const Variable = @import("./variable/variable.zig");
+const Thread = @import("../../thread/thread.zig");
+
 const COND_ALIGN_BYTES = @alignOf(t.FilterCondition);
 
 pub fn prepare(
@@ -16,9 +18,10 @@ pub fn prepare(
     typeEntry: Node.Type,
 ) !void {
     var i: usize = 0;
+
     while (i < q.len) {
         const headerSize = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition);
-        var condition: *t.FilterCondition = undefined;
+        var c: *t.FilterCondition = undefined;
         // 255 means its unprepared - the condition new index will be set when aligned
 
         if (q[i] == 255) {
@@ -26,38 +29,42 @@ pub fn prepare(
             const totalSize = headerSize + condSize;
 
             q[i] = COND_ALIGN_BYTES - utils.alignLeft(t.FilterCondition, q[i + 1 .. i + totalSize]) + 1;
-            condition = utils.readPtr(t.FilterCondition, q, q[i] + i);
+            c = utils.readPtr(t.FilterCondition, q, q[i] + i);
 
-            if (condition.op.compare != t.FilterOpCompare.nextOrIndex) {
-                condition.fieldSchema = try Schema.getFieldSchema(typeEntry, condition.prop);
+            if (c.op.compare != t.FilterOpCompare.nextOrIndex) {
+                c.fieldSchema = try Schema.getFieldSchema(typeEntry, c.prop);
             }
 
             const nextI = q[i] + i + utils.sizeOf(t.FilterCondition);
-            condition.offset = utils.alignLeftLen(condition.len, q[nextI .. totalSize + i]);
+
+            c.offset = utils.alignLeftLen(c.len, q[nextI .. totalSize + i]);
+
             const end = totalSize + i;
 
-            switch (condition.op.compare) {
+            switch (c.op.compare) {
                 .selectLargeRefEdge => {
-                    // const select = utils.readPtr(t.FilterSelect, q, i + q[i] + utils.sizeOf(t.FilterCondition) + @alignOf(t.FilterSelect) - condition.offset);
+                    // const select = utils.readPtr(t.FilterSelect, q, i + q[i] + utils.sizeOf(t.FilterCondition) + @alignOf(t.FilterSelect) - c.offset);
                     // const edgeSelect = utils.readPtr(t.FilterSelect, q, i + q[i] + utils.sizeOf(t.FilterCondition) + @alignOf(t.FilterSelect) - condition.offset);
                     // select.typeEntry = try Node.getType(ctx.db, select.typeId);
                     // try prepare(q[end .. end + select.size], ctx, select.typeEntry);
                     // i = end + select.size;
-                    i = end;
+                    // i = end;
                 },
                 .selectRef => {
-                    const select = utils.readPtr(t.FilterSelect, q, nextI + @alignOf(t.FilterSelect) - condition.offset);
+                    const select = utils.readPtr(t.FilterSelect, q, nextI + @alignOf(t.FilterSelect) - c.offset);
                     select.typeEntry = try Node.getType(ctx.db, select.typeId);
                     try prepare(q[end .. end + select.size], ctx, select.typeEntry);
                     i = end + select.size;
                 },
+                // .nincLcase => {}
+                // can check it here...
                 else => {
                     i = end;
                 },
             }
         } else {
-            condition = utils.readPtr(t.FilterCondition, q, q[i] + i + 1);
-            const totalSize = headerSize + condition.size;
+            c = utils.readPtr(t.FilterCondition, q, q[i] + i); // + 1
+            const totalSize = headerSize + c.size;
             const end = totalSize + i;
             i = end;
         }
@@ -77,41 +84,37 @@ pub fn recursionErrorBoundary(
     };
 }
 
-inline fn compare(
-    T: type,
-    comptime meta: Instruction.OpMeta,
+pub inline fn filter(
+    node: Node.Node,
+    ctx: *Query.QueryCtx,
     q: []u8,
-    v: []u8,
-    index: usize,
-    c: *t.FilterCondition,
-) bool {
-    const res = switch (meta.func) {
-        .Single => Compare.single(meta.cmp, T, q, v, index, c),
-        .Range => Compare.range(T, q, v, index, c),
-        .Batch => Compare.batch(meta.cmp, T, q, v, index, c),
-        .BatchSmall => Compare.batchSmall(meta.cmp, T, q, v, index, c),
-    };
-    return if (meta.invert) !res else res;
-}
-
-// Check if this becomes better
-pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
+) !bool {
     var i: usize = 0;
     var pass: bool = true;
-    var v: []u8 = undefined;
+    var v: []const u8 = undefined;
     var prop: u8 = 255;
-    var nextOrIndex: usize = q.len;
-    while (i < nextOrIndex) {
+    var end: usize = q.len;
+
+    while (i < end) {
         const c = utils.readPtr(t.FilterCondition, q, i + q[i]);
         const index = i + q[i] + utils.sizeOf(t.FilterCondition);
         var nextIndex = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + c.size + i;
+
         if (prop != c.prop) {
             prop = c.prop;
+            // handle alias seperate;ly (seperate command)
+            // if (c.fieldSchema.type == Selva.c.SELVA_FIELD_TYPE_ALIAS) {
+            //     v = try Fields.getAliasByNode(try Node.getType(ctx.db, node), node, c.fieldSchema.field);
+            // } else {
             v = Fields.getRaw(node, c.fieldSchema);
+            // }
         }
+
         pass = switch (c.op.compare) {
+            // select Id
+            // select Alias
             .nextOrIndex => blk: {
-                nextOrIndex = utils.readPtr(u64, q, index + @alignOf(u64) - c.offset).*;
+                end = utils.readPtr(u64, q, index + @alignOf(u64) - c.offset).*;
                 break :blk true;
             },
             .selectRef => blk: {
@@ -126,23 +129,70 @@ pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
             .selectSmallRefs, .selectLargeRefsEdge, .selectLargeRefEdge, .selectLargeRefs => blk: {
                 break :blk true;
             },
-            inline else => |op| blk: {
-                const meta = comptime Instruction.parseOp(op);
+            inline .eq,
+            .neq,
+            .eqBatch,
+            .neqBatch,
+            .eqBatchSmall,
+            .neqBatchSmall,
+            .range,
+            .nrange,
+            .le,
+            .lt,
+            .ge,
+            .gt,
+            => |op| blk: {
                 break :blk switch (c.op.prop) {
-                    .id, .uint32, .int32 => compare(u32, meta, q, v, index, c),
-                    .uint16, .int16 => compare(u16, meta, q, v, index, c),
-                    .number => compare(f64, meta, q, v, index, c),
-                    .timestamp => compare(u64, meta, q, v, index, c),
-                    else => compare(u8, meta, q, v, index, c),
+                    .id, .uint32, .int32 => Fixed.compare(u32, op, q, v, index, c),
+                    .uint16, .int16 => Fixed.compare(u16, op, q, v, index, c),
+                    .number => Fixed.compare(f64, op, q, v, index, c),
+                    .timestamp => Fixed.compare(u64, op, q, v, index, c),
+                    else => Fixed.compare(u8, op, q, v, index, c),
                 };
             },
+            inline .eqCrc32,
+            .neqCrc32,
+            .eqCrc32Batch,
+            .neqCrc32Batch,
+            .eqVar,
+            .neqVar,
+            .eqVarBatch,
+            .neqVarBatch,
+            .inc,
+            .ninc,
+            .incLcase,
+            .nincLcase,
+            .incLcaseFast,
+            .nincLcaseFast,
+            .incBatch,
+            .nincBatch,
+            .incBatchLcase,
+            .nincBatchLcase,
+            .incBatchLcaseFast,
+            .nincBatchLcaseFast,
+            .like,
+            .nlike,
+            .likeBatch,
+            .nlikeBatch,
+            => |op| blk: {
+                @setEvalBranchQuota(2000);
+                break :blk switch (c.op.prop) {
+                    .string, .json, .binary => Variable.compare(.default, op, q, v, index, c, ctx.thread),
+                    .stringFixed, .jsonFixed, .binaryFixed => Variable.compare(.fixed, op, q, v, index, c, ctx.thread),
+                    .stringLocalized, .jsonLocalized => Variable.compare(.localized, op, q, v, index, c, ctx.thread),
+                    else => false,
+                };
+            },
+            // else => false,
         };
+
         if (!pass) {
-            i = nextOrIndex;
-            nextOrIndex = q.len;
+            i = end;
+            end = q.len;
         } else {
             i = nextIndex;
         }
     }
+
     return pass;
 }

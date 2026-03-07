@@ -8,8 +8,8 @@ const Fields = @import("../../selva/fields.zig");
 const opts = @import("opts.zig");
 const append = @import("append.zig");
 const t = @import("../../types.zig");
-const multiple = @import("../multiple.zig");
-const single = @import("../single.zig");
+const Multiple = @import("../multiple/references.zig");
+const Single = @import("../single.zig");
 const References = @import("../../selva/references.zig");
 const aggregateRefs = @import("../aggregates/references.zig");
 
@@ -49,17 +49,17 @@ pub fn include(
     var i: usize = 0;
     while (i < q.len) {
         const op: t.IncludeOp = @enumFromInt(q[i]);
-
+        // std.debug.print("includeop: {any} - {any}\n", .{ op, q });
         switch (op) {
             // add .referenceEdge?
             .reference => {
-                recursionErrorBoundary(single.reference, node, ctx, q, typeEntry, &i);
+                recursionErrorBoundary(Single.reference, node, ctx, q, typeEntry, &i);
             },
             .referenceEdge => {
-                recursionErrorBoundary(single.referenceEdge, node, ctx, q, typeEntry, &i);
+                recursionErrorBoundary(Single.referenceEdge, node, ctx, q, typeEntry, &i);
             },
             .references => {
-                recursionErrorBoundary(multiple.references, node, ctx, q, typeEntry, &i);
+                recursionErrorBoundary(Multiple.references, node, ctx, q, typeEntry, &i);
             },
             .partial => {
                 const header = utils.readNext(t.IncludePartialHeader, q, &i);
@@ -74,10 +74,10 @@ pub fn include(
                 const header = utils.readNext(t.IncludeMetaHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
                 switch (header.propType) {
-                    t.PropType.binary, t.PropType.string, t.PropType.json, t.PropType.alias => {
+                    .binary, .string, .json, .alias => {
                         try append.meta(ctx.thread, header.prop, value);
                     },
-                    t.PropType.text => {
+                    .stringLocalized, .jsonLocalized => {
                         var iter = Fields.textIterator(value);
                         while (iter.next()) |textValue| {
                             try append.meta(ctx.thread, header.prop, textValue);
@@ -92,7 +92,7 @@ pub fn include(
                 var header = utils.readNext(t.IncludeMetaHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
                 switch (header.propType) {
-                    t.PropType.text => {
+                    .stringLocalized, .jsonLocalized => {
                         // can be optmized... read next is quite slow because pointer
                         var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
                         try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.meta);
@@ -105,11 +105,10 @@ pub fn include(
                 const value = try get(typeEntry, node, &header);
                 var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
                 switch (header.propType) {
-                    t.PropType.binary, t.PropType.string, t.PropType.json => {
+                    .binary, .string, .json => {
                         try opts.string(ctx.thread, header.prop, value, &optsHeader);
                     },
-                    t.PropType.text,
-                    => {
+                    .stringLocalized, .jsonLocalized => {
                         try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.string);
                     },
                     else => {
@@ -120,22 +119,27 @@ pub fn include(
             .default => {
                 const header = utils.readNext(t.IncludeHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
+                // std.debug.print("??? value {any} - {any}\n", .{ value, header });
                 switch (header.propType) {
-                    t.PropType.text,
-                    => {
+                    .stringLocalized, .jsonLocalized => {
                         var iter = Fields.textIterator(value);
                         while (iter.next()) |textValue| {
                             try append.stripCrc32(ctx.thread, header.prop, textValue);
                         }
                     },
-                    t.PropType.binary, t.PropType.string, t.PropType.json => {
+                    .binary, .string, .json => {
                         // utils.printString("derp", value);
                         try append.stripCrc32(ctx.thread, header.prop, value);
                     },
-                    t.PropType.microBuffer, t.PropType.vector, t.PropType.colVec => {
+                    .microBuffer, .vector, .colVec => {
                         // Fixed size
                         try ctx.thread.query.append(header.prop);
-                        try ctx.thread.query.append(value);
+                        if (value.len == 0) {
+                            const fs = try Schema.getFieldSchema(typeEntry, header.prop);
+                            _ = try ctx.thread.query.reserve(fs.unnamed_0.smb.len);
+                        } else {
+                            try ctx.thread.query.append(value);
+                        }
                     },
                     else => {
                         try append.default(ctx.thread, header.prop, value);
@@ -152,7 +156,6 @@ pub fn include(
             },
             .referencesAggregation => {
                 try aggregateRefs.aggregateRefsProps(ctx, q, node, typeEntry, &i);
-                i += q.len - i;
             },
         }
     }

@@ -58,10 +58,15 @@ export const parseType = (
     type.partial === undefined || isBoolean(type.partial),
     'Should be boolean',
   )
+  assert(
+    type.insertOnly === undefined || isBoolean(type.insertOnly),
+    'Should be boolean',
+  )
   assert(isRecord(type.props), 'Should be record')
   const result = {
     hooks: type.hooks,
     blockCapacity: type.blockCapacity,
+    insertOnly: type.insertOnly,
     capped: type.capped,
     partial: type.partial,
     props: parseProps(type.props, locales),

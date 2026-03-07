@@ -14,7 +14,6 @@ import {
 import { parseReferences, type SchemaReferences } from './references.js'
 import { parseReference, type SchemaReference } from './reference.js'
 import { parseString, type SchemaString } from './string.js'
-import { parseText, type SchemaText } from './text.js'
 import { parseTimestamp, type SchemaTimestamp } from './timestamp.js'
 import { parseVector, type SchemaVector } from './vector.js'
 import { parseObject, type SchemaObject } from './object.js'
@@ -31,7 +30,6 @@ type SchemaPropObj<strict = false> =
   | SchemaReferences<strict>
   | SchemaReference<strict>
   | SchemaString
-  | SchemaText
   | SchemaTimestamp
   | SchemaVector
   | SchemaObject<strict>
@@ -42,11 +40,11 @@ export type SchemaPropShorthand =
   | 'boolean'
   | 'string'
   | 'alias'
-  | 'text'
   | 'json'
   | 'cardinality'
   | NumberType
   | EnumItem[]
+  | readonly EnumItem[]
 
 export type SchemaProp<strict = false> =
   | SchemaPropObj<strict>
@@ -96,9 +94,7 @@ export const parseProp = (
   } else if (type === 'references') {
     return parseReferences(def, locales)
   } else if (type === 'string') {
-    return parseString(def)
-  } else if (type === 'text') {
-    return parseText(def, locales)
+    return parseString(def, locales)
   } else if (type === 'timestamp') {
     return parseTimestamp(def)
   } else if (type === 'vector' || type === 'colvec') {

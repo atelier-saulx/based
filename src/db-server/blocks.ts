@@ -10,15 +10,12 @@ import {
 import { DbServer } from './index.js'
 import { OpType } from '../zigTsExports.js'
 
-export type BlockHash = Uint8Array
 export const BLOCK_HASH_SIZE = 16
 
 export type SaveOpts = {
   skipDirtyCheck?: boolean
   skipMigrationCheck?: boolean
 }
-
-const SELVA_ENOENT = -8
 
 const loadCommonId = idGenerator()
 const saveAllBlocksId = idGenerator()
@@ -53,9 +50,7 @@ function saveAll(db: DbServer, id: number): Promise<number> {
   })
 }
 
-export async function loadCommon(
-  db: DbServer,
-): Promise<void> {
+export async function loadCommon(db: DbServer): Promise<void> {
   const id = loadCommonId.next().value
   const msg = new Uint8Array(5)
 
@@ -66,12 +61,12 @@ export async function loadCommon(
     db.addOpOnceListener(OpType.loadCommon, id, (buf: Uint8Array) => {
       const err = readInt32(buf, 0)
       if (err) {
-        // TODO read errlog
-        const errMsg = `Load failed: ${native.selvaStrerror(err)}`
         const errLog = DECODER.decode(buf.subarray(4))
+        const errMsg = `Load failed: ${native.selvaStrerror(err)}\n${errLog}`
 
-        console.log(errLog)
-        db.emit('error', errMsg)
+        if (!errMsg.includes('ERR_SELVA ENOENT')) {
+          db.emit('error', errMsg)
+        }
         reject(new Error(errMsg))
       } else {
         resolve()
@@ -159,11 +154,7 @@ export async function getBlockStatuses(
     db.addOpOnceListener(OpType.blockStatuses, id, (buf: Uint8Array) => {
       const len = readInt32(buf, 0)
       if (len === 0) {
-        reject(
-          new Error(
-            `getBlockStatuses(${typeCode}) failed`,
-          ),
-        )
+        reject(new Error(`getBlockStatuses(${typeCode}) failed`))
       } else {
         resolve(buf.slice(4, 4 * len))
       }
@@ -173,10 +164,7 @@ export async function getBlockStatuses(
   })
 }
 
-function inhibitSave(
-  db: DbServer,
-  { skipMigrationCheck }: SaveOpts,
-): boolean {
+function inhibitSave(db: DbServer, { skipMigrationCheck }: SaveOpts): boolean {
   if (db.migrating && !skipMigrationCheck) {
     db.emit('info', 'Block save db is migrating')
     return true

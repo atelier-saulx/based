@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2025 SAULX
+ * Copyright (c) 2020-2026 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -105,6 +105,8 @@ void mempool_gc(struct mempool *mempool)
  */
 void mempool_defrag(struct mempool *mempool, int (*obj_compar)(const void *, const void*));
 
+void mempool_prealloc(struct mempool *mempool, size_t nr_objects);
+
 /**
  * Get a new object from the pool.
  */
@@ -139,7 +141,6 @@ static inline struct mempool_chunk *get_first_chunk(struct mempool_slab * restri
 
     return (struct mempool_chunk *)p;
 }
-
 
 /**
  * For each slab in the mempool.

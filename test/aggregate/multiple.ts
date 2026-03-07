@@ -1,17 +1,9 @@
-import { BasedDb, groupBy } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
+import { testDb } from '../shared/index.js'
 
 await test('multiple functions', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       sequence: {
         props: {
@@ -79,13 +71,7 @@ await test('multiple functions', async (t) => {
     PL: -50,
     FI: -50.999,
   })
-  // const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
-  db.drain()
-  db.create('sequence', { votes: nl1 })
-  db.create('sequence', { votes: nl2 })
-  db.create('sequence', { votes: au1 })
-  db.create('sequence', { votes: au2 })
-  db.create('sequence', { votes: br1 })
+  const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
   deepEqual(
     await db.query('vote').sum('NL').sum('NO').max('NL').min('NL').get(),
@@ -110,23 +96,9 @@ await test('multiple functions', async (t) => {
     'multiple func main with groupBy',
   )
 
-  // const j = db.create('vote', {
-  //   region: 'Great',
-  //   judges: ['lala', 'lele', 'lili'],
-  // })
-
-  db.drain()
-  db.create('vote', {
+  const j = db.create('vote', {
     region: 'Great',
-    judges: 'lala',
-  })
-  db.create('vote', {
-    region: 'Great',
-    judges: 'lele',
-  })
-  db.create('vote', {
-    region: 'Great',
-    judges: 'lili',
+    judges: ['lala', 'lele', 'lili'],
   })
 
   const multi = await db
@@ -152,8 +124,7 @@ await test('multiple functions', async (t) => {
         max: 50,
       },
       NO: {
-        // avg: -29.333333333333332, // originally one node because of multiref
-        avg: -22, // 3 nodes temporarely
+        avg: -29.333333333333332,
         sum: -176,
       },
       judges: {
@@ -220,8 +191,7 @@ await test('multiple functions', async (t) => {
           max: 50,
         },
         NO: {
-          // avg: -25, // also one node only originally
-          avg: -12.5,
+          avg: -25,
           sum: -50,
         },
         judges: {
@@ -241,12 +211,10 @@ await test('multiple functions', async (t) => {
       PT: {
         sum: 186,
       },
-      // NO: {
-      //   stddev: 21.518983866964227, // also one node only originally
-      // },
-      // count: 6, // also one node only originally
-      NO: { stddev: 22.696758736499294 }, // std([-10,-23,-43,-50,-50,0,0,0]) ans = 22.697
-      count: 8,
+      NO: {
+        stddev: 21.518983866964227,
+      },
+      count: 6,
     },
     'multiple main + count no groupBy',
   )
@@ -291,76 +259,74 @@ await test('multiple functions', async (t) => {
         PT: {
           sum: 50,
         },
-        // NO: {
-        //   stddev: 35.35533905932738,
-        // },
-        // count: 2,
-        NO: { stddev: 25 },
-        count: 4,
+        NO: {
+          stddev: 35.35533905932738,
+        },
+        count: 2,
       },
     },
     'multiple main + count groupBy',
   )
 
-  // const multiref = await db
-  //   .query('sequence')
-  //   .include((q) => q('votes').sum('NL').count().cardinality('judges'))
-  //   .get()
+  const multiref = await db
+    .query('sequence')
+    .include((q) => q('votes').sum('NL').count().cardinality('judges'))
+    .get()
 
-  // deepEqual(
-  //   multiref,
-  //   [
-  //     {
-  //       id: 1,
-  //       votes: {
-  //         NL: {
-  //           sum: 176,
-  //         },
-  //         count: 5,
-  //         judges: {
-  //           cardinality: 0,
-  //         },
-  //       },
-  //     },
-  //   ],
-  //   'multi references + count + no cardinality',
-  // )
+  deepEqual(
+    multiref,
+    [
+      {
+        id: 1,
+        votes: {
+          NL: {
+            sum: 176,
+          },
+          count: 5,
+          judges: {
+            cardinality: 0,
+          },
+        },
+      },
+    ],
+    'multi references + count + no cardinality',
+  )
 
-  // db.create('sequence', { votes: [j] })
+  db.create('sequence', { votes: [j] })
 
-  // deepEqual(
-  //   await db
-  //     .query('sequence')
-  //     .include((q) => q('votes').sum('NL').count().cardinality('judges'))
-  //     .get(),
-  //   [
-  //     {
-  //       id: 1,
-  //       votes: { NL: { sum: 176 }, count: 5, judges: { cardinality: 0 } },
-  //     },
-  //     {
-  //       id: 2,
-  //       votes: { NL: { sum: 0 }, count: 1, judges: { cardinality: 3 } },
-  //     },
-  //   ],
-  //   'multi references + count + cardinality',
-  // )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').sum('NL').count().cardinality('judges'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: { NL: { sum: 176 }, count: 5, judges: { cardinality: 0 } },
+      },
+      {
+        id: 2,
+        votes: { NL: { sum: 0 }, count: 1, judges: { cardinality: 3 } },
+      },
+    ],
+    'multi references + count + cardinality',
+  )
 
-  // deepEqual(
-  //   await db
-  //     .query('sequence')
-  //     .include((q) => q('votes').count().sum('NL').cardinality('judges'))
-  //     .get(),
-  //   [
-  //     {
-  //       id: 1,
-  //       votes: { count: 5, NL: { sum: 176 }, judges: { cardinality: 0 } },
-  //     },
-  //     {
-  //       id: 2,
-  //       votes: { count: 1, NL: { sum: 0 }, judges: { cardinality: 3 } },
-  //     },
-  //   ],
-  //   'multi references + count first + cardinality',
-  // )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').count().sum('NL').cardinality('judges'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: { count: 5, NL: { sum: 176 }, judges: { cardinality: 0 } },
+      },
+      {
+        id: 2,
+        votes: { count: 1, NL: { sum: 0 }, judges: { cardinality: 3 } },
+      },
+    ],
+    'multi references + count first + cardinality',
+  )
 })

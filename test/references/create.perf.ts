@@ -1,15 +1,10 @@
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
-import { deepEqual, equal, throws, perf } from '../shared/assert.js'
+import { testDb } from '../shared/index.js'
+import { perf } from '../shared/assert.js'
 
 await test('create 1m items with 1 reference(s)', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       test: {
         refs: {
@@ -37,13 +32,7 @@ await test('create 1m items with 1 reference(s)', async (t) => {
 })
 
 await test('create 1m items with 100 reference(s)', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       test: {
         refs: {

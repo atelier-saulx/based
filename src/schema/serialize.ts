@@ -10,9 +10,10 @@ import {
   ENCODER,
   DECODER,
 } from '../utils/index.js'
+import { vectorBaseType2TypedArray } from './schema/vector.js'
 import { PropType, PropTypeInverse } from '../zigTsExports.js'
-import type { SchemaOut } from './schema/schema.js'
 import { stringFormats } from './schema/string.js'
+import type { SchemaOut } from './schema/schema.js'
 
 const UINT8 = 245
 const FALSE = 246
@@ -80,16 +81,27 @@ const handleSingleValue = (
 ) => {
   const type = typeof val
   // typed Array - single PROP
-  if (val instanceof Uint8Array) {
-    ensureCapacity(1 + 2 + val.byteLength)
+  if (
+    val instanceof Uint8Array ||
+    val instanceof Int8Array ||
+    val instanceof Uint16Array ||
+    val instanceof Int16Array ||
+    val instanceof Uint32Array ||
+    val instanceof Int32Array ||
+    val instanceof Float16Array ||
+    val instanceof Float32Array ||
+    val instanceof Float64Array
+  ) {
+    const tmp = new Uint8Array(val.buffer, val.byteOffset, val.byteLength)
+    ensureCapacity(1 + 2 + tmp.byteLength)
     schemaBuffer.buf[schemaBuffer.len] = BINARY
     schemaBuffer.len += 1
-    schemaBuffer.buf[schemaBuffer.len] = val.byteLength
+    schemaBuffer.buf[schemaBuffer.len] = tmp.byteLength
     schemaBuffer.len += 1
-    schemaBuffer.buf[schemaBuffer.len] = val.byteLength >>> 8
+    schemaBuffer.buf[schemaBuffer.len] = tmp.byteLength >>> 8
     schemaBuffer.len += 1
-    schemaBuffer.buf.set(val, schemaBuffer.len)
-    schemaBuffer.len += val.byteLength
+    schemaBuffer.buf.set(tmp, schemaBuffer.len)
+    schemaBuffer.len += tmp.byteLength
   } else if (type === 'function') {
     // Support both arrow functions and methods (including shorthand method syntax)
     let str = val.toString()
@@ -193,14 +205,11 @@ const encodeKey = (key: string, schemaBuffer: SchemaBuffer) => {
     schemaBuffer.dictMap[key] = dictKey
   } else {
     ensureCapacity(4)
-
     // updated address? maybe
     const dictMapUsed: DictMapUsed = { address: schemaBuffer.len, key: dictKey }
     schemaBuffer.dictMapUsed.push(dictMapUsed)
     // used can be handled differently - also pass to
     // dictKey.used.push(dictMapUsed)
-    // console.log('USE KEY!', key)
-    // have to check this to correct - correctly
     if (dictKey.address > 65025) {
       schemaBuffer.buf[schemaBuffer.len] = KEY_ADDRESS_3_BYTES
       schemaBuffer.len += 1
@@ -233,16 +242,14 @@ const walk = (
   schemaBuffer: SchemaBuffer,
 ) => {
   let start = schemaBuffer.len
-
   const isArray = Array.isArray(obj)
   const isFromObj = prev2?.type === 'object' || fromObject === false
-  const isSchemaProp =
-    ('enum' in obj || ('type' in obj && PropType[obj.type])) && isFromObj
+  const isSchemaProp = 'type' in obj && PropType[obj.type] && isFromObj
 
   ensureCapacity(1 + 5) // Type byte + size
   if (isSchemaProp) {
     schemaBuffer.buf[schemaBuffer.len++] = SCHEMA_PROP
-    const typeIndex = PropType['enum' in obj ? 'enum' : obj.type]
+    const typeIndex = PropType[obj.type]
     schemaBuffer.buf[schemaBuffer.len++] = typeIndex
   } else {
     schemaBuffer.buf[schemaBuffer.len++] = isArray ? ARRAY : OBJECT
@@ -468,10 +475,7 @@ export const deSerializeInner = (
 
   if (isSchemaProp) {
     const type = buf[i]
-    const parsedType = PropTypeInverse[type]
-    if (type !== PropType.enum) {
-      obj.type = parsedType
-    }
+    obj.type = PropTypeInverse[type]
     i += 1
   }
 
@@ -566,7 +570,14 @@ export const deSerializeInner = (
       i += 1
       const size = readUint16(buf, i)
       i += 2
-      obj[key] = buf.subarray(i, size + i)
+      const tmp = buf.subarray(i, i + size)
+      if (obj.baseType) {
+        obj[key] = new vectorBaseType2TypedArray[obj.baseType](
+          tmp.slice().buffer,
+        )
+      } else {
+        obj[key] = tmp
+      }
       i += size
     } else if (buf[i] === UINT32) {
       obj[key] = readUint32(buf, i + 1)
@@ -579,7 +590,7 @@ export const deSerializeInner = (
       const fieldSize = deSerializeInner(buf, nest, i, false)
       i += fieldSize
     } else if (buf[i] === ARRAY) {
-      const len = readUint16(buf, i + 3)
+      const len = readUint16(buf, i + 2)
       const nest = (obj[key] = new Array(len))
       const fieldSize = deSerializeInner(buf, nest, i, true)
       i += fieldSize

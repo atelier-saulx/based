@@ -1,11 +1,10 @@
-import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { join } from 'path'
 import { readdir, readFile } from 'node:fs/promises'
 import { promisify } from 'node:util'
 import { gunzip as _gunzip } from 'zlib'
 import { Sema } from 'async-sema'
-import { logMemoryUsage } from '../shared/index.js'
+import { logMemoryUsage, testDb } from '../shared/index.js'
 
 const gunzip = promisify(_gunzip)
 
@@ -342,96 +341,91 @@ class Loading {
 }
 
 await test.skip('taxi', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  // FIXME
-  //t.after(() => t.backup(db))
-  t.after(() => db.stop())
-
-  await db.setSchema({
-    types: {
-      zone: {
-        props: {
-          locationId: 'alias',
-          borough: 'string',
-          zone: 'string',
-          serviceZone: { type: 'string', max: 16 },
-        },
-      },
-      rate: {
-        props: {
-          rateCodeId: 'alias',
-          name: { type: 'string', max: 20 },
-        },
-      },
-      vendor: {
-        props: {
-          vendorId: 'alias',
-          name: 'string',
-        },
-      },
-      trip: {
-        hooks: {
-          create(payload: Record<string, any>) {
-            payload.pickupYear = new Date(
-              `${payload.pickup.getUTCFullYear()}`,
-            ).getUTCFullYear()
-            payload.pickupHour = payload.pickup.getUTCHours()
-            payload.avgSpeed =
-              payload.tripDistance /
-              ((payload.dropoff.getTime() - payload.pickup.getTime()) / 3.6e6 ||
-                0)
+  const db = await testDb(
+    t,
+    {
+      types: {
+        zone: {
+          props: {
+            locationId: 'alias',
+            borough: 'string',
+            zone: 'string',
+            serviceZone: { type: 'string', max: 16 },
           },
         },
-        props: {
-          vendor: { ref: 'vendor', prop: 'trips' },
-          pickupYear: 'int16',
-          pickupHour: 'uint8',
-          pickup: 'timestamp',
-          dropoff: 'timestamp',
-          pickupLoc: { ref: 'zone', prop: 'pickups' },
-          dropoffLoc: { ref: 'zone', prop: 'dropoffs' },
-          pickupDropoffLocs: 'string', // TODO Would be better if we could combine fields in groupBy()
-          avgSpeed: 'number',
-          passengerCount: 'uint8',
-          tripDistance: 'number',
-          storeAndFwd: 'boolean',
-          rate: { ref: 'rate', prop: 'trips' },
-          paymentType: {
-            type: 'enum',
-            enum: [
-              'flex',
-              'credit card',
-              'cash',
-              'no charge',
-              'dispute',
-              'unknown',
-              'voided trip',
-            ],
-            default: 'unknown',
+        rate: {
+          props: {
+            rateCodeId: 'alias',
+            name: { type: 'string', max: 20 },
           },
-          fees: {
-            type: 'object',
-            props: {
-              fareAmount: 'int32', // $ cents
-              extra: 'int32', // $ cents
-              mtaTax: 'int32', // $ cents
-              tipAmount: 'int32', // $ cents
-              tollsAmount: 'int32', // $ cents
-              imporvementSurcharge: 'int32', // $ cents
-              totalAmount: 'int32', // $ cents
-              congestionSurcharge: 'int32', // $ cents
-              airportFee: 'int32', // $ cents
-              cbdCongestionFee: 'int32', // $ cents
+        },
+        vendor: {
+          props: {
+            vendorId: 'alias',
+            name: 'string',
+          },
+        },
+        trip: {
+          hooks: {
+            create(payload: Record<string, any>) {
+              payload.pickupYear = new Date(
+                `${payload.pickup.getUTCFullYear()}`,
+              ).getUTCFullYear()
+              payload.pickupHour = payload.pickup.getUTCHours()
+              payload.avgSpeed =
+                payload.tripDistance /
+                ((payload.dropoff.getTime() - payload.pickup.getTime()) /
+                  3.6e6 || 0)
+            },
+          },
+          props: {
+            vendor: { ref: 'vendor', prop: 'trips' },
+            pickupYear: 'int16',
+            pickupHour: 'uint8',
+            pickup: 'timestamp',
+            dropoff: 'timestamp',
+            pickupLoc: { ref: 'zone', prop: 'pickups' },
+            dropoffLoc: { ref: 'zone', prop: 'dropoffs' },
+            pickupDropoffLocs: 'string', // TODO Would be better if we could combine fields in groupBy()
+            avgSpeed: 'number',
+            passengerCount: 'uint8',
+            tripDistance: 'number',
+            storeAndFwd: 'boolean',
+            rate: { ref: 'rate', prop: 'trips' },
+            paymentType: {
+              type: 'enum',
+              enum: [
+                'flex',
+                'credit card',
+                'cash',
+                'no charge',
+                'dispute',
+                'unknown',
+                'voided trip',
+              ],
+              default: 'unknown',
+            },
+            fees: {
+              type: 'object',
+              props: {
+                fareAmount: 'int32', // $ cents
+                extra: 'int32', // $ cents
+                mtaTax: 'int32', // $ cents
+                tipAmount: 'int32', // $ cents
+                tollsAmount: 'int32', // $ cents
+                imporvementSurcharge: 'int32', // $ cents
+                totalAmount: 'int32', // $ cents
+                congestionSurcharge: 'int32', // $ cents
+                airportFee: 'int32', // $ cents
+                cbdCongestionFee: 'int32', // $ cents
+              },
             },
           },
         },
       },
     },
-  })
+    { noBackup: true },
+  )
 
   for (let i = 0; i < taxiZoneLookup.length; i += 4) {
     db.create('zone', {
@@ -475,27 +469,25 @@ await test.skip('taxi', async (t) => {
     clamp(Math.round(isNaN(x) ? 0 : x), -2147483648, 2147483647)
 
   const createTrip = async (trip: any) => {
-    // TODO toObject() shouldn't be needed
     const { id: vendor = null } = await db
       .query('vendor', { vendorId: trip.VendorID })
       .include('id')
       .get()
-      .toObject()
+
     const { id: rate = null } = await db
       .query('rate', { rateCodeId: trip.RatecodeID ?? '99' })
       .include('id')
       .get()
-      .toObject()
+
     const { id: pickupLoc = null } = await db
       .query('zone', { locationId: trip.PULocationID ?? '264' })
       .include('id')
       .get()
-      .toObject()
+
     const { id: dropoffLoc = null } = await db
       .query('zone', { locationId: trip.DOLocationID ?? '264' })
       .include('id')
       .get()
-      .toObject()
 
     const pickup = new Date(trip.tpep_pickup_datetime)
     const dropoff = new Date(trip.tpep_dropoff_datetime)
@@ -596,7 +588,7 @@ await test.skip('taxi', async (t) => {
   //       .get(),
   //   ),
   // )
-  //   res.map((r) => r.toObject())
+  //   res.map((r) => r)
 
   // Yearly/Monthly/Daily revenue
   console.log('Yearly/Monthly/Daily revenue')
@@ -647,13 +639,13 @@ await test.skip('taxi', async (t) => {
     .groupBy('pickup', { step: 'dow', timeZone: 'America/New_York' })
     .count()
     .get()
-    .toObject()
+
   const rh2 = await db
     .query('trip')
     .groupBy('pickup', { step: 'dow', timeZone: 'America/New_York' })
     .count()
     .get()
-    .toObject()
+
   console.log(
     Object.keys(day2enum).reduce(
       (prev, key) => (
@@ -683,7 +675,7 @@ await test.skip('taxi', async (t) => {
     .or((t) => t.filter('pickupHour', '>=', 16).filter('pickupHour', '<=', 19))
     .groupBy('pickup', { step: 'dow', timeZone: 'America/New_York' })
     //.groupBy('pickupDropoffLocs')
-    .harmonicMean('avgSpeed')
+    .hmean('avgSpeed')
     .get()
     .inspect()
 

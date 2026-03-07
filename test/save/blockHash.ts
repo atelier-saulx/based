@@ -1,4 +1,4 @@
-import assert, { equal, notEqual } from 'node:assert'
+import assert, { equal } from 'node:assert'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
@@ -7,8 +7,8 @@ import test from '../shared/test.js'
 import native from '../../src/native.js'
 import { deepEqual } from '../shared/assert.js'
 import { getBlockHash } from '../../src/db-server/blocks.js'
+import { checksum } from '../../src/db-query/query/index.js'
 
-const f = (v) => v.map((r) => r.hash)
 const sha1 = async (path: string) =>
   createHash('sha1')
     .update(await fs.readFile(path))
@@ -21,7 +21,7 @@ await test('isomorphic types have equal hashes', async (t) => {
   await db.start({ clean: true })
   t.after(() => db.destroy())
 
-  await db.setSchema({
+  const schema = {
     types: {
       article: {
         title: 'string',
@@ -32,23 +32,24 @@ await test('isomorphic types have equal hashes', async (t) => {
         body: 'string',
       },
     },
-  })
+  } as const
+  const client = await db.setSchema(schema)
 
   for (let i = 0; i < 200_000; i++) {
-    db.create('article', {
+    client.create('article', {
       title: 'party in the house',
       body: 'there was',
     })
-    db.create('story', {
+    client.create('story', {
       title: 'party in the house',
       body: 'there was',
     })
   }
-  await db.drain()
+  await client.drain()
 
   deepEqual(
-    (await db.query('article').get()).checksum,
-    (await db.query('story').get()).checksum,
+    checksum(await client.query('article').get()),
+    checksum(await client.query('story').get()),
   )
   assert(
     native.equals(

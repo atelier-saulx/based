@@ -68,4 +68,7 @@ SELVA_EXPORT
 void colvec_set_vec(struct SelvaTypeEntry *te, node_id_t node_id, const struct SelvaFieldSchema *fs, const void *vec);
 
 SELVA_EXPORT
+void colvec_clear_vec(struct SelvaTypeEntry *te, node_id_t node_id, const struct SelvaFieldSchema *fs);
+
+SELVA_EXPORT
 int colvec_foreach(struct SelvaTypeEntry *te, const struct SelvaFieldSchema *fs, node_id_t start, uint32_t len, void (*cb)(node_id_t node_id, void *vec, void *arg), void *arg);

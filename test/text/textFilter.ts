@@ -1,27 +1,14 @@
-import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
+import { testDb } from '../shared/index.js'
 import { join } from 'path'
 import { deepEqual } from '../shared/assert.js'
 
 await test('textFilter', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e3 * 1e3,
-  })
-  await db.start({ clean: true })
-
-  const dbX = new BasedDb({
-    path: join(t.tmp, 'x'),
-    maxModifySize: 1e3 * 1e3,
-  })
-  await dbX.start({ clean: true })
-
-  t.after(() => t.backup(db))
-  t.after(() => dbX.destroy())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: {
-      en: { required: true },
+      en: {
+        /* required: true */
+      },
       nl: {},
     },
     types: {
@@ -38,26 +25,31 @@ await test('textFilter', async (t) => {
       },
     },
   })
-
-  await dbX.setSchema({
-    locales: {
-      en: { required: true },
-      nl: {},
-    },
-    types: {
-      project: {
-        props: {
-          createdAt: {
-            type: 'timestamp',
-            on: 'create',
+  const dbx = testDb(
+    t,
+    {
+      locales: {
+        en: {
+          /* required: true */
+        },
+        nl: {},
+      },
+      types: {
+        project: {
+          props: {
+            createdAt: {
+              type: 'timestamp',
+              on: 'create',
+            },
+            title: { type: 'text' },
+            description: { type: 'text' },
+            abstract: { type: 'string' },
           },
-          title: { type: 'text' },
-          description: { type: 'text' },
-          abstract: { type: 'string' },
         },
       },
     },
-  })
+    { noBackup: true, path: join(t.tmp, 'x') },
+  )
 
   await db.create(
     'project',
@@ -117,14 +109,7 @@ await test('textFilter', async (t) => {
 })
 
 await test('compressionFilter', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e3 * 1e3,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       function: {
         name: 'alias',

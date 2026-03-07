@@ -35,10 +35,10 @@ const native = {
     return db.modify(q, dbCtx)
   },
 
-  start: (bridge: (id: number, payload: any) => void, fsPath: string, nrThreads: number) => {
+  start: (bridge: (id: number, payload: any) => void, fsPath: string, nrThreads: number, selvaSchema: Uint8Array) => {
     const fsPathBuf = new Uint8Array(db.stringByteLength(fsPath))
     ENCODER.encodeInto(fsPath, fsPathBuf)
-    return db.start(bridge, fsPathBuf, nrThreads)
+    return db.start(bridge, fsPathBuf, nrThreads, selvaSchema)
   },
 
   stop: (dbCtx: any) => {

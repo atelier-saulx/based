@@ -1,20 +1,10 @@
-import { equal } from 'node:assert'
 import { BasedDb } from '../../src/index.js'
-import { allCountryCodes } from '../shared/examples.js'
 import test from '../shared/test.js'
-import { throws, deepEqual } from '../shared/assert.js'
-import { fastPrng } from '../../src/utils/index.js'
+import { deepEqual } from '../shared/assert.js'
+import { testDb } from '../shared/index.js'
 
 await test('undefined numbers', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       vote: {
         props: {
@@ -36,7 +26,7 @@ await test('undefined numbers', async (t) => {
   })
 
   deepEqual(
-    await db.query('vote').max('AU', 'FI').groupBy('region').get().toObject(),
+    await db.query('vote').max('AU', 'FI').groupBy('region').get(),
     {
       EU: {
         AU: { max: 23 },
@@ -46,7 +36,7 @@ await test('undefined numbers', async (t) => {
     'number is initialized with zero',
   )
   deepEqual(
-    await db.query('vote').avg('AU', 'FI').groupBy('region').get().toObject(),
+    await db.query('vote').avg('AU', 'FI').groupBy('region').get(),
     {
       EU: {
         AU: { avg: 16.5 },
@@ -57,30 +47,19 @@ await test('undefined numbers', async (t) => {
   )
 
   deepEqual(
-    await db
-      .query('vote')
-      .harmonicMean('AU', 'FI')
-      .groupBy('region')
-      .get()
-      .toObject(),
+    await db.query('vote').hmean('AU', 'FI').groupBy('region').get(),
     {
       EU: {
         AU: { hmean: 13.93939393939394 },
         FI: { hmean: 0 },
       },
     },
-    'harmonic_mean affected by count because number is initialized with zero',
+    'hmean affected by count because number is initialized with zero',
   )
 })
 
 await test('boundary cases for validation', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       movie: {
         name: 'string',

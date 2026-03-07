@@ -15,30 +15,44 @@ const GroupByHashMap = @import("hashMap.zig").GroupByHashMap;
 const filter = @import("../filter/filter.zig").filter;
 
 pub fn iterator(
-    ctx: *Query.QueryCtx,
+    aggCtx: *Aggregates.AggCtx,
     groupByHashMap: *GroupByHashMap,
     it: anytype,
-    limit: u32,
-    comptime hasFilter: bool,
+    hasFilter: bool,
     filterBuf: []u8,
     aggDefs: []u8,
-    accumulatorSize: usize,
-    typeEntry: Node.Type,
-    hllAccumulator: anytype,
-) !u32 {
+) usize {
     var count: u32 = 0;
-    var hadAccumulated: bool = false;
+    aggCtx.hadAccumulated = false;
 
-    while (it.next()) |node| {
-        if (hasFilter) {
-            if (!try filter(node, ctx, filterBuf)) {
-                continue;
+    if (@hasDecl(@TypeOf(it.*), "nextRef")) {
+        while (it.nextRef()) |ref| {
+            if (hasFilter) {
+                if (!try filter(ref.node, aggCtx.queryCtx, filterBuf)) {
+                    continue;
+                }
             }
+            aggregatePropsWithGroupBy(groupByHashMap, ref.node, ref.edge, aggDefs, aggCtx) catch {
+                return 0;
+            };
+            count += 1;
+            if (count >= aggCtx.limit) break;
         }
-        try aggregatePropsWithGroupBy(groupByHashMap, node, typeEntry, aggDefs, accumulatorSize, hllAccumulator, &hadAccumulated);
-        count += 1;
-        if (count >= limit) break;
+    } else {
+        while (it.next()) |node| {
+            if (hasFilter) {
+                if (!try filter(node, aggCtx.queryCtx, filterBuf)) {
+                    continue;
+                }
+            }
+            aggregatePropsWithGroupBy(groupByHashMap, node, null, aggDefs, aggCtx) catch {
+                return 0;
+            };
+            count += 1;
+            if (count >= aggCtx.limit) break;
+        }
     }
+
     return count;
 }
 
@@ -55,17 +69,13 @@ inline fn getGrouByKeyValue(
 
     if (keyValue.len == 0) return emptyKey;
 
-    const key = if (propType == t.PropType.string)
-        if (propId == 0)
-            keyValue.ptr[start + 1 .. start + 1 + keyValue[start]]
-        else
-            keyValue.ptr[2 + start .. start + keyValue.len - propType.crcLen()]
-    else if (propType == t.PropType.timestamp)
-        @constCast(utils.datePart(keyValue.ptr[start .. start + keyValue.len], @enumFromInt(stepType), timezone))
-    else if (propType == t.PropType.reference)
-        Node.getReferenceNodeId(@ptrCast(@alignCast(keyValue.ptr)))
-    else
-        keyValue.ptr[start .. start + propType.size()];
+    const key = switch (propType) {
+        .string => if (propId == 0) keyValue.ptr[start + 1 .. start + 1 + keyValue[start]] else keyValue.ptr[2 + start .. start + keyValue.len - propType.crcLen()],
+        .stringFixed => if (propId == 0) keyValue.ptr[start + 1 .. start + 1 + keyValue[start]] else keyValue.ptr[2 + start .. start + keyValue.len - propType.crcLen()],
+        .timestamp => @constCast(utils.datePart(keyValue.ptr[start .. start + propType.size()], @enumFromInt(stepType), timezone)),
+        .reference => Node.getReferenceNodeId(@ptrCast(@alignCast(keyValue.ptr))),
+        else => keyValue.ptr[start .. start + propType.size()],
+    };
 
     return key;
 }
@@ -73,49 +83,59 @@ inline fn getGrouByKeyValue(
 inline fn aggregatePropsWithGroupBy(
     groupByHashMap: *GroupByHashMap,
     node: Node.Node,
-    typeEntry: Node.Type,
+    edgeNode: ?Node.Node,
     aggDefs: []u8,
-    accumulatorSize: usize,
-    hllAccumulator: anytype,
-    hadAccumulated: *bool,
+    aggCtx: *Aggregates.AggCtx,
 ) !void {
     if (aggDefs.len == 0) return;
-    // utils.debugPrint("\n\naggDefs: {any}\n", .{aggDefs});
 
     var i: usize = 0;
     const currentKeyPropDef = utils.readNext(t.GroupByKeyProp, aggDefs, &i);
-    // utils.debugPrint("currentKeyPropDef: {any}\n", .{currentKeyPropDef});
-    // utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentKeyPropDef.propId, Node.getNodeId(node) });
 
     var keyValue: []u8 = undefined;
 
-    const propSchema = Schema.getFieldSchema(typeEntry, currentKeyPropDef.propId) catch {
-        i += @sizeOf(t.GroupByKeyProp);
+    var keyNode = node;
+    var keyTypeEntry = aggCtx.typeEntry;
+    if (currentKeyPropDef.isEdge) {
+        if (edgeNode) |en| {
+            keyNode = en;
+            if (aggCtx.edgeTypeEntry) |ete| {
+                keyTypeEntry = ete;
+            }
+        } else {
+            return;
+        }
+    }
+    const propSchema = Schema.getFieldSchema(keyTypeEntry, currentKeyPropDef.propId) catch {
+        i += utils.sizeOf(t.GroupByKeyProp);
         return;
     };
 
     keyValue = Fields.get(
-        typeEntry,
-        node,
+        keyTypeEntry,
+        keyNode,
         propSchema,
         currentKeyPropDef.propType,
     );
 
     const key = getGrouByKeyValue(keyValue, currentKeyPropDef);
     const hash_map_entry = if (currentKeyPropDef.propType == t.PropType.timestamp and currentKeyPropDef.stepRange != 0)
-        try groupByHashMap.getOrInsertWithRange(key, accumulatorSize, currentKeyPropDef.stepRange)
+        try groupByHashMap.getOrInsertWithRange(key, aggCtx.accumulatorSize, currentKeyPropDef.stepRange)
     else
-        try groupByHashMap.getOrInsert(key, accumulatorSize);
-    const accumulatorProp = hash_map_entry.value;
-    hadAccumulated.* = !hash_map_entry.is_new;
+        try groupByHashMap.getOrInsert(key, aggCtx.accumulatorSize);
 
-    Aggregates.aggregateProps(node, typeEntry, aggDefs[i..], accumulatorProp, hllAccumulator, hadAccumulated);
+    const accumulatorProp = hash_map_entry.value;
+    aggCtx.hadAccumulated = !hash_map_entry.is_new;
+    if (hash_map_entry.is_new) {
+        aggCtx.totalResultsSize += 2 + key.len + aggCtx.resultsSize;
+    }
+
+    Aggregates.aggregateProps(node, edgeNode, aggDefs[i..], accumulatorProp, aggCtx);
 }
 
 pub inline fn finalizeGroupResults(
-    ctx: *Query.QueryCtx,
+    aggCtx: *Aggregates.AggCtx,
     groupByHashMap: *GroupByHashMap,
-    header: t.AggHeader,
     aggDefs: []u8,
 ) !void {
     var it = groupByHashMap.iterator();
@@ -124,12 +144,34 @@ pub inline fn finalizeGroupResults(
         const key = entry.key_ptr.*;
         const keyLen: u16 = @intCast(key.len);
         if (key.len > 0) {
-            try ctx.thread.query.append(keyLen);
-            try ctx.thread.query.append(key);
+            try aggCtx.queryCtx.thread.query.append(keyLen);
+            try aggCtx.queryCtx.thread.query.append(key);
         }
 
         const accumulatorProp = entry.value_ptr.*;
 
-        try Aggregates.finalizeResults(ctx, aggDefs, accumulatorProp, header.isSamplingSet, @bitSizeOf(t.GroupByKeyProp) / 8);
+        try Aggregates.finalizeResults(aggCtx, aggDefs, accumulatorProp, @bitSizeOf(t.GroupByKeyProp) / 8);
+    }
+}
+
+pub inline fn finalizeRefsGroupResults(
+    aggCtx: *Aggregates.AggCtx,
+    groupByHashMap: *GroupByHashMap,
+    aggDefs: []u8,
+) !void {
+    var it = groupByHashMap.iterator();
+
+    while (it.next()) |entry| {
+        const key = entry.key_ptr.*;
+        const keyLen: u16 = @intCast(key.len);
+
+        if (key.len > 0) {
+            try aggCtx.queryCtx.thread.query.append(keyLen);
+            try aggCtx.queryCtx.thread.query.append(key);
+        }
+
+        const accumulatorProp = entry.value_ptr.*;
+
+        try Aggregates.finalizeResults(aggCtx, aggDefs, accumulatorProp, @bitSizeOf(t.GroupByKeyProp) / 8);
     }
 }

@@ -119,7 +119,10 @@ test('query ctx bound + default verifyAuthState', async (t: T) => {
   close()
 
   t.deepEqual(await client.query('counter').get(), { userId: 1, cnt: 0 })
-  t.deepEqual(await client.query('counter', 'bla').get(), { userId: 1, cnt: 0 })
+  t.deepEqual(await client.query('counter', 'bla').get(), {
+    userId: 1,
+    cnt: 0,
+  })
 
   t.throwsAsync(() => client.query('counter', 'error').get())
 
@@ -326,7 +329,10 @@ test('query ctx bound on authState.userId require auth', async (t: T) => {
   close()
 
   t.deepEqual(await client.query('counter').get(), { userId: 1, cnt: 0 })
-  t.deepEqual(await client.query('counter', 'bla').get(), { userId: 1, cnt: 0 })
+  t.deepEqual(await client.query('counter', 'bla').get(), {
+    userId: 1,
+    cnt: 0,
+  })
 
   t.throwsAsync(() => client.query('counter', 'error').get())
 

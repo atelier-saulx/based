@@ -1,15 +1,8 @@
-import { BasedDb } from '../src/index.js'
+import { testDb } from './shared/index.js'
 import test from './shared/test.js'
 
 await test('too large payload should throw, correct size should not', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 80,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const client = await testDb(t, {
     types: {
       user: {
         props: {
@@ -19,10 +12,12 @@ await test('too large payload should throw, correct size should not', async (t) 
     },
   })
 
-  let error
+  let error: Error | null = null
   try {
-    db.create('user', {
-      name: 'cool string but too long for the max size unfortunately wow what the hell',
+    client.create('user', {
+      name: 'cool string but too long for the max size unfortunately wow what the hell'.repeat(
+        4,
+      ),
     })
   } catch (e) {
     error = e
@@ -36,10 +31,10 @@ await test('too large payload should throw, correct size should not', async (t) 
 
   let i = 10
   while (i--) {
-    db.create('user', {
+    client.create('user', {
       name: 'user' + i,
     })
   }
 
-  await db.drain()
+  await client.drain()
 })

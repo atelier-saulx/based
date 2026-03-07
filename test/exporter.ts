@@ -51,8 +51,8 @@ await test('export to csv', async (t) => {
   await db.setSchema({
     locales: {
       en: {},
-      it: { fallback: 'en' },
-      fi: { fallback: 'en' },
+      it: { fallback: ['en'] },
+      fi: { fallback: ['en'] },
     },
     types: {
       product: {

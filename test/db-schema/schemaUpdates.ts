@@ -1,34 +1,20 @@
 import { setTimeout } from 'node:timers/promises'
-import { DbClient } from '../../src/db-client/index.js'
-import { DbServer } from '../../src/db-server/index.js'
 import { deepEqual } from '../shared/assert.js'
 import test from '../shared/test.js'
-import { BasedDb, getDefaultHooks } from '../../src/index.js'
 import { wait } from '../../src/utils/index.js'
+import { testDb, testDbClient, testDbServer } from '../shared/index.js'
 
 await test('client server schema updates', async (t) => {
-  const server = new DbServer({
-    path: t.tmp,
-  })
-
-  await server.start({ clean: true })
-  t.after(() => server.destroy())
-
-  const client1 = new DbClient({
-    hooks: getDefaultHooks(server),
-  })
-
-  const client2 = new DbClient({
-    hooks: getDefaultHooks(server),
-  })
-
-  await client1.setSchema({
+  const server = await testDbServer(t, { noBackup: true })
+  const schema = {
     types: {
       user: {
         name: 'string',
       },
     },
-  })
+  } as const
+  const client1 = await testDbClient(server, schema)
+  const client2 = await testDbClient<typeof schema>(server)
 
   await client1.create('user', {
     name: 'youzi',
@@ -43,7 +29,7 @@ await test('client server schema updates', async (t) => {
     { id: 2, name: 'jamez' },
   ])
 
-  await client1.setSchema({
+  const client1Updated = await client1.setSchema({
     types: {
       user: {
         age: 'number',
@@ -51,16 +37,12 @@ await test('client server schema updates', async (t) => {
     },
   })
 
-  deepEqual(await client1.query('user').get(), [
+  deepEqual(await client1Updated.query('user').get(), [
     { id: 1, age: 0 },
     { id: 2, age: 0 },
   ])
 
-  const ageSorted = await client2
-    .query('user')
-    .sort('age', 'asc')
-    .get()
-    .toObject()
+  const ageSorted = await client2.query('user').sort('age', 'asc').get()
 
   await client1.setSchema({
     types: {
@@ -70,11 +52,7 @@ await test('client server schema updates', async (t) => {
     },
   })
 
-  const ageSorted2 = await client1
-    .query('user')
-    .sort('age', 'asc')
-    .get()
-    .toObject()
+  const ageSorted2 = await client1.query('user').sort('age', 'asc').get()
 
   deepEqual(ageSorted, ageSorted2)
 
@@ -89,29 +67,16 @@ await test('client server schema updates', async (t) => {
     },
   })
 
-  const ageSorted3 = await client1
-    .query('user')
-    .sort('age', 'asc')
-    .get()
-    .toObject()
+  const ageSorted3 = await client1.query('user').sort('age', 'asc').get()
 
   deepEqual(ageSorted3, ageSorted2)
 })
 
 await test('rapid schema updates', async (t) => {
-  const server = new DbServer({
-    path: t.tmp,
-  })
-  await server.start({ clean: true })
-  t.after(() => server.destroy())
+  const server = await testDbServer(t, { noBackup: true })
 
-  const client1 = new DbClient({
-    hooks: getDefaultHooks(server),
-  })
-
-  const client2 = new DbClient({
-    hooks: getDefaultHooks(server),
-  })
+  const client1 = await testDbClient(server)
+  const client2 = await testDbClient(server)
 
   await client1.setSchema({
     types: {
@@ -159,39 +124,28 @@ await test('rapid schema updates', async (t) => {
 
   await Promise.all(promises)
 
-  const res = await client1.query('user').get().toObject()
+  const res = await client1.query('user').get()
 
   deepEqual(
     [
       { id: 1, name: 'youzi', field0: '' },
       { id: 2, name: 'jamez', field0: '' },
     ],
-    res,
+    res as any,
   )
 })
 
 await test('rapid modifies during schema update', async (t) => {
-  const server = new DbServer({
-    path: t.tmp,
-  })
-  await server.start({ clean: true })
-  t.after(() => server.destroy())
-
-  const client1 = new DbClient({
-    hooks: getDefaultHooks(server),
-  })
-
-  const client2 = new DbClient({
-    hooks: getDefaultHooks(server),
-  })
-  // console.log('set schema 1')
-  await client1.setSchema({
+  const server = await testDbServer(t, { noBackup: true })
+  const schema = {
     types: {
       user: {
         name: 'string',
       },
     },
-  })
+  } as const
+  const client1 = await testDbClient(server, schema)
+  const client2 = await testDbClient<typeof schema>(server)
 
   const youzies = 500_000
 
@@ -217,28 +171,22 @@ await test('rapid modifies during schema update', async (t) => {
   while (b--) {
     const name = 'jamex' + b
     const id = await client2.create('user', { name })
-    const res = await client2.query('user', id).get().toObject()
+    const res = (await client2.query('user', id).get())!
 
     deepEqual(res.id, id)
     deepEqual(res.name, name)
   }
 
-  const all = await client2.query('user').range(0, 1000_000).get().toObject()
+  const all = (await client2.query('user').range(0, 1000_000).get())!
   // await wait(1e3)
   // console.log(all.length, all.slice(0, 10), all.slice(-10))
-  deepEqual(all[0], { id: 1, name: 'youzi499999', age: 0 })
-  deepEqual(all.at(-1), { id: 501000, name: 'jamex0', age: 0 })
+  deepEqual(all[0], { id: 1, name: 'youzi499999', age: 0 } as any)
+  deepEqual(all.at(-1), { id: 501000, name: 'jamex0', age: 0 } as any)
   deepEqual(all.length, youzies + jamesies)
 })
 
 await test('tree after schema update', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       nurp: {
         props: {
@@ -281,6 +229,4 @@ await test('tree after schema update', async (t) => {
   await db.create('user', {
     name: 'dr youz',
   })
-
-  await db.save()
 })

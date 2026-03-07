@@ -1,5 +1,6 @@
 import type { SchemaHooks } from '../../schema/index.js'
 import type { PropTypeEnum, VectorBaseTypeEnum } from '../../zigTsExports.js'
+import type { TypedArray } from '../../schema/index.js'
 
 export type Item = {
   id: number
@@ -16,16 +17,6 @@ export type Meta = {
 }
 
 export type AggItem = Partial<Item>
-
-export type TypedArray =
-  | Int8Array
-  | Uint8Array
-  | Int16Array
-  | Uint16Array
-  | Int32Array
-  | Uint32Array
-  | Float32Array
-  | Float64Array
 
 export enum ReaderSchemaEnum {
   edge = 1,
@@ -77,14 +68,12 @@ export type ReaderGroupBy = {
   typeIndex: PropTypeEnum
   stepRange?: number
   stepType?: boolean
-  display?: Intl.DateTimeFormat // find a way for this -- shitty
+  display?: Intl.DateTimeFormat
   enum?: any[]
 }
 
-// Move these types to seperate pkg including query def agg
 export type ReaderSchema = {
   readId: number
-  // maybe current read id that you add
   props: { [prop: string]: ReaderPropDef }
   main: { props: { [start: string]: ReaderPropDef }; len: number }
   type: ReaderSchemaEnum

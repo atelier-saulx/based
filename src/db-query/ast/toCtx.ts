@@ -1,0 +1,70 @@
+import { crc32 } from '../../db-client/crc32.js'
+import { ReaderSchema, ReaderSchemaEnum } from '../../protocol/index.js'
+import { SchemaOut } from '../../schema/index.js'
+import { getTypeDefs } from '../../schema/defs/getTypeDefs.js'
+import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
+import { Ctx, QueryAst } from './ast.js'
+import { defaultMultiple } from './multiple.js'
+import { getReaderLocales, readSchema } from './readSchema.js'
+import { defaultSingle } from './single.js'
+import { LangCode, LangCodeEnum } from '../../zigTsExports.js'
+
+export const astToQueryCtx = (
+  schema: SchemaOut,
+  ast: QueryAst,
+  query: AutoSizedUint8Array,
+  // sub: AutoSizedUint8Array, maybe we can just check the query for subs
+  // PREPARE
+): {
+  query: Uint8Array
+  readSchema: ReaderSchema
+} => {
+  query.length = 0
+
+  if (!ast.type) {
+    throw new Error('Query requires type')
+  }
+
+  const typeDefs = getTypeDefs(schema)
+  const typeDef = typeDefs.get(ast.type)
+
+  if (!typeDef) {
+    throw new Error('Type does not exist')
+  }
+
+  const queryIdPos = query.reserveUint32()
+
+  let locale: LangCodeEnum = LangCode.none
+  const locales = getReaderLocales(schema)
+
+  if (ast.locale) {
+    const code = LangCode[ast.locale]
+    if (!(code in locales)) {
+      throw new Error(`Invalid locale ${ast.locale}`)
+    }
+    locale = code
+  }
+
+  const ctx: Ctx = {
+    query,
+    readSchema: readSchema(),
+    locales,
+    locale: locale,
+  }
+
+  if (ast.target && !Array.isArray(ast.target)) {
+    defaultSingle(ast, ctx, typeDef)
+    ctx.readSchema.type = ReaderSchemaEnum.single
+  } else {
+    defaultMultiple(ast, ctx, typeDef)
+  }
+
+  query.pushUint64(schema.hash)
+  query.writeUint32(crc32(query.view), queryIdPos)
+
+  // can use same buf for sub
+  return {
+    query: query.view.slice(),
+    readSchema: ctx.readSchema,
+  }
+}

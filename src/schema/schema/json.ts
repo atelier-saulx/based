@@ -1,6 +1,7 @@
-import { parseBase, type Base } from './base.js'
+import { parseBase } from './base.js'
+import type { SchemaString } from './string.js'
 
-export type SchemaJson = Base & {
+export type SchemaJson = Omit<SchemaString, 'default' | 'type'> & {
   type: 'json'
   default?: any
 }

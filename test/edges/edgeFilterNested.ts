@@ -1,15 +1,9 @@
 import { deepEqual } from '../shared/assert.js'
-import { BasedDb } from '../../src/index.js'
+import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 
 await test('edge enum', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       initiative: {
         name: 'string',
@@ -27,7 +21,7 @@ await test('edge enum', async (t) => {
           items: {
             ref: 'initiative',
             prop: 'users',
-            // $role: ['a', 'b'],
+            $role: ['a', 'b'],
           },
         },
       },
@@ -48,9 +42,9 @@ await test('edge enum', async (t) => {
   deepEqual(
     await db
       .query('user')
-      .include('name', (q) => {
-        q('initiatives').filter('$role', '=', 'a').include('name')
-      })
+      .include('name', (q) =>
+        q('initiatives').filter('$role', '=', 'a').include('name'),
+      )
       .get(),
     [
       {
@@ -65,11 +59,13 @@ await test('edge enum', async (t) => {
   deepEqual(
     await db
       .query('user')
-      .include('name', (q) => {
+      .include('name', (q) =>
         q('initiatives')
           .filter('$role', '=', 'a')
-          .include((q) => q('users').include('$role').filter('$role', '=', 'b'))
-      })
+          .include((q) =>
+            q('users').include('$role').filter('$role', '=', 'b'),
+          ),
+      )
       .get(),
     [
       {

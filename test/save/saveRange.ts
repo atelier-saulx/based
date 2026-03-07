@@ -1,28 +1,9 @@
-import { createHash } from 'node:crypto';
 import { readdir } from 'node:fs/promises'
-import { BasedDb, DbServer } from '../../src/index.js'
+import { BasedDb, DbClient, getDefaultHooks } from '../../src/index.js'
 import test from '../shared/test.js'
 import { italy } from '../shared/examples.js'
 import { deepEqual, equal, notEqual } from '../shared/assert.js'
-import { getBlockHash, getBlockStatuses } from '../../src/db-server/blocks.js'
-
-const getActiveBlocks = async (db: DbServer, tc: number): Promise<Array<number>> => (await getBlockStatuses(db, tc)).reduce((acc, cur, i) => {
-  if (cur) {
-    acc.push(i)
-  }
-  return acc
-}, [] as Array<number>)
-const block2start = (block: number, capacity: number): number => block * capacity + 1;
-const hashType = async (db: DbServer, typeName: string): Promise<string> => {
-  const tc = db.schemaTypesParsed[typeName].id
-  const capacity = db.schemaTypesParsed[typeName].blockCapacity
-  const hash = createHash('sha256')
-  const bhs = await Promise.all((await getActiveBlocks(db, tc)).map((block) => getBlockHash(db, tc, block2start(block, capacity))))
-  for (const bh of bhs) {
-    hash.update(bh)
-  }
-  return hash.digest('hex')
-}
+import { countDirtyBlocks, hashType } from '../shared/index.js'
 
 await test('save simple range', async (t) => {
   const db = new BasedDb({
@@ -33,7 +14,7 @@ await test('save simple range', async (t) => {
     return db.destroy()
   })
 
-  await db.setSchema({
+  const schema = {
     types: {
       user: {
         props: {
@@ -44,7 +25,8 @@ await test('save simple range', async (t) => {
         },
       },
     },
-  })
+  } as const
+  const client = await db.setSchema(schema)
 
   const N = 800_000
   const slen = 80
@@ -59,7 +41,7 @@ await test('save simple range', async (t) => {
       xn1 ^= xn2
     }
 
-    db.create('user', {
+    client.create('user', {
       age: i,
       name: 'mr flop ' + i,
       email: 'abuse@disaster.co.uk',
@@ -67,26 +49,23 @@ await test('save simple range', async (t) => {
     })
   }
 
-  await db.drain()
+  await client.drain()
 
   const save1_start = performance.now()
   await db.save()
   const save1_end = performance.now()
   const firstHash = await hashType(db.server, 'user')
 
-  db.update('user', 1, {
+  client.update('user', 1, {
     age: 1337,
   })
-  await db.drain()
-  deepEqual(
-    (await db.query('user').include('age').range(0, 1).get()).toObject(),
-    [
-      {
-        id: 1,
-        age: 1337,
-      },
-    ],
-  )
+  await client.drain()
+  deepEqual(await client.query('user').include('age').range(0, 1).get(), [
+    {
+      id: 1,
+      age: 1337,
+    },
+  ])
 
   const save2_start = performance.now()
   await db.save()
@@ -114,35 +93,34 @@ await test('save simple range', async (t) => {
     'schema.bin',
   ])
 
-  const load_start = performance.now()
-  const newDb = new BasedDb({
+  //const load_start = performance.now()
+  const db2 = new BasedDb({
     path: t.tmp,
   })
-  await newDb.start()
-  t.after(() => newDb.destroy())
-  const load_end = performance.now()
+  await db2.start()
+  t.after(() => db2.destroy())
+  //const load_end = performance.now()
 
-  const thirdHash = await hashType(newDb.server, 'user')
+  const client2 = new DbClient<typeof schema>({
+    hooks: getDefaultHooks(db2.server),
+  })
+
+  const thirdHash = await hashType(db2.server, 'user')
   notEqual(firstHash, secondHash)
   equal(secondHash, thirdHash)
 
+  deepEqual(await client2.query('user').include('age').range(0, 1).get(), [
+    {
+      id: 1,
+      age: 1337,
+    },
+  ])
   deepEqual(
-    (await newDb.query('user').include('age').range(0, 1).get()).toObject(),
-    [
-      {
-        id: 1,
-        age: 1337,
-      },
-    ],
-  )
-  deepEqual(
-    (
-      await newDb
-        .query('user')
-        .include('age')
-        .range(200000, 200000 + 1)
-        .get()
-    ).toObject(),
+    await client2
+      .query('user')
+      .include('age')
+      .range(200000, 200000 + 1)
+      .get(),
     [
       {
         id: 200001,
@@ -151,28 +129,23 @@ await test('save simple range', async (t) => {
     ],
   )
 
-  deepEqual(
-    (await newDb.query('user').include('name').range(0, 2).get()).toObject(),
-    [
-      {
-        id: 1,
-        name: 'mr flop 1',
-      },
-      {
-        id: 2,
-        name: 'mr flop 2',
-      },
-    ],
-  )
+  deepEqual(await client2.query('user').include('name').range(0, 2).get(), [
+    {
+      id: 1,
+      name: 'mr flop 1',
+    },
+    {
+      id: 2,
+      name: 'mr flop 2',
+    },
+  ])
 
   deepEqual(
-    (
-      await newDb
-        .query('user')
-        .include('name')
-        .range(200_000, 200_000 + 2)
-        .get()
-    ).toObject(),
+    await client2
+      .query('user')
+      .include('name')
+      .range(200_000, 200_000 + 2)
+      .get(),
     [
       {
         id: 200001,
@@ -186,24 +159,14 @@ await test('save simple range', async (t) => {
   )
 })
 
-async function countDirtyBlocks(server: DbServer) {
-  let n = 0
-
-  for (const t of Object.keys(server.schemaTypesParsedById)) {
-    n += (await getBlockStatuses(server, Number(t))).reduce((acc, cur) => acc + ~~!!(cur & 0x4), 0)
-  }
-
-  return n
-}
-
 await test('reference changes', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
-  await db.setSchema({
+  const client = await db.setSchema({
     types: {
       user: {
         props: {
@@ -222,45 +185,65 @@ await test('reference changes', async (t) => {
   })
 
   const users = Array.from({ length: 3 }, (_, k) =>
-    db.create('user', {
+    client.create('user', {
       name: 'mr flop ' + k,
     }),
   )
-  await db.drain()
-  equal(await countDirtyBlocks(db.server), 1, 'creating new users creates a dirty range')
+  await client.drain()
+  equal(
+    await countDirtyBlocks(db.server),
+    1,
+    'creating new users creates a dirty range',
+  )
 
-  db.create('doc', {
+  client.create('doc', {
     title: 'The Wonders of AI',
     creator: users[0],
   })
-  await db.drain()
-  equal(await countDirtyBlocks(db.server), 2, 'creating nodes in two types makes both dirty')
+  await client.drain()
+  equal(
+    await countDirtyBlocks(db.server),
+    2,
+    'creating nodes in two types makes both dirty',
+  )
 
   await db.save()
   equal(await countDirtyBlocks(db.server), 0, 'saving clears dirt')
 
-  const doc2 = db.create('doc', {
+  const doc2 = client.create('doc', {
     title: 'The Slops of AI',
   })
-  const doc3 = db.create('doc', {
+  const doc3 = client.create('doc', {
     title: 'The Hype of AI',
   })
-  await db.drain()
-  equal(await countDirtyBlocks(db.server), 1, 'creating docs makes the range dirty')
+  await client.drain()
+  equal(
+    await countDirtyBlocks(db.server),
+    1,
+    'creating docs makes the range dirty',
+  )
   await db.save()
   equal(await countDirtyBlocks(db.server), 0, 'saving clears dirt')
 
   // Link user -> doc
-  db.update('user', users[1], { docs: [doc2] })
-  await db.drain()
-  equal(await countDirtyBlocks(db.server), 2, 'Linking a user to doc makes both dirty')
+  client.update('user', users[1], { docs: [doc2] })
+  await client.drain()
+  equal(
+    await countDirtyBlocks(db.server),
+    2,
+    'Linking a user to doc makes both dirty',
+  )
   await db.save()
   equal(await countDirtyBlocks(db.server), 0, 'saving clears dirt')
 
   // Link doc -> user
-  db.update('doc', doc3, { creator: users[2] })
-  await db.drain()
-  equal(await countDirtyBlocks(db.server), 2, 'Linking a doc to user makes both dirty')
+  client.update('doc', doc3, { creator: users[2] })
+  await client.drain()
+  equal(
+    await countDirtyBlocks(db.server),
+    2,
+    'Linking a doc to user makes both dirty',
+  )
   await db.save()
   equal(await countDirtyBlocks(db.server), 0, 'saving clears dirt')
 })
@@ -270,9 +253,9 @@ await test('ref block moves', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
-  await db.setSchema({
+  const client = await db.setSchema({
     types: {
       a: {
         props: {
@@ -289,22 +272,22 @@ await test('ref block moves', async (t) => {
     },
   })
 
-  const a1 = await db.create('a', { x: 1 })
-  const b1 = await db.create('b', { y: 1, aref: a1 })
+  const a1 = await client.create('a', { x: 1 })
+  const b1 = await client.create('b', { y: 1, aref: a1 })
   for (let i = 0; i < 100_000; i++) {
-    db.create('a', { x: i % 256 })
-    db.create('b', { y: i % 256 })
+    client.create('a', { x: i % 256 })
+    client.create('b', { y: i % 256 })
   }
-  await db.drain()
+  await client.drain()
   for (let i = 0; i < 100_000; i++) {
-    db.delete('a', i + 2)
-    db.delete('b', i + 2)
+    client.delete('a', i + 2)
+    client.delete('b', i + 2)
   }
-  const an = await db.create('a', { x: 2 })
-  const bn = await db.create('b', { y: 2, aref: an })
+  const an = await client.create('a', { x: 2 })
+  const bn = await client.create('b', { y: 2, aref: an })
   await db.save()
 
-  await db.update('a', a1, { bref: bn })
+  await client.update('a', a1, { bref: bn })
   // t.backup will continue the test from here
 })
 
@@ -313,9 +296,9 @@ await test('ref removal', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
-  await db.setSchema({
+  const client = await db.setSchema({
     types: {
       a: {
         props: {
@@ -333,12 +316,12 @@ await test('ref removal', async (t) => {
   })
 
   for (let i = 0; i < 100_000; i++) {
-    const a = db.create('a', { x: i % 256 })
-    db.create('b', { y: 255 - (i % 256), aref: a })
+    const a = client.create('a', { x: i % 256 })
+    client.create('b', { y: 255 - (i % 256), aref: a })
   }
   await db.save()
   for (let i = 0; i < 100_000; i++) {
-    db.update('a', i + 1, { bref: null })
+    client.update('a', i + 1, { bref: null })
   }
 
   // t.backup will continue the test from here
@@ -349,9 +332,9 @@ await test('refs removal with delete', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
-  await db.setSchema({
+  const client = await db.setSchema({
     types: {
       a: {
         props: {
@@ -368,12 +351,12 @@ await test('refs removal with delete', async (t) => {
     },
   })
 
-  const a = db.create('a', { x: 13 })
+  const a = client.create('a', { x: 13 })
   for (let i = 0; i < 10; i++) {
-    db.create('b', { y: 255 - (i % 256), aref: a })
+    client.create('b', { y: 255 - (i % 256), aref: a })
   }
   await db.save()
-  db.delete('a', a)
+  client.delete('a', a)
 })
 
 await test('large block gap', async (t) => {
@@ -381,9 +364,9 @@ await test('large block gap', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
-  await db.setSchema({
+  const client = await db.setSchema({
     types: {
       b: {
         blockCapacity: 10_000,
@@ -394,11 +377,11 @@ await test('large block gap', async (t) => {
     },
   })
 
-  db.create('b', {
+  client.create('b', {
     y: 10,
   })
   for (let i = 268435456; i < 268468224; i++) {
-    db.create(
+    client.create(
       'b',
       {
         id: i,
@@ -408,5 +391,5 @@ await test('large block gap', async (t) => {
     )
   }
 
-  await db.drain()
+  await client.drain()
 })

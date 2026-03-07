@@ -92,9 +92,18 @@ int selva_io_init_file(struct selva_io *io, int dirfd, const char *filename, enu
     }
 
     if (flags & SELVA_IO_FLAGS_WRITE) {
-        fd = openat(dirfd, filename, O_WRONLY | O_CREAT | O_TRUNC | O_RESOLVE_BENEATH | O_CLOEXEC, 0640);
+        /* TODO Use Linux openat2 and RESOLVE_BENEATH if supported */
+        fd = openat(dirfd, filename, O_WRONLY | O_CREAT | O_TRUNC |
+#if __MACH__
+                O_RESOLVE_BENEATH |
+#endif
+                O_CLOEXEC, 0640);
     } else {
-        fd = openat(dirfd, filename, O_RDONLY | O_RESOLVE_BENEATH | O_CLOEXEC);
+        fd = openat(dirfd, filename, O_RDONLY |
+#if __MACH__
+                O_RESOLVE_BENEATH |
+#endif
+                O_CLOEXEC);
     }
     if (fd == -1) {
         goto fopen_err;

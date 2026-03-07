@@ -1,12 +1,9 @@
-import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { isSorted } from '../shared/assert.js'
+import { testDb } from '../shared/index.js'
 
 await test('alias', async (t) => {
-  const db = new BasedDb({ path: t.tmp })
-  t.after(() => db.destroy())
-  await db.start({ clean: true })
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       article: {
         props: {
@@ -25,7 +22,7 @@ await test('alias', async (t) => {
   await db.drain()
 
   isSorted(
-    await db.query('article').sort('email', 'desc').get(),
+    await db.query('article').sort('email').order('desc').get(),
     'email',
     'desc',
     'After create',
@@ -41,7 +38,7 @@ await test('alias', async (t) => {
   await db.drain()
 
   isSorted(
-    await db.query('article').sort('email', 'desc').get(),
+    await db.query('article').sort('email').order('desc').get(),
     'email',
     'desc',
     'After update',
@@ -54,7 +51,7 @@ await test('alias', async (t) => {
   await db.drain()
 
   isSorted(
-    await db.query('article').sort('email', 'desc').get(),
+    await db.query('article').sort('email').order('desc').get(),
     'email',
     'desc',
     'After delete',
@@ -70,7 +67,7 @@ await test('alias', async (t) => {
   await db.drain()
 
   isSorted(
-    await db.query('article').sort('email', 'desc').get(),
+    await db.query('article').sort('email').order('desc').get(),
     'email',
     'desc',
     'After create (same values)',

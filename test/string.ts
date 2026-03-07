@@ -1,18 +1,11 @@
 import { ENCODER, fastPrng } from '../src/utils/index.js'
-import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
+import { testDb } from './shared/index.js'
 import { deepEqual, equal } from './shared/assert.js'
 import { euobserver } from './shared/examples.js'
 
 await test('simple', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e4,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -46,45 +39,37 @@ await test('simple', async (t) => {
 
   await db.drain()
 
-  deepEqual(
-    (await db.query('user').include('name', 'snurp').get()).toObject(),
-    [
-      {
-        id: 1,
-        snurp: 'derp derp',
-        name: '',
-      },
-    ],
-  )
+  deepEqual(await db.query('user').include('name', 'snurp').get(), [
+    {
+      id: 1,
+      snurp: 'derp derp',
+      name: '',
+    },
+  ])
+
+  deepEqual(await db.query('user').include('name', 'snurp', 'age').get(), [
+    {
+      id: 1,
+      age: 99,
+      snurp: 'derp derp',
+      name: '',
+    },
+  ])
 
   deepEqual(
-    (await db.query('user').include('name', 'snurp', 'age').get()).toObject(),
-    [
-      {
-        id: 1,
-        age: 99,
-        snurp: 'derp derp',
-        name: '',
-      },
-    ],
-  )
-
-  deepEqual(
-    (
-      await db
-        .query('user')
-        .include(
-          'name',
-          'snurp',
-          'age',
-          'email',
-          'flap',
-          'burp',
-          'location.x',
-          'location.y',
-        )
-        .get()
-    ).toObject(),
+    await db
+      .query('user')
+      .include(
+        'name',
+        'snurp',
+        'age',
+        'email',
+        'flap',
+        'burp',
+        'location.x',
+        'location.y',
+      )
+      .get(),
     [
       {
         id: 1,
@@ -99,19 +84,16 @@ await test('simple', async (t) => {
     ],
   )
 
-  deepEqual(
-    (await db.query('user').include('location.label').get()).toObject(),
-    [
-      {
-        id: 1,
-        location: {
-          label: 'BLA BLA',
-        },
+  deepEqual(await db.query('user').include('location.label').get(), [
+    {
+      id: 1,
+      location: {
+        label: 'BLA BLA',
       },
-    ],
-  )
+    },
+  ])
 
-  deepEqual((await db.query('user').include('location').get()).toObject(), [
+  deepEqual(await db.query('user').include('location').get(), [
     {
       id: 1,
       location: {
@@ -122,36 +104,31 @@ await test('simple', async (t) => {
     },
   ])
 
-  deepEqual(
-    (await db.query('user').include('location', 'burp').get()).toObject(),
-    [
-      {
-        id: 1,
-        burp: 66,
-        location: {
-          x: 0,
-          y: 0,
-          label: 'BLA BLA',
-        },
+  deepEqual(await db.query('user').include('location', 'burp').get(), [
+    {
+      id: 1,
+      burp: 66,
+      location: {
+        x: 0,
+        y: 0,
+        label: 'BLA BLA',
       },
-    ],
-  )
+    },
+  ])
 
   deepEqual(
-    (
-      await db
-        .query('user')
-        .include(
-          'age',
-          'email',
-          'flap',
-          'burp',
-          'location.x',
-          'location.y',
-          'location.label',
-        )
-        .get()
-    ).toObject(),
+    await db
+      .query('user')
+      .include(
+        'age',
+        'email',
+        'flap',
+        'burp',
+        'location.x',
+        'location.y',
+        'location.label',
+      )
+      .get(),
     [
       {
         id: 1,
@@ -164,7 +141,7 @@ await test('simple', async (t) => {
     ],
   )
 
-  deepEqual((await db.query('user').get()).toObject(), [
+  deepEqual(await db.query('user').get(), [
     {
       id: 1,
       name: '',
@@ -179,13 +156,7 @@ await test('simple', async (t) => {
 })
 
 await test('string + refs', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -282,13 +253,11 @@ await test('string + refs', async (t) => {
   await db.drain()
 
   deepEqual(
-    (
-      await db
-        .query('simple')
-        .include('user.name', 'user.myBlup.name')
-        .range(0, 1)
-        .get()
-    ).toObject(),
+    await db
+      .query('simple')
+      .include('user.name', 'user.myBlup.name')
+      .range(0, 1)
+      .get(),
     [
       {
         id: 1,
@@ -311,9 +280,7 @@ await test('string + refs', async (t) => {
   await db.drain()
 
   deepEqual(
-    (
-      await db.query('simple').include('user.name', 'user.myBlup.name').get()
-    ).toObject(),
+    await db.query('simple').include('user.name', 'user.myBlup.name').get(),
     [
       {
         id: 1,
@@ -335,13 +302,7 @@ await test('string + refs', async (t) => {
 })
 
 await test('Big string disable compression', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       file: {
         props: {
@@ -416,13 +377,7 @@ await test('Big string disable compression', async (t) => {
 })
 
 await test('Big string', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       file: {
         props: {
@@ -453,7 +408,7 @@ await test('Big string', async (t) => {
   await db.drain()
 
   deepEqual(
-    (await db.query('file').get()).toObject(),
+    await db.query('file').get(),
     [
       {
         id: 1,
@@ -471,13 +426,7 @@ await test('Big string', async (t) => {
 })
 
 await test('schema compression prop', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       file: {
         props: {
@@ -518,16 +467,7 @@ await test('schema compression prop', async (t) => {
 
 await test('string compression - max buf size', async (t) => {
   const contents = 'a'.repeat(201) // min size for compression
-  const db = new BasedDb({
-    maxModifySize: Buffer.byteLength(contents) * 2 + 100,
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       file: {
         props: {
@@ -547,7 +487,7 @@ await test('string compression - max buf size', async (t) => {
 
   await db.drain()
 
-  const items = await db.query('file').get().toObject()
+  const items = await db.query('file').get()
 
   for (const item of items) {
     equal(item.contents, contents, 'contents are the same')

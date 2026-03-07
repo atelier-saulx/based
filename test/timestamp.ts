@@ -1,18 +1,10 @@
 import { wait } from '../src/utils/index.js'
-import { BasedDb } from '../src/index.js'
 import { deepEqual, equal } from './shared/assert.js'
 import test from './shared/test.js'
+import { testDb } from './shared/index.js'
 
 await test('timestamp', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -36,7 +28,7 @@ await test('timestamp', async (t) => {
     name: 'youzi',
   })
 
-  let res = (await db.query('user').get()).toObject()
+  let res = await db.query('user').get()
 
   if (typeof res[0].createdAt !== 'number') {
     throw 'should be number'
@@ -55,7 +47,7 @@ await test('timestamp', async (t) => {
     name: 'youzi1',
   })
 
-  res = (await db.query('user').get()).toObject()
+  res = await db.query('user').get()
 
   if (!(res[0].updatedAt > res[0].createdAt)) {
     throw 'updatedAt should be updated after update'
@@ -63,7 +55,7 @@ await test('timestamp', async (t) => {
 
   const measure = async (v: number) => {
     deepEqual(
-      Math.floor((await db.query('user', youzi).get().toObject()).mrDerp / 10),
+      Math.floor(((await db.query('user', youzi).get())?.mrDerp ?? 0) / 10),
       Math.floor(v / 10),
     )
   }
@@ -102,25 +94,17 @@ await test('timestamp', async (t) => {
     updatedAt: overwriteUpdatedAt,
   })
 
-  const newUser = await db.query('user', jamex).get().toObject()
-  const updatedUser = await db.query('user', youzi).get().toObject()
+  const newUser = await db.query('user', jamex).get()
+  const updatedUser = await db.query('user', youzi).get()
 
-  equal(newUser.createdAt, overwriteCreatedAt)
-  equal(newUser.updatedAt, overwriteUpdatedAt)
-  equal(updatedUser.createdAt, overwriteCreatedAt)
-  equal(updatedUser.updatedAt, overwriteUpdatedAt)
+  equal(newUser?.createdAt, overwriteCreatedAt)
+  equal(newUser?.updatedAt, overwriteUpdatedAt)
+  equal(updatedUser?.createdAt, overwriteCreatedAt)
+  equal(updatedUser?.updatedAt, overwriteUpdatedAt)
 })
 
 await test('timestamp before 1970', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -137,7 +121,6 @@ await test('timestamp before 1970', async (t) => {
     bday: d,
   })
 
-  const res = await db.query('user', user).get().toObject()
-
-  equal(res.bday, d.valueOf())
+  const res = await db.query('user', user).get()
+  equal(res?.bday, d.valueOf())
 })

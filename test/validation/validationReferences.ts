@@ -1,17 +1,9 @@
-import { BasedDb } from '../../src/index.js'
 import { deepEqual, throws } from '../shared/assert.js'
+import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 
 await test('update', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: { en: {}, de: {} },
     types: {
       flap: {
@@ -44,6 +36,7 @@ await test('update', async (t) => {
   })
 
   await throws(async () => {
+    // @ts-expect-error
     return db.query('flap').include('x.$derp').get()
   }, 'Non existing reference on flap')
 
@@ -83,61 +76,72 @@ await test('update', async (t) => {
   )
 
   await throws(async () => {
+    // @ts-expect-error
     db.create('user', { connections: user1 })
   }, 'Expected array for references field connections')
 
   await throws(async () => {
+    // @ts-expect-error
     db.update('user', userWithConn, { connections: user1 })
   }, 'Expected array or object for references field connections')
 
   await throws(async () => {
+    // @ts-expect-error
     db.create('user', { connections: [user1, 'not an id'] })
   }, 'Invalid reference "not an id" for field connections')
 
   await throws(async () => {
+    // @ts-expect-error
     db.create('user', { connections: [user1, {}] })
   }, 'Invalid reference "[object Object]" for field connections')
 
   await throws(async () => {
+    // @ts-expect-error
     db.create('user', { connections: [user1, invalidId] })
   }, 'Invalid reference "usr_invalid" for field connections')
 
   await throws(async () => {
+    // @ts-expect-error
     db.update('user', userWithConn, { connections: { add: [invalidId] } })
   }, 'Invalid reference "usr_invalid" for field add in connections')
 
   await throws(async () => {
     db.update('user', userWithConn, {
+      // @ts-expect-error
       connections: { update: [invalidId] },
     })
   }, 'Invalid reference "usr_invalid" for field update in connections')
 
   await throws(async () => {
+    // @ts-expect-error
     db.update('user', userWithConn, { connections: { add: [invalidId] } })
   }, 'Invalid reference "usr_invalid" for field add in connections')
 
   await throws(async () => {
     db.update('user', userWithConn, {
+      // @ts-expect-error
       connections: { delete: [invalidId] },
     })
   }, 'Invalid reference "usr_invalid" for field delete in connections')
 
   await throws(async () => {
+    // @ts-expect-error
     db.update('user', userWithConn, { connections: { update: 'bla' } })
   }, 'Expected array for field set in connections')
 
   await throws(async () => {
+    // @ts-expect-error
     db.update('user', userWithConn, { connections: { add: {} } })
   }, 'Expected array for field add in connections')
 
   await throws(async () => {
+    // @ts-expect-error
     db.update('user', userWithConn, { connections: { delete: 123 } })
   }, 'Expected array for field delete in connections')
 
   // --- Friends (with Edges) Validation ---
   const now = Date.now()
   const badge = new Uint8Array([1, 2, 3])
-  const badgeString = 'badge-string' // String is also valid for binary
 
   const userWithFriends = await db.create('user', {
     name: 'friendlyUser',
@@ -148,7 +152,7 @@ await test('update', async (t) => {
         $friendsSince: now,
         $friendShipBadge: badge,
       },
-      { id: user2, $bestFriend: false, $friendShipBadge: badgeString }, // Minimal edge data + string badge
+      { id: user2, $bestFriend: false, $friendShipBadge: badge }, // Minimal edge data
     ],
   })
 
@@ -214,6 +218,9 @@ await test('update', async (t) => {
           id: 3,
           $bestFriend: true,
           $friendsSince: new Date('09/02/2000').getTime(),
+          $friendShipBadge: new Uint8Array([
+            98, 97, 100, 103, 101, 45, 115, 116, 114, 105, 110, 103,
+          ]),
         },
       ],
     },
@@ -265,27 +272,33 @@ await test('update', async (t) => {
   )
 
   await throws(async () => {
+    // @ts-expect-error
     db.create('user', { friends: { id: user1 } })
   }, 'Expected array for references field friends')
 
   await throws(async () => {
+    // @ts-expect-error
     db.update('user', userWithFriends, { friends: user1 })
   }, 'Expected array or object for references field friends')
 
   await throws(async () => {
+    // @ts-expect-error
     db.create('user', { friends: [user1, 'not an id'] })
   }, 'Invalid reference "not an id" for field friends')
 
   await throws(async () => {
+    // @ts-expect-error
     db.create('user', { friends: [user1, { $bestFriend: true }] })
   }, 'Missing id in reference object for field friends')
 
   await throws(async () => {
+    // @ts-expect-error
     db.create('user', { friends: [user1, { id: invalidId }] })
   }, 'Invalid reference "usr_invalid" for field friends')
 
   await throws(async () => {
     db.create('user', {
+      // @ts-expect-error
       friends: [{ id: user1, $bestFriend: 'yes' }],
     })
   }, 'Incorrect type for $bestFriend expected boolean got string')
@@ -298,39 +311,46 @@ await test('update', async (t) => {
 
   await throws(async () => {
     db.create('user', {
+      // @ts-expect-error
       friends: [{ id: user1, $friendShipBadge: [1, 2, 3] }],
     })
   }, 'Incorrect type for $friendShipBadge expected binary got array')
 
   await throws(async () => {
     db.create('user', {
+      // @ts-expect-error
       friends: [{ id: user1, $friendLevel: 9000 }],
     })
   }, 'Unknown edge field "$friendLevel" for reference field friends')
 
   await throws(async () => {
     db.update('user', userWithFriends, {
+      // @ts-expect-error
       friends: { add: [{ id: user1, $bestFriend: 'yes' }] },
     })
   }, 'Incorrect type for $bestFriend expected boolean got string')
 
   await throws(async () => {
     db.update('user', userWithFriends, {
+      // @ts-expect-error
       friends: { add: [{ $bestFriend: true }] },
     })
   }, 'Missing id in reference object for field add in friends')
 
   await throws(async () => {
     db.update('user', userWithFriends, {
+      // @ts-expect-error
       friends: { delete: [{ id: user1 }] },
     })
   }, 'Cannot have edge data in delete operation for field friends')
 
   await throws(async () => {
+    // @ts-expect-error
     db.update('user', userWithFriends, { friends: { add: {} } })
   }, 'Expected array for field add in friends')
 
   await throws(async () => {
+    // @ts-expect-error
     db.update('user', userWithFriends, { friends: { delete: 123 } })
   }, 'Expected array for field delete in friends')
 

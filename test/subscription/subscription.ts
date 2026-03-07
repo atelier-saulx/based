@@ -194,7 +194,7 @@ await test('subscribe to refs', async (t) => {
     .include('items')
     .subscribe((q) => {
       updatesReceived++
-      const res = q.toObject()
+      const res = q
       size = res.items.length
       const n = performance.now()
       console.log(updatesReceived, 'update received after', n - d)

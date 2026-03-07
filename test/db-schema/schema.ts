@@ -1,21 +1,16 @@
 import test from '../shared/test.js'
-import { BasedDb } from '../../src/index.js'
+import { DbClient, DbServer, getDefaultHooks } from '../../src/index.js'
 import { setTimeout } from 'node:timers/promises'
 import { deepEqual, throws } from '../shared/assert.js'
+import { testDb, testDbClient, testDbServer } from '../shared/index.js'
 
 await test('support many fields on type', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.destroy())
-
-  const props = {}
+  const props: Record<string, any> = {}
   for (let i = 0; i < 248; i++) {
     props['myProp' + i] = 'string'
   }
 
-  await db.setSchema({
+  await testDb(t, {
     types: {
       flurp: props,
     },
@@ -23,13 +18,8 @@ await test('support many fields on type', async (t) => {
 })
 
 await test('schema hash', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.destroy())
-
-  await db.setSchema({
+  const server = await testDbServer(t)
+  const client = await testDbClient(server, {
     types: {
       flurp: {
         name: 'string',
@@ -37,9 +27,9 @@ await test('schema hash', async (t) => {
     },
   })
 
-  const hash1 = db.server.schema!.hash
+  const hash1 = server.schema!.hash
 
-  await db.setSchema({
+  await client.setSchema({
     types: {
       flurp: {
         name: 'string',
@@ -48,7 +38,7 @@ await test('schema hash', async (t) => {
     },
   })
 
-  const hash2 = db.server.schema!.hash
+  const hash2 = server.schema!.hash
 
   if (!hash1 || !hash2 || hash1 === hash2) {
     throw new Error('Incorrect hash')
@@ -56,31 +46,31 @@ await test('schema hash', async (t) => {
 })
 
 await test('dont accept modify with mismatch schema', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
+  const server = await testDbServer(t)
+  const client = new DbClient({
+    hooks: Object.assign(getDefaultHooks(server), {
+      async flushModify(buf: Uint8Array) {
+        buf = new Uint8Array(buf)
+        await setTimeout(100)
+        return server.modify(buf)
+      },
+    }),
   })
-  await db.start({ clean: true })
-  t.after(() => db.destroy())
 
-  db.client.hooks.flushModify = async (buf) => {
-    buf = new Uint8Array(buf)
-    await setTimeout(100)
-    return db.server.modify(buf)
-  }
-
-  await db.setSchema({
+  await client.setSchema({
     types: {
       flurp: {
         name: 'string',
       },
     },
   })
-  await db.create('flurp', {
+
+  await client.create('flurp', {
     name: 'xxx',
   })
 
-  const q1 = db.query('flurp')
-  const setSchemaPromise = db.setSchema({
+  const q1 = client.query('flurp')
+  const setSchemaPromise = client.setSchema({
     types: {
       flurp: {
         title: 'string',
@@ -88,17 +78,19 @@ await test('dont accept modify with mismatch schema', async (t) => {
     },
   })
 
-  db.create('flurp', {
+  client.create('flurp', {
     name: 'yyy',
   })
+
   await setSchemaPromise
 
   throws(() => {
-    return db.create('flurp', {
+    return client.create('flurp', {
       name: 'zzz',
     })
   })
-  const res = await db.query('flurp').get().toObject()
+
+  const res = (await client.query('flurp').get()) as any
 
   deepEqual(res, [
     { id: 1, title: '' },
@@ -107,12 +99,11 @@ await test('dont accept modify with mismatch schema', async (t) => {
 })
 
 await test('set schema before start', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
+  const server = new DbServer({ path: t.tmp })
+  const client = await testDbClient(server)
 
   await throws(() =>
-    db.setSchema({
+    client.setSchema({
       types: {
         flurp: {
           props: {
@@ -123,6 +114,6 @@ await test('set schema before start', async (t) => {
     }),
   )
 
-  await db.start({ clean: true })
-  t.after(() => db.destroy())
+  await server.start({ clean: true })
+  t.after(() => server.destroy())
 })

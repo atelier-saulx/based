@@ -5,7 +5,7 @@
 // } from 'node:worker_threads'
 // import native from '../../native.js'
 // import { BasedDb } from '../../index.js'
-// import { setSchemaOnServer } from '../schema.js'
+// import { setSchemaOnServer } from '../schema/index.js'
 // import { setToSleep } from './utils.js'
 // import { setLocalClientSchema } from '../../client/setLocalClientSchema.js'
 // import { MigrateRange } from './index.js'

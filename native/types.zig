@@ -2,6 +2,9 @@ const Schema = @import("selva/schema.zig");
 const Node = @import("selva/node.zig");
 
 pub const TypeId = u16;
+pub const NodeId = u32;
+pub const SelvaFieldType = u8;
+pub const SelvaField = u8;
 
 pub const BridgeResponse = enum(u32) {
     query = 1,
@@ -36,9 +39,8 @@ pub const OpType = enum(u8) {
     loadBlock = 128,
     unloadBlock = 129,
     loadCommon = 130,
-    createType = 131,
-    setSchemaIds = 132,
     emptyMod = 133,
+    expire = 134,
 
     // --------------------
     noOp = 255,
@@ -48,37 +50,127 @@ pub const OpType = enum(u8) {
     }
 };
 
-pub const ModOp = enum(u8) {
-    switchProp = 0,
-    switchIdUpdate = 1,
-    switchType = 2,
-    createProp = 3,
-    deleteSortIndex = 4,
-    updatePartial = 5,
-    updateProp = 6,
-    addEmptySort = 7,
-    switchIdCreateUnsafe = 8,
-    switchIdCreate = 9,
-    switchIdCreateRing = 19,
-    // switchEdgeId = 20,
-    deleteNode = 10,
-    delete = 11,
-    increment = 12,
-    decrement = 13,
-    expire = 14,
-    addEmptySortText = 15,
-    deleteTextField = 16,
-    upsert = 17,
-    insert = 18,
-    // TODO remove when modify is not used for response
-    padding = 255,
+pub const Modify = enum(u8) {
+    create = 0,
+    createRing = 1,
+    update = 2,
+    delete = 3,
+    upsert = 4,
+    insert = 5,
+};
+
+pub const ModifyHeader = packed struct {
+    opId: u32,
+    opType: OpType,
+    schema: u64,
+    count: u32,
+};
+
+pub const ModifyUpdateHeader = packed struct {
+    op: Modify,
+    type: TypeId,
+    isTmp: bool,
+    _padding: u7,
+    id: NodeId,
+    size: u32,
+};
+
+pub const ModifyDeleteHeader = packed struct {
+    op: Modify,
+    type: TypeId,
+    isTmp: bool,
+    _padding: u7,
+    id: NodeId,
+};
+
+pub const ModifyCreateHeader = packed struct {
+    op: Modify,
+    type: TypeId,
+    size: u32,
+};
+
+pub const ModifyCreateRingHeader = packed struct {
+    op: Modify,
+    type: TypeId,
+    maxNodeId: u32,
+    size: u32,
+};
+
+pub const ModifyMainHeader = packed struct {
+    id: u8,
+    type: PropType,
+    resetDefault: bool,
+    increment: bool,
+    incrementPositive: bool,
+    expire: bool,
+    _padding: u4,
+    size: u8,
+    start: u16,
+};
+
+pub const ModifyPropHeader = packed struct {
+    id: u8,
+    type: PropType,
+    size: u32,
+};
+
+pub const ModifyReferences = enum(u8) {
+    clear = 0,
+    ids = 1,
+    idsWithMeta = 2,
+    tmpIds = 3,
+    delIds = 4,
+    delTmpIds = 5,
+};
+
+pub const ModifyReferencesHeader = packed struct {
+    op: ModifyReferences,
+    size: u32,
+};
+
+// pub const ModifyReferencesMeta = enum(u8) {
+//     noTmpNoIndex = 0,
+//     tmpNoIndex = 1,
+//     tmpIndex = 2,
+//     noTmpIndex = 4,
+// };
+
+pub const ModifyReferencesMetaHeader = packed struct {
+    id: u32,
+    isTmp: bool,
+    withIndex: bool,
+    _padding: u6,
+    index: i32,
+    size: u32,
+};
+
+pub const ModifyReferenceMetaHeader = packed struct {
+    id: u32,
+    isTmp: bool,
+    _padding: u7,
+    size: u32,
+};
+
+pub const ModifyCardinalityHeader = packed struct {
+    sparse: bool,
+    _padding: u7,
+    precision: u8,
+};
+
+pub const ModifyResultItem = packed struct {
+    id: u32,
+    err: ModifyError,
+};
+
+pub const ModifyError = enum(u8) {
+    null = 0,
+    nx = 1,
+    unknown = 2,
 };
 
 pub const PropType = enum(u8) {
     null = 0,
     timestamp = 1,
-    // created = 2,
-    // updated = 3,
     number = 4,
     cardinality = 5,
     uint8 = 6,
@@ -87,7 +179,7 @@ pub const PropType = enum(u8) {
     @"enum" = 10,
     string = 11,
     stringFixed = 12,
-    text = 13,
+    stringLocalized = 13,
     reference = 15,
     references = 16,
     microBuffer = 17,
@@ -102,6 +194,7 @@ pub const PropType = enum(u8) {
     vector = 27,
     json = 28,
     jsonFixed = 29,
+    jsonLocalized = 32,
     object = 30,
     colVec = 31,
     id = 255,
@@ -157,8 +250,6 @@ pub const PropType = enum(u8) {
     pub fn size(self: PropType) u8 {
         switch (self) {
             .timestamp,
-            // .created,
-            // .updated,
             .number,
             => return 8,
             .int8,
@@ -178,27 +269,16 @@ pub const PropType = enum(u8) {
     }
 };
 
-pub const RefOp = enum(u8) {
-    clear = 0,
-    del = 1,
-    end = 2,
-
-    set = 3,
-    setIndex = 4,
-    setTmp = 5,
-    setEdge = 6,
-
-    setIndexTmp = 7,
-    setEdgeIndex = 8,
-    setEdgeIndexTmp = 9,
-    setEdgeTmp = 10,
-
-    // overwrite = 0,
-    // add = 1,
-    // delete = 2,
-    // putOverwrite = 3,
-    // putAdd = 4,
-    // _,
+pub const PropTypeSelva = enum(u8) {
+    null = 0,
+    microBuffer = 1,
+    string = 2,
+    text = 3,
+    reference = 4,
+    references = 5,
+    alias = 8,
+    aliases = 9,
+    colVec = 10,
 };
 
 pub const ReadOp = enum(u8) {
@@ -519,6 +599,27 @@ pub const QueryIteratorType = enum(u8) {
     edgeIncludeDescSort = 35,
     edgeIncludeDescFilter = 36,
     edgeIncludeDescFilterSort = 37,
+
+    edgeIncludeFilterOnEdge = 40,
+    edgeIncludeFilterOnEdgeDesc = 41,
+    edgeIncludeFilterOnEdgeSort = 42,
+    edgeIncludeFilterOnEdgeSortDesc = 43,
+
+    edgeFilterOnEdge = 60,
+    edgeFilterOnEdgeDesc = 61,
+    edgeFilterOnEdgeSort = 62,
+    edgeFilterOnEdgeSortDesc = 63,
+
+    edgeIncludeFilterAndFilterOnEdge = 70,
+    edgeIncludeFilterAndFilterOnEdgeDesc = 71,
+    edgeIncludeFilterAndFilterOnEdgeSort = 72,
+    edgeIncludeFilterAndFilterOnEdgeSortDesc = 73,
+
+    edgeFilterAndFilterOnEdge = 80,
+    edgeFilterAndFilterOnEdgeDesc = 81,
+    edgeFilterAndFilterOnEdgeSort = 82,
+    edgeFilterAndFilterOnEdgeSortDesc = 83,
+
     // default search
     search = 120,
     searchFilter = 121,
@@ -531,6 +632,10 @@ pub const QueryIteratorType = enum(u8) {
     aggregateFilter = 141,
     groupBy = 142,
     groupByFilter = 143,
+    aggregateEdge = 144,
+    aggregateEdgeFilter = 145,
+    groupByEdge = 146,
+    groupByEdgeFilter = 147,
 };
 
 // include op needs overlap with this
@@ -632,9 +737,9 @@ pub const QueryHeader = packed struct {
     searchSize: u16,
     edgeSize: u16,
     edgeFilterSize: u16,
-    includeSize: u16, // cannot be more then 16kb? might be good enough
+    includeSize: u32, // cannot be more then 16kb? might be good enough (youri increased to 32)
     iteratorType: QueryIteratorType,
-    size: u16,
+    size: u32,
     sort: bool,
     _padding: u7,
 };
@@ -690,6 +795,8 @@ pub const AggRefsHeader = packed struct {
     filterSize: u16,
     resultsSize: u16,
     accumulatorSize: u16,
+    aggDefsSize: u16,
+    iteratorType: QueryIteratorType,
     hasGroupBy: bool,
     isSamplingSet: bool,
     _padding: u6,
@@ -710,6 +817,8 @@ pub const AggProp = packed struct {
     aggFunction: AggFunction,
     resultPos: u16,
     accumulatorPos: u16,
+    isEdge: bool,
+    _padding: u7,
 };
 
 pub const GroupByKeyProp = packed struct {
@@ -719,6 +828,8 @@ pub const GroupByKeyProp = packed struct {
     stepType: u8,
     stepRange: u32,
     timezone: i16,
+    isEdge: bool,
+    _padding: u7,
 };
 
 // pub const AggGroupByKey = packed struct {
@@ -744,25 +855,40 @@ pub const FilterOpCompare = enum(u8) {
     // -----------
     gt = 14,
     lt = 15,
-    gtBatch = 16,
-    ltBatch = 17,
-    gtBatchSmall = 18,
-    ltBatchSmall = 19,
-    // -----------
     ge = 20,
     le = 21,
-    geBatch = 22,
-    leBatch = 23,
-    geBatchSmall = 24,
-    leBatchSmall = 25,
     // -----------
-    // eq = 12,
-    // will become quite a lot :L > , < <=, >=
-    // maybe format a bit easier
+    inc = 22,
+    ninc = 23,
+    incBatch = 24,
+    nincBatch = 25,
+    // ----------
+    incLcase = 26,
+    nincLcase = 27,
+    incBatchLcase = 28,
+    nincBatchLcase = 29,
+    // ----------
+    eqVar = 30,
+    neqVar = 31,
+    eqVarBatch = 32,
+    neqVarBatch = 33,
+    // ----------
+    eqCrc32 = 34,
+    neqCrc32 = 35,
+    eqCrc32Batch = 36,
+    neqCrc32Batch = 37,
+    // ----------
+    incLcaseFast = 38,
+    nincLcaseFast = 39,
+    incBatchLcaseFast = 40,
+    nincBatchLcaseFast = 41,
+    // ----------
+    like = 42,
+    nlike = 43,
+    likeBatch = 44,
+    nlikeBatch = 45,
+    // ----------
 
-    // var is a lot less
-
-    // selectLargeRef = 202,
     selectLargeRefs = 203,
     selectRef = 204,
     selectSmallRefs = 205,
@@ -779,11 +905,12 @@ pub const FilterOp = packed struct {
 };
 
 pub const FilterCondition = packed struct {
-    op: FilterOp, // this can become a u16 that holds the [OP,PROP_TYPE]
+    op: FilterOp,
     size: u32,
     prop: u8,
     start: u16,
     len: u8,
+    lang: LangCode,
     fieldSchema: Schema.FieldSchema,
     offset: u8,
 };
@@ -797,4 +924,49 @@ pub const FilterSelect = packed struct {
     // this is basicly another condition seperate from the ref thing itself
     // edgeTypeId: TypeId,
     // you want EDGE INDEX as well
+};
+
+pub const SelvaSchemaHeader = packed struct {
+    blockCapacity: u32,
+    nrFields: u8,
+    nrFixedFields: u8,
+    nrVirtualFields: u8,
+    sdbVersion: u8,
+};
+
+pub const SelvaSchemaMicroBuffer = packed struct {
+    type: SelvaFieldType,
+    len: u16,
+    hasDefault: u8,
+};
+
+pub const SelvaSchemaString = packed struct {
+    type: SelvaFieldType,
+    fixedLenHint: u8,
+    defaultLen: u32,
+};
+
+pub const SelvaSchemaText = packed struct {
+    type: SelvaFieldType,
+    nrDefaults: u8,
+};
+
+pub const SelvaSchemaRef = packed struct {
+    type: SelvaFieldType,
+    flags: u8,
+    dstNodeType: TypeId,
+    inverseField: SelvaField,
+    edgeNodeType: TypeId,
+    capped: u32,
+};
+
+pub const SelvaSchemaAlias = packed struct {
+    type: SelvaFieldType,
+};
+
+pub const SelvaSchemaColvec = packed struct {
+    type: SelvaFieldType,
+    vecLen: u16,
+    compSize: u16,
+    hasDefault: u8,
 };

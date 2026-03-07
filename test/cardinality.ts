@@ -1,16 +1,11 @@
-import { BasedDb, xxHash64 } from '../src/index.js'
+import { xxHash64 } from '../src/index.js'
 import { ENCODER } from '../src/utils/uint8.js'
 import test from './shared/test.js'
+import { testDb } from './shared/index.js'
 import { deepEqual } from './shared/assert.js'
 
 await test('hll', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       article: {
         derp: 'number',
@@ -43,13 +38,12 @@ await test('hll', async (t) => {
     myUniqueValuesCount: 'myCoolValue',
   })
 
+  console.log('a')
   deepEqual(
-    (
-      await db
-        .query('article')
-        .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
-        .get()
-    ).toObject(),
+    await db
+      .query('article')
+      .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
+      .get(),
     [
       {
         id: 1,
@@ -58,15 +52,14 @@ await test('hll', async (t) => {
       },
     ],
   )
+  console.log('b')
 
   deepEqual(
-    (
-      await db
-        .query('article')
-        .include('myUniqueValuesCount')
-        .filter('myUniqueValuesCount', '!=', 0)
-        .get()
-    ).toObject(),
+    await db
+      .query('article')
+      .include('myUniqueValuesCount')
+      .filter('myUniqueValuesCount', '!=', 0)
+      .get(),
     [
       {
         id: 1,
@@ -98,12 +91,10 @@ await test('hll', async (t) => {
   })
 
   deepEqual(
-    (
-      await db
-        .query('article')
-        .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
-        .get()
-    ).toObject(),
+    await db
+      .query('article')
+      .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
+      .get(),
     [
       { id: 1, myUniqueValuesCount: 1, myUniqueValuesCountFromArray: 0 },
       { id: 2, myUniqueValuesCountFromArray: 7, myUniqueValuesCount: 0 },
@@ -111,13 +102,11 @@ await test('hll', async (t) => {
   )
 
   deepEqual(
-    (
-      await db
-        .query('article')
-        .include('myUniqueValuesCountFromArray')
-        .filter('myUniqueValuesCountFromArray', '=', 7)
-        .get()
-    ).toObject(),
+    await db
+      .query('article')
+      .include('myUniqueValuesCountFromArray')
+      .filter('myUniqueValuesCountFromArray', '=', 7)
+      .get(),
     [
       {
         id: 2,
@@ -127,13 +116,11 @@ await test('hll', async (t) => {
   )
 
   deepEqual(
-    (
-      await db
-        .query('article')
-        .include('myUniqueValuesCount')
-        .filter('myUniqueValuesCount', '>', 1)
-        .get()
-    ).toObject(),
+    await db
+      .query('article')
+      .include('myUniqueValuesCount')
+      .filter('myUniqueValuesCount', '>', 1)
+      .get(),
     [],
   )
 
@@ -161,12 +148,10 @@ await test('hll', async (t) => {
   await db.drain()
 
   deepEqual(
-    (
-      await db
-        .query('article')
-        .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
-        .get()
-    ).toObject(),
+    await db
+      .query('article')
+      .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
+      .get(),
     [
       { id: 1, myUniqueValuesCount: 7, myUniqueValuesCountFromArray: 0 },
       { id: 2, myUniqueValuesCountFromArray: 7, myUniqueValuesCount: 0 },
@@ -193,13 +178,11 @@ await test('hll', async (t) => {
   await db.drain()
 
   deepEqual(
-    (
-      await db
-        .query('article')
-        .filter('myUniqueValuesCount', '=', 11)
-        .or('myUniqueValuesCountFromArray', '>', 6)
-        .get()
-    ).toObject(),
+    await db
+      .query('article')
+      .filter('myUniqueValuesCount', '=', 11)
+      .or('myUniqueValuesCountFromArray', '>', 6)
+      .get(),
     [
       {
         id: 1,
@@ -271,13 +254,11 @@ await test('hll', async (t) => {
   })
 
   deepEqual(
-    (
-      await db
-        .query('article')
-        .filter('id', '>=', 3)
-        .include('contributors.$tokens')
-        .get()
-    ).toObject(),
+    await db
+      .query('article')
+      .filter('id', '>=', 3)
+      .include('contributors.$tokens')
+      .get(),
     [
       {
         id: 3,
@@ -297,8 +278,7 @@ await test('hll', async (t) => {
       .query('article')
       .filter('id', '>=', 3)
       .include('contributors.$undeftokens')
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 3,
@@ -326,8 +306,7 @@ await test('hll', async (t) => {
       .query('article')
       .filter('id', '>=', 3)
       .include('contributors.$undeftokens')
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 3,
@@ -343,13 +322,7 @@ await test('hll', async (t) => {
 })
 
 await test('switches', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       store: {
         name: 'string',
@@ -365,7 +338,7 @@ await test('switches', async (t) => {
 
   const visits = ['Clint', 'Lee', 'Clint', 'Aldo', 'Lee']
 
-  const store1 = db.create('store', {
+  const store1 = await db.create('store', {
     name: 'Handsome Sportsman',
     visitors: visits,
     visits: visits.length,
@@ -401,23 +374,14 @@ await test('switches', async (t) => {
 })
 
 await test('defaultPrecision', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
-    // props: {
-    //   myRootCount: 'cardinality',
-    // },
+  const db = await testDb(t, {
     types: {
-      stores: {
+      store: {
         name: 'string',
         customers: {
           items: {
             ref: 'customer',
-            prop: 'customer',
+            prop: 'client',
           },
         },
       },
@@ -432,10 +396,41 @@ await test('defaultPrecision', async (t) => {
     name: 'Alex Atala',
     productsBought: ['fork', 'knife', 'knife', 'frying pan'],
   })
-  const sto = db.create('stores', {
-    name: "Worderland's Kitchen",
+  const sto = db.create('store', {
+    name: 'Worderlands Kitchen',
     customers: [cus],
   })
 
-  // await db.query('stores').include('*', '**').get().inspect()
+  const pb = await db.query('customer').include('productsBought').get()
+  // pb.inspect()
+  deepEqual(
+    pb,
+    [
+      {
+        id: 1,
+        productsBought: 3,
+      },
+    ],
+    'simple cardinality default precision',
+  )
+
+  const pbr = await db.query('store').include('*', '**').get()
+  // pbr.inspect()
+  deepEqual(
+    pbr,
+    [
+      {
+        id: 1,
+        name: 'Worderlands Kitchen',
+        customers: [
+          {
+            id: 1,
+            name: 'Alex Atala',
+            productsBought: 3,
+          },
+        ],
+      },
+    ],
+    'simple cardinality default precision on ref',
+  )
 })

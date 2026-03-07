@@ -1,15 +1,10 @@
-import { BasedDb } from '../../src/index.js'
+import { BasedDb, DbClient, getDefaultHooks } from '../../src/index.js'
 import test from '../shared/test.js'
+import { testDb } from '../shared/index.js'
 import { deepEqual, equal } from '../shared/assert.js'
 
 await test('basic', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -58,9 +53,12 @@ await test('basic', async (t) => {
   await db.drain()
 
   deepEqual(
-    (
-      await db.query('user').sort('age', 'desc').include('email', 'age').get()
-    ).toObject(),
+    await db
+      .query('user')
+      .sort('age')
+      .order('desc')
+      .include('email', 'age')
+      .get(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
@@ -72,9 +70,12 @@ await test('basic', async (t) => {
   )
 
   deepEqual(
-    (
-      await db.query('user').sort('age', 'asc').include('email', 'age').get()
-    ).toObject(),
+    await db
+      .query('user')
+      .sort('age')
+      .order('asc')
+      .include('email', 'age')
+      .get(),
     [
       { id: 5, email: 'z@z.z', age: 1 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -88,7 +89,12 @@ await test('basic', async (t) => {
   await db.drain()
 
   deepEqual(
-    await db.query('user').sort('email', 'asc').include('email', 'age').get(),
+    await db
+      .query('user')
+      .sort('email')
+      .order('asc')
+      .include('email', 'age')
+      .get(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -100,7 +106,12 @@ await test('basic', async (t) => {
   )
 
   deepEqual(
-    await db.query('user').sort('email', 'desc').include('email', 'age').get(),
+    await db
+      .query('user')
+      .sort('email')
+      .order('desc')
+      .include('email', 'age')
+      .get(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -244,7 +255,8 @@ await test('basic', async (t) => {
     await db
       .query('user', ids)
       .include('name', 'age')
-      .sort('age', 'desc')
+      .sort('age')
+      .order('desc')
       .get(),
     [
       { id: 10, name: 'mr 3', age: 303 },
@@ -270,7 +282,8 @@ await test('basic', async (t) => {
     await db
       .query('user', ids2)
       .include('name', 'age')
-      .sort('age', 'asc')
+      .sort('age')
+      .order('asc')
       .get(),
     [
       { id: 6, name: 'mr x', age: 0 },
@@ -295,12 +308,12 @@ await test('basic', async (t) => {
   db.delete('user', mrX)
 
   await db.drain()
-
   deepEqual(
     await db
       .query('user', ids2)
       .include('name', 'age')
-      .sort('age', 'asc')
+      .sort('age')
+      .order('asc')
       .get(),
     [
       { id: 5, name: 'mr z', age: 1 },
@@ -409,15 +422,7 @@ await test('basic', async (t) => {
 })
 
 await test('sort - from start (1M items)', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  // db.blockSize = 1e5
-
-  await db.setSchema({
+  const schema = {
     types: {
       user: {
         props: {
@@ -428,31 +433,36 @@ await test('sort - from start (1M items)', async (t) => {
         },
       },
     },
+  } as const
+  const db = new BasedDb({
+    path: t.tmp,
   })
+  await db.start({ clean: true })
+  const client = await db.setSchema(schema)
 
-  db.create('user', {
+  client.create('user', {
     name: 'mr blap',
     age: 100,
     email: 'blap@blap.blap.blap',
   })
 
-  db.create('user', {
+  client.create('user', {
     name: 'mr flap',
     age: 50,
     email: 'flap@flap.flap.flap',
   })
 
   for (let i = 0; i < 1000e3; i++) {
-    db.create('user', {
+    client.create('user', {
       name: 'mr ' + i,
       age: i + 101,
     })
   }
 
-  await db.drain()
+  await client.drain()
 
   deepEqual(
-    await db.query('user').include('name').sort('age').range(0, 2).get(),
+    await client.query('user').include('name').sort('age').range(0, 2).get(),
     [
       { id: 2, name: 'mr flap' },
       { id: 1, name: 'mr blap' },
@@ -460,7 +470,7 @@ await test('sort - from start (1M items)', async (t) => {
   )
 
   deepEqual(
-    await db.query('user').include('name').sort('age').range(0, 2).get(),
+    await client.query('user').include('name').sort('age').range(0, 2).get(),
     [
       { id: 2, name: 'mr flap' },
       { id: 1, name: 'mr blap' },
@@ -468,7 +478,7 @@ await test('sort - from start (1M items)', async (t) => {
   )
 
   deepEqual(
-    await db.query('user').include('name').sort('name').range(0, 2).get(),
+    await client.query('user').include('name').sort('name').range(0, 2).get(),
     [
       {
         id: 3,
@@ -483,18 +493,17 @@ await test('sort - from start (1M items)', async (t) => {
 
   await db.stop()
 
-  const newDb = new BasedDb({
+  const db2 = new BasedDb({
     path: t.tmp,
   })
-
-  await newDb.start()
-
-  t.after(() => newDb.destroy())
+  await db2.start()
+  t.after(() => db2.destroy())
+  const client2 = new DbClient<typeof schema>({
+    hooks: getDefaultHooks(db2.server),
+  })
 
   deepEqual(
-    (
-      await newDb.query('user').include('name').sort('name').range(0, 2).get()
-    ).toObject(),
+    await client2.query('user').include('name').sort('name').range(0, 2).get(),
     [
       {
         id: 3,
@@ -506,18 +515,10 @@ await test('sort - from start (1M items)', async (t) => {
       },
     ],
   )
-
-  // newDb.server.destroySortIndex('user', 'age')
 })
 
 await test('unset value on create', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       dialog: {
         props: {
@@ -529,26 +530,22 @@ await test('unset value on create', async (t) => {
     },
   })
 
-  await db.query('dialog').sort('fun', 'desc').get().toObject()
-
-  const id1 = await db.create('dialog', {
+  await db.query('dialog').sort('fun').order('desc').get()
+  await db.query('dialog').include('fun').get()
+  await db.create('dialog', {
     fun: '1',
   })
-
-  const id2 = await db.create('dialog', {
+  await db.create('dialog', {
     fun: '2',
   })
-
-  const id3 = await db.create('dialog', {
+  await db.create('dialog', {
     fun: '3',
   })
-
-  const id4 = await db.create('dialog', {})
-
+  await db.create('dialog', {})
   const id5 = await db.create('dialog', {})
 
   deepEqual(
-    await db.query('dialog').sort('fun', 'desc').get().toObject(),
+    await db.query('dialog').sort('fun').order('desc').get(),
     [
       {
         id: 3,
@@ -574,7 +571,7 @@ await test('unset value on create', async (t) => {
     'first',
   )
 
-  deepEqual(await db.query('dialog').sort('fun', 'desc').get().toObject(), [
+  deepEqual(await db.query('dialog').sort('fun').order('desc').get(), [
     { id: 3, fun: '3' },
     { id: 2, fun: '2' },
     { id: 1, fun: '1' },
@@ -586,7 +583,7 @@ await test('unset value on create', async (t) => {
     fun: '0',
   })
 
-  deepEqual(await db.query('dialog').sort('fun', 'desc').get().toObject(), [
+  deepEqual(await db.query('dialog').sort('fun').order('desc').get(), [
     {
       id: 3,
       fun: '3',
@@ -612,7 +609,7 @@ await test('unset value on create', async (t) => {
   db.delete('dialog', id5)
   await db.drain()
 
-  deepEqual(await db.query('dialog').sort('fun', 'desc').get().toObject(), [
+  deepEqual(await db.query('dialog').sort('fun').order('desc').get(), [
     {
       id: 3,
       fun: '3',

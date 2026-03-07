@@ -1,16 +1,10 @@
-import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
+import { testDb } from '../shared/index.js'
 import { deepEqual } from '../shared/assert.js'
 import { italy } from '../shared/examples.js'
 
 await test('meta for selva string', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: {
       en: {},
       it: {},
@@ -19,7 +13,7 @@ await test('meta for selva string', async (t) => {
       item: {
         props: {
           name: 'string',
-          body: 'text',
+          body: { type: 'string', localized: true },
           email: { maxBytes: 20, type: 'string' }, // fix main prop
           items: {
             items: {

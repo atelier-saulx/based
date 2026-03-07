@@ -1,5 +1,5 @@
-import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
+import { testDb } from '../shared/index.js'
 import { isSorted } from '../shared/assert.js'
 
 const schema = {
@@ -17,22 +17,8 @@ const schema = {
   },
 } as const
 
-// import { Schema} f
-
-// type Schema = typeof schema
-
 await test('sort by id', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
-
-  await db.setSchema(schema)
+  const db = await testDb(t, schema)
 
   for (let i = 0; i < 1e6; i++) {
     db.create('user', {
@@ -41,16 +27,14 @@ await test('sort by id', async (t) => {
     })
   }
 
-  const dbTime = await db.drain()
-
   isSorted(
-    await db.query('user').include('name').sort('id', 'asc').get(),
+    await db.query('user').include('name').order('asc').get(),
     'id',
     'asc',
   )
 
   isSorted(
-    await db.query('user').include('name').sort('id', 'desc').get(),
+    await db.query('user').include('name').order('desc').get(),
     'id',
     'desc',
   )

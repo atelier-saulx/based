@@ -3,16 +3,16 @@ import native from '../../src/native.js'
 import { clientWorker } from '../shared/startWorker.js'
 import { BasedDb } from '../../src/index.js'
 import { italy } from '../shared/examples.js'
-import { registerSubscription } from '../../src/db-client/query/subscription/toByteCode.js'
+import { registerSubscription } from '../../src/db-client/_query/subscription/toByteCode.js'
 import { writeUint32 } from '../../src/utils/index.js'
-import { registerQuery } from '../../src/db-client/query/registerQuery.js'
+import { registerQuery } from '../../src/db-client/_query/registerQuery.js'
 
 await test('subscription perf', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
   await db.setSchema({
     types: {
@@ -76,7 +76,7 @@ await test('native single id perf', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
   await db.setSchema({
     types: {

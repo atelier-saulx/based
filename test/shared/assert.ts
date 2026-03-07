@@ -1,18 +1,9 @@
 import { deepEqual as uDeepEqual } from '../../src/utils/index.js'
 import { styleText } from 'node:util'
 import util from 'node:util'
-import { BasedQueryResponse } from '../../src/db-client/query/BasedQueryResponse.js'
-import { PropTypeInverse } from '../../src/zigTsExports.js'
 export { perf } from './perf.js'
 
-// add fn
-export const deepEqual = (a, b, msg?: string) => {
-  if (a instanceof BasedQueryResponse) {
-    a = a.toObject()
-  }
-  if (b instanceof BasedQueryResponse) {
-    b = b.toObject()
-  }
+export const deepEqual = <A>(a: A, b: NoInfer<A>, msg?: string) => {
   if (!uDeepEqual(a, b)) {
     const m = `${msg || ``}
 ------------------ EXPECTED ----------------------
@@ -25,9 +16,9 @@ ${util.inspect(a, { depth: 10, maxStringLength: 60 })}
   }
 }
 
-export const notEqual = (a, b, msg?: string) => {
+export const notEqual = (a: any, b: any, msg?: string) => {
   if (uDeepEqual(a, b)) {
-    const m = `${msg || 'Should not be equal:'} 
+    const m = `${msg || 'Should not be equal:'}
 ------------------ A ---------------------
 ${util.inspect(a, { depth: 10, maxStringLength: 60 })}
 ------------------ B ---------------------
@@ -40,10 +31,10 @@ ${util.inspect(b, { depth: 10, maxStringLength: 60 })}
 
 export const equal = deepEqual
 
-const SORT_ERR_MSG = 'Incorrect sort oder'
+const SORT_ERR_MSG = 'Incorrect sort order'
 
 export const isSorted = (
-  a: BasedQueryResponse,
+  a: Record<string, any>[],
   field: string,
   order: 'asc' | 'desc' = 'asc',
   msg?: string,
@@ -52,11 +43,11 @@ export const isSorted = (
   let i = 0
   var s = new Set()
   let fieldType = ''
-  const propDef = a.def?.schema?.props?.[field]
+  // const propDef = a.def?.schema?.props?.[field]
 
-  if (propDef) {
-    fieldType = ' ' + PropTypeInverse[propDef.typeIndex]
-  }
+  // if (propDef) {
+  //   fieldType = ' ' + PropTypeInverse[propDef.typeIndex]
+  // }
 
   for (const result of a) {
     i++

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 SAULX
+ * Copyright (c) 2024-2026 SAULX
  * SPDX-License-Identifier: MIT
  *
  * A colvec is a columnar vector field in Selva. Specifically a colvec structure
@@ -29,7 +29,7 @@ static inline size_t colvec_slab_off(size_t block_capacity, size_t vec_size, nod
 
 void colvec_init_te(struct SelvaTypeEntry *te)
 {
-    size_t nr_colvecs = te->ns.nr_colvecs;
+    size_t nr_colvecs = te->ns.nr_colvec_fields;
     struct SelvaNodeSchema *ns = &te->ns;
     size_t nr_blocks = te->blocks->len;
     size_t block_capacity = selva_get_block_capacity(te);
@@ -48,7 +48,7 @@ void colvec_init_te(struct SelvaTypeEntry *te)
             size_t ci = fs->colvec.index;
             size_t slab_size = block_capacity * fs->colvec.vec_len * fs->colvec.comp_size;
 
-            assert(ci < ns->nr_colvecs);
+            assert(ci < ns->nr_colvec_fields);
 
             te->col_fields.colvec[ci] = (struct SelvaColvec){
                 .field = i,
@@ -62,7 +62,7 @@ void colvec_init_te(struct SelvaTypeEntry *te)
 
 void colvec_deinit_te(struct SelvaTypeEntry *te)
 {
-    for (size_t i = 0; i < te->ns.nr_colvecs; i++) {
+    for (size_t i = 0; i < te->ns.nr_colvec_fields; i++) {
         struct SelvaColvec *colvec = &te->col_fields.colvec[i];
         block_id_t blocks_len = te->blocks->len;
 
@@ -100,7 +100,7 @@ void colvec_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node)
     /*
      * Initialize each col field of this node.
      */
-    for (size_t i = 0; i < te->ns.nr_colvecs; i++) {
+    for (size_t i = 0; i < te->ns.nr_colvec_fields; i++) {
         struct SelvaColvec *colvec = &te->col_fields.colvec[i];
         const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(&te->ns.fields_schema, colvec->field);
         uint8_t *slab = colvec_init_slab(colvec, block_i);
@@ -108,9 +108,9 @@ void colvec_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node)
         assert(fs->type == SELVA_FIELD_TYPE_COLVEC);
 
         void *vec = slab + colvec_slab_off(selva_get_block_capacity(te), colvec->vec_size, node->node_id);
-        if (fs->colvec.default_off > 0) {
+        if (fs->default_off > 0) {
             const uint8_t *schema_buf = te->schema_buf;
-            const void *default_vec = schema_buf + fs->colvec.default_off;
+            const void *default_vec = schema_buf + fs->default_off;
             memcpy(vec, default_vec, colvec->vec_size);
         } else {
             memset(vec, 0, colvec->vec_size);
@@ -147,6 +147,17 @@ void colvec_set_vec(struct SelvaTypeEntry *te, node_id_t node_id, const struct S
     void *dst = slab + colvec_slab_off(selva_get_block_capacity(te), colvec->vec_size, node_id);
 
     memcpy(dst, vec, colvec->vec_size);
+}
+
+void colvec_clear_vec(struct SelvaTypeEntry *te, node_id_t node_id, const struct SelvaFieldSchema *fs)
+{
+    assert(fs->type == SELVA_FIELD_TYPE_COLVEC);
+
+    struct SelvaColvec *colvec = &te->col_fields.colvec[fs->colvec.index];
+    uint8_t *slab = (uint8_t *)colvec->v[selva_node_id2block_i2(te, node_id)];
+    void *dst = slab + colvec_slab_off(selva_get_block_capacity(te), colvec->vec_size, node_id);
+
+    memset(dst, 0, colvec->vec_size);
 }
 
 int colvec_foreach(struct SelvaTypeEntry *te, const struct SelvaFieldSchema *fs, node_id_t start, uint32_t len, void (*cb)(node_id_t node_id, void *vec, void *arg), void *arg)

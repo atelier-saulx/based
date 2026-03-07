@@ -1,16 +1,10 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
+import { testDb } from './shared/index.js'
 import { deepEqual, equal } from './shared/assert.js'
 
 await test('range', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  // schema
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -62,30 +56,17 @@ await test('range', async (t) => {
 
   await db.drain()
 
-  const result = await db.query('user').include('nr').range(1, 2).get()
-
-  deepEqual(result.toObject(), [{ id: 2, nr: 2 }])
-
-  const result2 = await db
-    .query('user')
-    .include('nr')
-    .sort('email')
-    .range(1, 2)
-    .get()
-
-  deepEqual(result2.toObject(), [{ id: 2, nr: 2 }])
+  deepEqual(await db.query('user').include('nr').range(1, 2).get(), [
+    { id: 2, nr: 2 },
+  ])
+  deepEqual(
+    await db.query('user').include('nr').sort('email').range(1, 2).get(),
+    [{ id: 2, nr: 2 }],
+  )
 })
 
 await test('default range: 1000', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  // schema
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -102,6 +83,6 @@ await test('default range: 1000', async (t) => {
     })
   }
   await db.drain()
-  const res = await db.query('user').get().toObject()
+  const res = await db.query('user').get()
   equal(res.length, 1_000)
 })

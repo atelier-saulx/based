@@ -109,6 +109,7 @@ server.functions.addRoutes({
 await server.start()
 ```
 */
+
 export class BasedServer {
   public console: Console = console
 
@@ -120,15 +121,15 @@ export class BasedServer {
 
   public auth: BasedAuth
 
-  public port: number
+  public port!: number
 
-  public uwsApp: uws.TemplatedApp
+  public uwsApp!: uws.TemplatedApp
 
-  public silent: boolean
+  public silent!: boolean
 
-  public queryEvents: QueryEvents
+  public queryEvents!: QueryEvents
 
-  public channelEvents: ChannelEvents
+  public channelEvents!: ChannelEvents
 
   public rateLimit: RateLimit = {
     ws: 2e3,
@@ -140,7 +141,7 @@ export class BasedServer {
 
   public forceReloadLastSeqId: number = -1
 
-  public encodedForceReload: Uint8Array
+  public encodedForceReload!: Uint8Array
 
   public sendInitialForceReload: boolean = false
 
@@ -209,7 +210,7 @@ export class BasedServer {
 
   public requestsCounterInProgress: boolean = false
 
-  public requestsCounterTimeout: NodeJS.Timeout
+  public requestsCounterTimeout!: NodeJS.Timeout
 
   public obsCleanTimeout?: NodeJS.Timeout
 
@@ -237,7 +238,7 @@ export class BasedServer {
     [E in Event]?: Listener<EventMap[E]>[]
   } = {}
 
-  public workerRequest: (type: string, payload?: any) => void | Promise<any>
+  public workerRequest!: (type: string, payload?: any) => void | Promise<any>
 
   private http: ServerOptions['http'] = {};
 

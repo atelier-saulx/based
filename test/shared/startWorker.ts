@@ -3,7 +3,7 @@ import fs from 'node:fs/promises'
 import { fileURLToPath } from 'url'
 import { join, dirname } from 'path'
 import { DbClient } from '../../src/db-client/index.js'
-import { BasedDb } from '../../src/index.js'
+import { BasedDb, type DbServer } from '../../src/index.js'
 import native from '../../src/native.js'
 import * as utils from '../../src/utils/index.js'
 import hash from '../../src/hash/hash.js'
@@ -17,7 +17,7 @@ type Utils = typeof utils
 
 export const clientWorker = async <T extends any>(
   t: any,
-  db: BasedDb,
+  db: DbServer,
   fn: (
     client: DbClient,
     data: T,
@@ -64,14 +64,14 @@ export const clientWorker = async <T extends any>(
     done = r
   })
 
-  db.server.on('schema', (s) => {
+  db.on('schema', (s) => {
     schemaChannel.port1.postMessage(s)
   })
 
   port1.on('message', async (d) => {
     if (d === 'started') {
-      if (db.server.schema) {
-        schemaChannel.port1.postMessage(db.server.schema)
+      if (db.schema) {
+        schemaChannel.port1.postMessage(db.schema)
       }
       return
     }
@@ -80,7 +80,7 @@ export const clientWorker = async <T extends any>(
       return
     }
     const seqId = d.id
-    const result = await db.server[d.fn](...d.data)
+    const result = await db[d.fn](...d.data)
     port1.postMessage({ id: seqId, result })
   })
 

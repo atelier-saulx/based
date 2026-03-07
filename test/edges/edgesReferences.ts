@@ -1,15 +1,9 @@
-import { BasedDb } from '../../src/index.js'
+import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
 
 await test('multi reference', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -105,7 +99,7 @@ await test('multi reference', async (t) => {
       .query('article')
       .include('contributors.$age')
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [{ id: 1, contributors: [{ id: 1, $age: 66 }] }],
     'age 66',
   )
@@ -157,13 +151,7 @@ await test('multi reference', async (t) => {
 })
 
 await test('multiple references', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       country: {
         props: {
@@ -254,7 +242,7 @@ await test('multiple references', async (t) => {
       .query('article')
       .include('contributors.id')
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [
       { id: 1, contributors: [{ id: mrDerp }] },
       { id: 2, contributors: [{ id: mrFlap }] },
@@ -266,7 +254,7 @@ await test('multiple references', async (t) => {
       .query('article')
       .include('contributors.id', 'contributors.$countries.id')
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [
       {
         id: 1,
@@ -284,7 +272,7 @@ await test('multiple references', async (t) => {
       .query('article')
       .include('contributors.id', 'contributors.$countries.code')
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [
       {
         id: 1,
@@ -318,7 +306,7 @@ await test('multiple references', async (t) => {
       .query('article')
       .include('contributors.id', 'contributors.$countries')
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [
       {
         id: 1,
@@ -354,7 +342,7 @@ await test('multiple references', async (t) => {
         t('contributors').include('$countries').include('name').sort('name')
       })
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [
       {
         id: 1,
@@ -392,7 +380,7 @@ await test('multiple references', async (t) => {
         t('contributors').include('name').filter('nationality', '=', nl)
       })
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [
       {
         id: 1,
@@ -421,7 +409,7 @@ await test('multiple references', async (t) => {
           .filter('nationality', '=', nl)
       })
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [
       {
         id: 1,
@@ -455,8 +443,7 @@ await test('multiple references', async (t) => {
           .sort('name')
           .filter('nationality', '=', nl)
       })
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -488,7 +475,7 @@ await test('multiple references', async (t) => {
           .filter('nationality', '=', nl)
       })
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [
       {
         id: 1,
@@ -517,7 +504,7 @@ await test('multiple references', async (t) => {
           .filter('nationality', '=', nl)
       })
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [
       {
         id: 1,
@@ -538,15 +525,7 @@ await test('multiple references', async (t) => {
 })
 
 await test('simple references', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       round: {
         name: 'alias',
@@ -601,13 +580,7 @@ await test('simple references', async (t) => {
 })
 
 await test('many to many', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  t.after(() => t.backup(db))
-
-  await db.start()
+  const db = await testDb(t, {})
 
   await db.setSchema({
     types: {

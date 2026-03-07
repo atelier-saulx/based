@@ -4,6 +4,7 @@ import { addProp, addLangProp } from './addProps.js'
 import { readString } from './string.js'
 import { readVector } from './vector.js'
 import { PropType } from '../../zigTsExports.js'
+import { VECTOR_BASE_TYPE_SIZE_MAP } from '../../schema/defs/props/vector.js'
 
 const readStringProp = (
   prop: ReaderPropDef,
@@ -12,7 +13,7 @@ const readStringProp = (
   size: number,
 ) => {
   if (
-    prop.typeIndex === PropType.text ||
+    prop.typeIndex === PropType.stringLocalized ||
     prop.typeIndex === PropType.string ||
     prop.typeIndex === PropType.alias
   ) {
@@ -35,7 +36,6 @@ export const readProp = (
 ) => {
   const prop = q.props[instruction]
   prop.readBy = q.readId
-
   if (prop.typeIndex === PropType.cardinality) {
     const size = readUint32(result, i)
     addProp(prop, readUint32(result, i + 4), item)
@@ -52,7 +52,7 @@ export const readProp = (
     const size = readUint32(result, i)
     addProp(prop, readStringProp(prop, result, i + 4, size), item)
     i += size + 4
-  } else if (prop.typeIndex == PropType.text) {
+  } else if (prop.typeIndex == PropType.stringLocalized) {
     const size = readUint32(result, i)
     if (size === 0) {
       // do nothing
@@ -83,9 +83,10 @@ export const readProp = (
     prop.typeIndex === PropType.vector ||
     prop.typeIndex === PropType.colVec
   ) {
-    const tmp = result.slice(i, i + prop.len!) // maybe align?
+    const vecSize = prop.len! * VECTOR_BASE_TYPE_SIZE_MAP[prop.vectorBaseType!]
+    const tmp = result.slice(i, i + vecSize) // maybe align?
     addProp(prop, readVector(prop, tmp), item)
-    i += prop.len!
+    i += vecSize
   }
   return i
 }

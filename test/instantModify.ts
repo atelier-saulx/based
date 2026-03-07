@@ -4,6 +4,7 @@ import test from './shared/test.js'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 import { Worker } from 'node:worker_threads'
+
 await test.skip('instantModify', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -16,8 +17,8 @@ await test.skip('instantModify', async (t) => {
   await db.setSchema({
     locales: {
       en: {},
-      it: { fallback: 'en' },
-      fi: { fallback: 'en' },
+      it: { fallback: ['en'] },
+      fi: { fallback: ['en'] },
     },
     types: {
       country: {
@@ -108,12 +109,12 @@ await test.skip('instantModify', async (t) => {
   let j = 1000
   await db2.start()
   while (j--) {
-    // db2.query('country').get().toObject()
+    // db2.query('country').get()
     for (const update of updates) {
       db2.server.modify(update)
     }
   }
 
-  // console.log('AFTER:', await db2.query('country').get().toObject())
+  // console.log('AFTER:', await db2.query('country').get())
   await db2.destroy()
 })

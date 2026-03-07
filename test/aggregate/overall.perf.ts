@@ -5,16 +5,11 @@ import { deepEqual } from '../shared/assert.js'
 import { fastPrng } from '../../src/utils/index.js'
 import { equal } from 'node:assert'
 import { SchemaType } from '../../src/schema/index.js'
+import { testDb } from '../shared/index.js'
 
-await test.skip('overall performance', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
+test.skip('overall performance', async (t) => {
   const types = ['IPA', 'Lager', 'Ale', 'Stout', 'Wit', 'Dunkel', 'Tripel']
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       beer: {
         props: {
@@ -60,15 +55,7 @@ await test.skip('overall performance', async (t) => {
 })
 
 await test.skip('count top level bignumber', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       sequence: {
         bla: 'uint32',
@@ -83,16 +70,10 @@ await test.skip('count top level bignumber', async (t) => {
   await db.drain()
 
   const q = await db.query('sequence').count().get()
-  equal(q.toObject().count, 1e6)
+  equal(q.count, 1e6)
 })
 
 await test('many countries', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
   const countrySchema: SchemaType = {
     props: {
       AF: 'uint8',
@@ -291,13 +272,13 @@ await test('many countries', async (t) => {
     },
   }
 
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       audience: countrySchema,
     },
   })
 
-  const countries = Object.keys(countrySchema.props)
+  const countries = Object.keys(countrySchema.props) as [any, ...any[]]
 
   // for (let i = 0; i < 1e8; i++) {
   //   db.create(

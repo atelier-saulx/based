@@ -1,13 +1,9 @@
-import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
+import { testDb } from '../shared/index.js'
 import { isSorted } from '../shared/assert.js'
 
 await test('sort timestamp', async (t) => {
-  const db = new BasedDb({ path: t.tmp })
-  t.after(() => t.backup(db))
-  await db.start({ clean: true })
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       event: {
         props: {
@@ -44,7 +40,8 @@ await test('sort timestamp', async (t) => {
 
   let ascResult = await db
     .query('event')
-    .sort('startTime', 'asc')
+    .sort('startTime')
+    .order('asc')
     .include('startTime', 'name')
     .get()
 
@@ -57,7 +54,8 @@ await test('sort timestamp', async (t) => {
 
   let descResult = await db
     .query('event')
-    .sort('startTime', 'asc')
+    .sort('startTime')
+    .order('asc')
     .include('startTime', 'name')
     .get()
 
@@ -73,7 +71,8 @@ await test('sort timestamp', async (t) => {
 
   ascResult = await db
     .query('event')
-    .sort('startTime', 'asc')
+    .sort('startTime')
+    .order('asc')
     .include('startTime', 'name')
     .get()
 
@@ -86,7 +85,8 @@ await test('sort timestamp', async (t) => {
 
   descResult = await db
     .query('event')
-    .sort('startTime', 'desc')
+    .sort('startTime')
+    .order('desc')
     .include('startTime', 'name')
     .get()
 
@@ -102,7 +102,8 @@ await test('sort timestamp', async (t) => {
 
   ascResult = await db
     .query('event')
-    .sort('startTime', 'asc')
+    .sort('startTime')
+    .order('asc')
     .include('startTime', 'name')
     .get()
 
@@ -115,7 +116,8 @@ await test('sort timestamp', async (t) => {
 
   descResult = await db
     .query('event')
-    .sort('startTime', 'desc')
+    .sort('startTime')
+    .order('desc')
     .include('startTime', 'name')
     .get()
 
@@ -128,11 +130,7 @@ await test('sort timestamp', async (t) => {
 })
 
 await test('sort multicore', async (t) => {
-  const db = new BasedDb({ path: t.tmp })
-  t.after(() => t.backup(db))
-  await db.start({ clean: true })
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       event: {
         props: {
@@ -157,7 +155,7 @@ await test('sort multicore', async (t) => {
   await db.drain()
 
   isSorted(
-    await db.query('event').sort('startTime', 'asc').get(),
+    await db.query('event').sort('startTime').order('asc').get(),
     'startTime',
     'asc',
   )
@@ -167,7 +165,7 @@ await test('sort multicore', async (t) => {
     q.push(
       (async () => {
         isSorted(
-          await db.query('event').sort('startTime', 'asc').get(),
+          await db.query('event').sort('startTime').order('asc').get(),
           'startTime',
           'asc',
         )

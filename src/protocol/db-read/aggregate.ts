@@ -140,8 +140,9 @@ const readAggValues = (
 
     const val = readFn(result, baseOffset + agg.resultPos)
 
-    const pathSuffix =
-      agg.type === AggFunction.count ? [] : [AggFunctionInverse[agg.type]]
+    const typeName = AggFunctionInverse[agg.type]
+
+    const pathSuffix = agg.type === AggFunction.count ? [] : [typeName]
 
     // MV: check for edgesagg.path[1][0] == '$`
     setByPath(targetObject, [...agg.path, ...pathSuffix], val)

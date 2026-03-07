@@ -120,7 +120,7 @@ fn fillSortIndex(
             const fieldSchema = try Schema.getFieldSchema(edgeType, header.prop);
             while (it.nextRef()) |ref| {
                 const data = switch (header.propType) {
-                    .text => Fields.getText(typeEntry, ref.edge, fieldSchema, header.propType, header.lang),
+                    .stringLocalized, .jsonLocalized => Fields.getText(typeEntry, ref.edge, fieldSchema, header.propType, header.lang),
                     else => Fields.get(typeEntry, ref.edge, fieldSchema, header.propType),
                 };
                 Sort.insert(decompressor, sortIndex, data, &ref);
@@ -138,13 +138,14 @@ fn fillSortIndex(
             const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
             while (it.nextRef()) |ref| {
                 const data = switch (header.propType) {
-                    .text => Fields.getText(typeEntry, ref.node, fieldSchema, header.propType, header.lang),
+                    .stringLocalized, .jsonLocalized => Fields.getText(typeEntry, ref.node, fieldSchema, header.propType, header.lang),
                     else => Fields.get(typeEntry, ref.node, fieldSchema, header.propType),
                 };
                 Sort.insert(decompressor, sortIndex, data, &ref);
             }
         }
     } else {
+        // lets do this first with filter
         if (header.propType == .id) {
             while (it.next()) |node| {
                 Sort.insert(
@@ -158,7 +159,7 @@ fn fillSortIndex(
             const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
             while (it.next()) |node| {
                 const data = switch (header.propType) {
-                    .text => Fields.getText(typeEntry, node, fieldSchema, header.propType, header.lang),
+                    .stringLocalized, .jsonLocalized => Fields.getText(typeEntry, node, fieldSchema, header.propType, header.lang),
                     else => Fields.get(typeEntry, node, fieldSchema, header.propType),
                 };
                 Sort.insert(decompressor, sortIndex, data, node);
@@ -199,7 +200,7 @@ fn getSortIndex(
         .number, .timestamp => {
             return if (isEdge) thread.tmpSortDoubleEdge else thread.tmpSortDouble;
         },
-        .string, .text, .alias, .binary => {
+        .stringFixed, .binaryFixed, .jsonFixed, .string, .stringLocalized, .json, .jsonLocalized, .alias, .binary => {
             return if (isEdge) thread.tmpSortBinaryEdge else thread.tmpSortBinary;
         },
         else => {
@@ -208,7 +209,7 @@ fn getSortIndex(
     }
 }
 
-pub fn fromIterator(
+pub inline fn fromIterator(
     comptime desc: bool,
     comptime isEdge: bool,
     dbCtx: *DbCtx,
@@ -216,9 +217,12 @@ pub fn fromIterator(
     typeEntry: Node.Type,
     header: *const t.SortHeader,
     it: anytype,
+    // add this latwr
+    // filter: t.QueryIteratorType,
+    // _: if (filter == .edgeFilter or filter == t.QueryIteratorType.) []u8 else void,
 ) !SortIterator(desc, isEdge) {
+    // maybe pass this outside
     var sortIndex: SortIndexMeta = .{
-        // can just store the header maybe?
         .len = header.len,
         .start = header.start,
         .index = try getSortIndex(isEdge, thread, header.propType),

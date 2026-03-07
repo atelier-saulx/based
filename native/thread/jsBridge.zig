@@ -20,7 +20,7 @@ fn callJsCallback(
     const responseFn = @as(*BridgeResponseStruct, @ptrCast(@alignCast(data.?)));
     const dbCtx = @as(*DbCtx, @ptrCast(@alignCast(ctx.?)));
 
-    if (dbCtx.selva == null) {
+    if (dbCtx.initialized == false) {
         std.debug.print("REMOVED DB firing bridge... {any} \n", .{responseFn});
         return;
     }
