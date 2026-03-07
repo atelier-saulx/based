@@ -226,29 +226,26 @@ await test.skip('query types', async (t) => {
     const query = db.query('everything', 1).include('*', 'myRefs')
     const data = await query.get()
 
-    // if ('n' in data) {
-    //   // Check it's a single item (not array)
-    //   const n: number = data.n
-    //   const myRefs: { id: number }[] = data.myRefs
+    if (data) {
+      // Check it's a single item (not array)
+      const n: number = data.n
+      const myRefs: { id: number }[] = data.myRefs
 
-    //   // @ts-expect-error
-    //   data.map
+      // @ts-expect-error
+      data.map
 
-    //   // @ts-expect-error
-    //   const myRef: number = data.myRef
-    // }
+      // @ts-expect-error
+      const myRef: number = data.myRef
+    }
   }
 
   {
-    const query = db
-      .query('everything', 1)
-      .include((select) => select('myRefs'))
+    const query = db.query('everything', 1).include((select) => select('myRef'))
     const data = await query.get()
-    // if ('myRefs' in data) {
-    //   for (const item of data.myRefs) {
-    //     const isNice: boolean = item.isNice
-    //   }
-    // }
+
+    if (data && data.myRef) {
+      const isNice: boolean = data.myRef.isNice
+    }
   }
 
   {
@@ -257,9 +254,19 @@ await test.skip('query types', async (t) => {
       .include((select) => select('backRefs').include('myEnum'))
     const data = await query.get()
 
-    // for (const { id, myEnum, nonExistent } of data.backRefs) {
-    //   console.log({ id, myEnum, nonExistent })
-    // }
+    if (data && data.backRefs) {
+      for (const item of data.backRefs) {
+        const id: number = item.id
+        const myEnum: 'a' | 'b' | null = item.myEnum
+
+        // @ts-expect-error
+        const nonExistent = item.nonExistent
+
+        // because we explicitly selected 'myEnum', 'n' should not be present
+        // @ts-expect-error
+        const n: number = item.n
+      }
+    }
   }
 
   {

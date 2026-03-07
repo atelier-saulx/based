@@ -39,31 +39,31 @@ export type QueryOpts = {
   $Group?: string
 }
 
-type OptK<O extends QueryOpts> = O extends { $K: infer V } ? V : '*'
-type OptSingle<O extends QueryOpts> = O extends { $Single: infer V } ? V : false
-type OptField<O extends QueryOpts> = O extends { $Field: infer V }
-  ? V
+type OptK<BaseOpts extends QueryOpts> = BaseOpts extends { $K: infer Value } ? Value : '*'
+type OptSingle<BaseOpts extends QueryOpts> = BaseOpts extends { $Single: infer Value } ? Value : false
+type OptField<BaseOpts extends QueryOpts> = BaseOpts extends { $Field: infer Value }
+  ? Value
   : undefined
-type OptRoot<O extends QueryOpts> = O extends { $Root: infer V } ? V : false
-type OptEdges<O extends QueryOpts> = O extends { $Edges: infer V } ? V : {}
-type OptAgg<O extends QueryOpts> = O extends { $Agg: infer V } ? V : {}
-type OptGroup<O extends QueryOpts> = O extends { $Group: infer V }
-  ? V
+type OptRoot<BaseOpts extends QueryOpts> = BaseOpts extends { $Root: infer Value } ? Value : false
+type OptEdges<BaseOpts extends QueryOpts> = BaseOpts extends { $Edges: infer Value } ? Value : {}
+type OptAgg<BaseOpts extends QueryOpts> = BaseOpts extends { $Agg: infer Value } ? Value : {}
+type OptGroup<BaseOpts extends QueryOpts> = BaseOpts extends { $Group: infer Value }
+  ? Value
   : undefined
 
-type MergeOpts<O extends QueryOpts, Updates extends QueryOpts> = {
-  $K: '$K' extends keyof Updates ? Updates['$K'] : OptK<O>
-  $Single: '$Single' extends keyof Updates ? Updates['$Single'] : OptSingle<O>
-  $Field: '$Field' extends keyof Updates ? Updates['$Field'] : OptField<O>
-  $Root: '$Root' extends keyof Updates ? Updates['$Root'] : OptRoot<O>
-  $Edges: '$Edges' extends keyof Updates ? Updates['$Edges'] : OptEdges<O>
-  $Agg: '$Agg' extends keyof Updates ? Updates['$Agg'] : OptAgg<O>
-  $Group: '$Group' extends keyof Updates ? Updates['$Group'] : OptGroup<O>
+type MergeOpts<BaseOpts extends QueryOpts, Updates extends QueryOpts> = {
+  $K: '$K' extends keyof Updates ? Updates['$K'] : OptK<BaseOpts>
+  $Single: '$Single' extends keyof Updates ? Updates['$Single'] : OptSingle<BaseOpts>
+  $Field: '$Field' extends keyof Updates ? Updates['$Field'] : OptField<BaseOpts>
+  $Root: '$Root' extends keyof Updates ? Updates['$Root'] : OptRoot<BaseOpts>
+  $Edges: '$Edges' extends keyof Updates ? Updates['$Edges'] : OptEdges<BaseOpts>
+  $Agg: '$Agg' extends keyof Updates ? Updates['$Agg'] : OptAgg<BaseOpts>
+  $Group: '$Group' extends keyof Updates ? Updates['$Group'] : OptGroup<BaseOpts>
 }
 
 class Query<
-  S extends { types: any; locales?: any } = { types: any },
-  T extends keyof S['types'] = any,
+  Schema extends { types: any; locales?: any } = { types: any },
+  Type extends keyof Schema['types'] = any,
   Opts extends QueryOpts = {},
 > {
   constructor(ast: QueryAst) {
@@ -72,43 +72,43 @@ class Query<
   ast: QueryAst
 
   locale<
-    L extends string &
-      (S['locales'] extends Record<string, any> ? keyof S['locales'] : string),
-  >(locale: L): NextBranch<{ types: S['types']; locales: L }, T, Opts> {
+    Locale extends string &
+      (Schema['locales'] extends Record<string, any> ? keyof Schema['locales'] : string),
+  >(locale: Locale): NextBranch<{ types: Schema['types']; locales: Locale }, Type, Opts> {
     this.ast.locale = locale
     return this as any
   }
 
   include<
-    F extends [
+    QueryArg extends [
       (
         | 'id'
-        | (keyof (ResolvedProps<S['types'], T> & OptEdges<Opts>) & string)
-        | Path<S, T>
+        | (keyof (ResolvedProps<Schema['types'], Type> & OptEdges<Opts>) & string)
+        | Path<Schema, Type>
         | '*'
         | '**'
-        | ((q: SelectFn<S, T>) => AnyQuery<S>)
+        | ((q: SelectFn<Schema, Type>) => AnyQuery<Schema>)
       ),
       ...(
         | 'id'
-        | (keyof (ResolvedProps<S['types'], T> & OptEdges<Opts>) & string)
-        | Path<S, T>
+        | (keyof (ResolvedProps<Schema['types'], Type> & OptEdges<Opts>) & string)
+        | Path<Schema, Type>
         | '*'
         | '**'
-        | ((q: SelectFn<S, T>) => AnyQuery<S>)
+        | ((q: SelectFn<Schema, Type>) => AnyQuery<Schema>)
       )[],
     ],
   >(
-    ...props: F
+    ...props: QueryArg
   ): NextBranch<
-    S,
-    T,
+    Schema,
+    Type,
     MergeOpts<
       Opts,
       {
         $K:
           | (OptK<Opts> extends '*' ? never : OptK<Opts>)
-          | ResolveIncludeArgs<F[number]>
+          | ResolveIncludeArgs<QueryArg[number]>
       }
     >
   > {
@@ -126,12 +126,12 @@ class Query<
   }
 
   filter(
-    fn: (filter: FilterFn<S, T, Opts>) => FilterBranch<Query<S, T, Opts>>,
+    fn: (filter: FilterFn<Schema, Type, Opts>) => FilterBranch<Query<Schema, Type, Opts>>,
   ): FilterBranch<this>
-  filter<P extends FilterProp<S, T, Opts>, O extends Operator = Operator>(
-    prop: P,
-    op: O,
-    val: FilterValue<O, S, T, P, Opts>,
+  filter<Prop extends FilterProp<Schema, Type, Opts>, Op extends Operator = Operator>(
+    prop: Prop,
+    op: Op,
+    val: FilterValue<Op, Schema, Type, Prop, Opts>,
     opts?: FilterOpts,
   ): FilterBranch<this>
   filter(prop: any, op?: any, val?: any, opts?: any): FilterBranch<this> {
@@ -140,12 +140,12 @@ class Query<
   }
 
   and(
-    fn: (filter: FilterFn<S, T, Opts>) => FilterBranch<Query<S, T, Opts>>,
+    fn: (filter: FilterFn<Schema, Type, Opts>) => FilterBranch<Query<Schema, Type, Opts>>,
   ): FilterBranch<this>
-  and<P extends FilterProp<S, T, Opts>, O extends Operator = Operator>(
-    prop: P,
-    op: O,
-    val: FilterValue<O, S, T, P, Opts>,
+  and<Prop extends FilterProp<Schema, Type, Opts>, Op extends Operator = Operator>(
+    prop: Prop,
+    op: Op,
+    val: FilterValue<Op, Schema, Type, Prop, Opts>,
     opts?: FilterOpts,
   ): FilterBranch<this>
   and(prop: any, op?: any, val?: any, opts?: any): FilterBranch<this> {
@@ -153,12 +153,12 @@ class Query<
   }
 
   or(
-    fn: (filter: FilterFn<S, T, Opts>) => FilterBranch<Query<S, T, Opts>>,
+    fn: (filter: FilterFn<Schema, Type, Opts>) => FilterBranch<Query<Schema, Type, Opts>>,
   ): FilterBranch<this>
-  or<P extends FilterProp<S, T, Opts>, O extends Operator = Operator>(
-    prop: P,
-    op: O,
-    val: FilterValue<O, S, T, P, Opts>,
+  or<Prop extends FilterProp<Schema, Type, Opts>, Op extends Operator = Operator>(
+    prop: Prop,
+    op: Op,
+    val: FilterValue<Op, Schema, Type, Prop, Opts>,
     opts?: FilterOpts,
   ): FilterBranch<this>
   or(prop: any, op?: any, val?: any, opts?: any): FilterBranch<this> {
@@ -167,23 +167,23 @@ class Query<
     return this.#addFilter(prop, op, val, opts, true)
   }
 
-  sum<F extends (q: SelectFn<S, T>) => AnyQuery<S>>(
-    fn: F,
+  sum<QueryArg extends (q: SelectFn<Schema, Type>) => AnyQuery<Schema>>(
+    fn: QueryArg,
   ): NextBranch<
-    S,
-    T,
-    MergeOpts<Opts, { $Agg: OptAgg<Opts> & ResolveAggregate<F> }>
+    Schema,
+    Type,
+    MergeOpts<Opts, { $Agg: OptAgg<Opts> & ResolveAggregate<QueryArg> }>
   >
-  sum<P extends NumberPaths<S, T>>(
-    ...props: [P, ...P[]]
+  sum<Prop extends NumberPaths<Schema, Type>>(
+    ...props: [Prop, ...Prop[]]
   ): NextBranch<
-    S,
-    T,
+    Schema,
+    Type,
     MergeOpts<
       Opts,
       {
         $Agg: OptAgg<Opts> &
-          UnionToIntersection<ExpandDotPath<P, { sum: number }>>
+          UnionToIntersection<ExpandDotPath<Prop, { sum: number }>>
       }
     >
   >
@@ -201,31 +201,31 @@ class Query<
   }
 
   count(): NextBranch<
-    S,
-    T,
+    Schema,
+    Type,
     MergeOpts<Opts, { $Agg: OptAgg<Opts> & { count: number } }>
   > {
     this.ast.count = {}
     return this as any
   }
 
-  cardinality<F extends (q: SelectFn<S, T>) => AnyQuery<S>>(
-    fn: F,
+  cardinality<QueryArg extends (q: SelectFn<Schema, Type>) => AnyQuery<Schema>>(
+    fn: QueryArg,
   ): NextBranch<
-    S,
-    T,
-    MergeOpts<Opts, { $Agg: OptAgg<Opts> & ResolveAggregate<F> }>
+    Schema,
+    Type,
+    MergeOpts<Opts, { $Agg: OptAgg<Opts> & ResolveAggregate<QueryArg> }>
   >
-  cardinality<P extends string>(
-    ...props: [P, ...P[]]
+  cardinality<Prop extends string>(
+    ...props: [Prop, ...Prop[]]
   ): NextBranch<
-    S,
-    T,
+    Schema,
+    Type,
     MergeOpts<
       Opts,
       {
         $Agg: OptAgg<Opts> &
-          UnionToIntersection<ExpandDotPath<P, { cardinality: number }>>
+          UnionToIntersection<ExpandDotPath<Prop, { cardinality: number }>>
       }
     >
   >
@@ -242,23 +242,23 @@ class Query<
     return this as any
   }
 
-  avg<F extends (q: SelectFn<S, T>) => AnyQuery<S>>(
-    fn: F,
+  avg<QueryArg extends (q: SelectFn<Schema, Type>) => AnyQuery<Schema>>(
+    fn: QueryArg,
   ): NextBranch<
-    S,
-    T,
-    MergeOpts<Opts, { $Agg: OptAgg<Opts> & ResolveAggregate<F> }>
+    Schema,
+    Type,
+    MergeOpts<Opts, { $Agg: OptAgg<Opts> & ResolveAggregate<QueryArg> }>
   >
-  avg<P extends NumberPaths<S, T>>(
-    ...props: [P, ...P[]]
+  avg<Prop extends NumberPaths<Schema, Type>>(
+    ...props: [Prop, ...Prop[]]
   ): NextBranch<
-    S,
-    T,
+    Schema,
+    Type,
     MergeOpts<
       Opts,
       {
         $Agg: OptAgg<Opts> &
-          UnionToIntersection<ExpandDotPath<P, { avg: number }>>
+          UnionToIntersection<ExpandDotPath<Prop, { avg: number }>>
       }
     >
   >
@@ -275,23 +275,23 @@ class Query<
     return this as any
   }
 
-  hmean<F extends (q: SelectFn<S, T>) => AnyQuery<S>>(
-    fn: F,
+  hmean<QueryArg extends (q: SelectFn<Schema, Type>) => AnyQuery<Schema>>(
+    fn: QueryArg,
   ): NextBranch<
-    S,
-    T,
-    MergeOpts<Opts, { $Agg: OptAgg<Opts> & ResolveAggregate<F> }>
+    Schema,
+    Type,
+    MergeOpts<Opts, { $Agg: OptAgg<Opts> & ResolveAggregate<QueryArg> }>
   >
-  hmean<P extends NumberPaths<S, T>>(
-    ...props: [P, ...P[]]
+  hmean<Prop extends NumberPaths<Schema, Type>>(
+    ...props: [Prop, ...Prop[]]
   ): NextBranch<
-    S,
-    T,
+    Schema,
+    Type,
     MergeOpts<
       Opts,
       {
         $Agg: OptAgg<Opts> &
-          UnionToIntersection<ExpandDotPath<P, { hmean: number }>>
+          UnionToIntersection<ExpandDotPath<Prop, { hmean: number }>>
       }
     >
   >
@@ -308,23 +308,23 @@ class Query<
     return this as any
   }
 
-  max<F extends (q: SelectFn<S, T>) => AnyQuery<S>>(
-    fn: F,
+  max<QueryArg extends (q: SelectFn<Schema, Type>) => AnyQuery<Schema>>(
+    fn: QueryArg,
   ): NextBranch<
-    S,
-    T,
-    MergeOpts<Opts, { $Agg: OptAgg<Opts> & ResolveAggregate<F> }>
+    Schema,
+    Type,
+    MergeOpts<Opts, { $Agg: OptAgg<Opts> & ResolveAggregate<QueryArg> }>
   >
-  max<P extends NumberPaths<S, T>>(
-    ...props: [P, ...P[]]
+  max<Prop extends NumberPaths<Schema, Type>>(
+    ...props: [Prop, ...Prop[]]
   ): NextBranch<
-    S,
-    T,
+    Schema,
+    Type,
     MergeOpts<
       Opts,
       {
         $Agg: OptAgg<Opts> &
-          UnionToIntersection<ExpandDotPath<P, { max: InferPathType<S, T, P> }>>
+          UnionToIntersection<ExpandDotPath<Prop, { max: InferPathType<Schema, Type, Prop> }>>
       }
     >
   >
@@ -341,23 +341,23 @@ class Query<
     return this as any
   }
 
-  min<F extends (q: SelectFn<S, T>) => AnyQuery<S>>(
-    fn: F,
+  min<QueryArg extends (q: SelectFn<Schema, Type>) => AnyQuery<Schema>>(
+    fn: QueryArg,
   ): NextBranch<
-    S,
-    T,
-    MergeOpts<Opts, { $Agg: OptAgg<Opts> & ResolveAggregate<F> }>
+    Schema,
+    Type,
+    MergeOpts<Opts, { $Agg: OptAgg<Opts> & ResolveAggregate<QueryArg> }>
   >
-  min<P extends NumberPaths<S, T>>(
-    ...props: [P, ...P[]]
+  min<Prop extends NumberPaths<Schema, Type>>(
+    ...props: [Prop, ...Prop[]]
   ): NextBranch<
-    S,
-    T,
+    Schema,
+    Type,
     MergeOpts<
       Opts,
       {
         $Agg: OptAgg<Opts> &
-          UnionToIntersection<ExpandDotPath<P, { min: InferPathType<S, T, P> }>>
+          UnionToIntersection<ExpandDotPath<Prop, { min: InferPathType<Schema, Type, Prop> }>>
       }
     >
   >
@@ -374,24 +374,24 @@ class Query<
     return this as any
   }
 
-  stddev<F extends (q: SelectFn<S, T>) => AnyQuery<S>>(
-    fn: F,
+  stddev<QueryArg extends (q: SelectFn<Schema, Type>) => AnyQuery<Schema>>(
+    fn: QueryArg,
     opts?: AggFnOptions,
   ): NextBranch<
-    S,
-    T,
-    MergeOpts<Opts, { $Agg: OptAgg<Opts> & ResolveAggregate<F> }>
+    Schema,
+    Type,
+    MergeOpts<Opts, { $Agg: OptAgg<Opts> & ResolveAggregate<QueryArg> }>
   >
-  stddev<P extends NumberPaths<S, T>>(
-    ...args: [...P[], AggFnOptions] | [P, ...P[]]
+  stddev<Prop extends NumberPaths<Schema, Type>>(
+    ...args: [...Prop[], AggFnOptions] | [Prop, ...Prop[]]
   ): NextBranch<
-    S,
-    T,
+    Schema,
+    Type,
     MergeOpts<
       Opts,
       {
         $Agg: OptAgg<Opts> &
-          UnionToIntersection<ExpandDotPath<P, { stddev: number }>>
+          UnionToIntersection<ExpandDotPath<Prop, { stddev: number }>>
       }
     >
   >
@@ -422,24 +422,24 @@ class Query<
     return this as any
   }
 
-  var<F extends (q: SelectFn<S, T>) => AnyQuery<S>>(
-    fn: F,
+  var<QueryArg extends (q: SelectFn<Schema, Type>) => AnyQuery<Schema>>(
+    fn: QueryArg,
     opts?: AggFnOptions,
   ): NextBranch<
-    S,
-    T,
-    MergeOpts<Opts, { $Agg: OptAgg<Opts> & ResolveAggregate<F> }>
+    Schema,
+    Type,
+    MergeOpts<Opts, { $Agg: OptAgg<Opts> & ResolveAggregate<QueryArg> }>
   >
-  var<P extends NumberPaths<S, T>>(
-    ...args: [...P[], AggFnOptions] | [P, ...P[]]
+  var<Prop extends NumberPaths<Schema, Type>>(
+    ...args: [...Prop[], AggFnOptions] | [Prop, ...Prop[]]
   ): NextBranch<
-    S,
-    T,
+    Schema,
+    Type,
     MergeOpts<
       Opts,
       {
         $Agg: OptAgg<Opts> &
-          UnionToIntersection<ExpandDotPath<P, { variance: number }>>
+          UnionToIntersection<ExpandDotPath<Prop, { variance: number }>>
       }
     >
   >
@@ -470,7 +470,7 @@ class Query<
     return this as any
   }
 
-  sort<P extends SortablePaths<S, T, OptEdges<Opts>>>(prop: P): this {
+  sort<Prop extends SortablePaths<Schema, Type, OptEdges<Opts>>>(prop: Prop): this {
     this.ast.sort = { prop: prop as string }
     return this as any
   }
@@ -486,10 +486,10 @@ class Query<
     return this as any
   }
 
-  groupBy<P extends string>(
-    prop: P,
+  groupBy<Prop extends string>(
+    prop: Prop,
     step?: StepInput,
-  ): NextBranch<S, T, MergeOpts<Opts, { $Group: P }>> {
+  ): NextBranch<Schema, Type, MergeOpts<Opts, { $Group: Prop }>> {
     const parts = prop.split('.')
     let target = this.ast
     let field: string = prop
@@ -539,44 +539,44 @@ class Query<
   }
 }
 
-type FilterBranch<T extends { filter: any }> = T
+type FilterBranch<Target extends { filter: any }> = Target
 
 // This overload is for when the user provides NO schema argument, rely on generic default or explicit generic
 export function query<
-  S extends { types: any; locales?: any } = { types: any },
-  T extends keyof S['types'] & string = keyof S['types'] & string,
->(type: T): Query<S, T, { $Root: false; $Single: false }>
+  Schema extends { types: any; locales?: any } = { types: any },
+  Type extends keyof Schema['types'] & string = keyof Schema['types'] & string,
+>(type: Type): Query<Schema, Type, { $Root: false; $Single: false }>
 
 // This overload is for when the user provides NO schema argument + ID, rely on generic default or explicit generic
 export function query<
-  S extends { types: any; locales?: any } = { types: any },
-  T extends keyof S['types'] & string = keyof S['types'] & string,
+  Schema extends { types: any; locales?: any } = { types: any },
+  Type extends keyof Schema['types'] & string = keyof Schema['types'] & string,
 >(
-  type: T,
-  id: number | Partial<InferSchemaOutput<S, T>>,
-): Query<S, T, { $Root: false; $Single: true }>
+  type: Type,
+  id: number | Partial<InferSchemaOutput<Schema, Type>>,
+): Query<Schema, Type, { $Root: false; $Single: true }>
 
 export function query<
-  S extends { types: any; locales?: any },
-  T extends keyof S['types'] & string = keyof S['types'] & string,
+  Schema extends { types: any; locales?: any },
+  Type extends keyof Schema['types'] & string = keyof Schema['types'] & string,
 >(
-  type: T,
-  target?: number | number[] | Partial<InferSchemaOutput<S, T>>,
-): Query<S, T, { $Root: false; $Single: boolean }> {
+  type: Type,
+  target?: number | number[] | Partial<InferSchemaOutput<Schema, Type>>,
+): Query<Schema, Type, { $Root: false; $Single: boolean }> {
   const ast: any = { type }
   if (target) ast.target = target
   return new Query(ast)
 }
 
 export class BasedQuery2<
-  S extends { types: any; locales?: any } = { types: any },
-  T extends keyof S['types'] = any,
+  Schema extends { types: any; locales?: any } = { types: any },
+  Type extends keyof Schema['types'] = any,
   Opts extends QueryOpts = {},
-> extends Query<S, T, MergeOpts<Opts, { $Root: true }>> {
+> extends Query<Schema, Type, MergeOpts<Opts, { $Root: true }>> {
   constructor(
     db: DbClient,
-    type: T,
-    target?: number | number[] | Partial<InferSchemaOutput<S, T>>,
+    type: Type,
+    target?: number | number[] | Partial<InferSchemaOutput<Schema, Type>>,
   ) {
     super({})
     this.ast.type = type as string
@@ -591,14 +591,14 @@ export class BasedQuery2<
       : [keyof OptAgg<Opts>] extends [never]
         ? OptSingle<Opts> extends true
           ? PickOutput<
-              S,
-              T,
-              ResolveInclude<ResolvedProps<S['types'], T>, OptK<Opts>>
+              Schema,
+              Type,
+              ResolveInclude<ResolvedProps<Schema['types'], Type>, OptK<Opts>>
             > | null
           : PickOutput<
-              S,
-              T,
-              ResolveInclude<ResolvedProps<S['types'], T>, OptK<Opts>>
+              Schema,
+              Type,
+              ResolveInclude<ResolvedProps<Schema['types'], Type>, OptK<Opts>>
             >[]
         : OptAgg<Opts>
   > {
@@ -632,74 +632,74 @@ export class BasedQuery2<
 }
 
 type FilterFn<
-  S extends { types: any; locales?: any },
-  T extends keyof S['types'],
+  Schema extends { types: any; locales?: any },
+  Type extends keyof Schema['types'],
   Opts extends QueryOpts,
-> = FilterSignature<S, T, Opts, FilterBranch<Query<S, T, Opts>>>
+> = FilterSignature<Schema, Type, Opts, FilterBranch<Query<Schema, Type, Opts>>>
 
 type FilterProp<
-  S extends { types: any; locales?: any },
-  T extends keyof S['types'],
+  Schema extends { types: any; locales?: any },
+  Type extends keyof Schema['types'],
   Opts extends QueryOpts,
-> = keyof (ResolvedProps<S['types'], T> & OptEdges<Opts>) | Path<S, T> | 'id'
+> = keyof (ResolvedProps<Schema['types'], Type> & OptEdges<Opts>) | Path<Schema, Type> | 'id'
 
 type FilterValue<
-  O extends Operator,
-  S extends { types: any; locales?: any },
-  T extends keyof S['types'],
-  P,
+  Op extends Operator,
+  Schema extends { types: any; locales?: any },
+  Type extends keyof Schema['types'],
+  Prop,
   Opts extends QueryOpts = {},
-> = O extends '=' | '!='
+> = Op extends '=' | '!='
   ?
-      | InferPathType<S, T, P, OptEdges<Opts>>
-      | InferPathType<S, T, P, OptEdges<Opts>>[]
-  : InferPathType<S, T, P, OptEdges<Opts>>
+      | InferPathType<Schema, Type, Prop, OptEdges<Opts>>
+      | InferPathType<Schema, Type, Prop, OptEdges<Opts>>[]
+  : InferPathType<Schema, Type, Prop, OptEdges<Opts>>
 
 type FilterSignature<
-  S extends { types: any; locales?: any },
-  T extends keyof S['types'],
+  Schema extends { types: any; locales?: any },
+  Type extends keyof Schema['types'],
   Opts extends QueryOpts,
   Result,
 > = {
   (
-    fn: (filter: FilterFn<S, T, Opts>) => FilterBranch<Query<S, T, Opts>>,
+    fn: (filter: FilterFn<Schema, Type, Opts>) => FilterBranch<Query<Schema, Type, Opts>>,
   ): Result
-  <P extends FilterProp<S, T, Opts>, O extends Operator = Operator>(
-    prop: P,
-    op: O,
-    val: FilterValue<O, S, T, P, Opts>,
+  <Prop extends FilterProp<Schema, Type, Opts>, Op extends Operator = Operator>(
+    prop: Prop,
+    op: Op,
+    val: FilterValue<Op, Schema, Type, Prop, Opts>,
     opts?: FilterOpts,
   ): Result
 }
 
 type SelectFn<
-  S extends { types: any; locales?: any },
-  T extends keyof S['types'],
-> = <P extends keyof ResolvedProps<S['types'], T>>(
-  field: P,
+  Schema extends { types: any; locales?: any },
+  Type extends keyof Schema['types'],
+> = <Prop extends keyof ResolvedProps<Schema['types'], Type>>(
+  field: Prop,
 ) => Query<
-  S,
-  ResolvedProps<S['types'], T>[P] extends { ref: infer R extends string }
-    ? R
-    : ResolvedProps<S['types'], T>[P] extends {
-          items: { ref: infer R extends string }
+  Schema,
+  ResolvedProps<Schema['types'], Type>[Prop] extends { ref: infer Ref extends string }
+    ? Ref
+    : ResolvedProps<Schema['types'], Type>[Prop] extends {
+          items: { ref: infer Ref extends string }
         }
-      ? R
+      ? Ref
       : never,
   {
     $K: '*'
     $Single: false
-    $Field: P
+    $Field: Prop
     $Root: false
-    $Edges: FilterEdges<ResolvedProps<S['types'], T>[P]> &
-      (ResolvedProps<S['types'], T>[P] extends { items: infer Items }
+    $Edges: FilterEdges<ResolvedProps<Schema['types'], Type>[Prop]> &
+      (ResolvedProps<Schema['types'], Type>[Prop] extends { items: infer Items }
         ? FilterEdges<Items>
         : {})
   }
 >
 
 // ResolveIncludeArgs needs to stay here because it refers to Query
-type ResolveIncludeArgs<T> = T extends (
+type ResolveIncludeArgs<Target> = Target extends (
   q: any,
 ) => Query<any, any, infer Opts extends QueryOpts>
   ? [OptGroup<Opts>] extends [string]
@@ -710,28 +710,28 @@ type ResolveIncludeArgs<T> = T extends (
     : [keyof OptAgg<Opts>] extends [never]
       ? { field: OptField<Opts>; select: OptK<Opts> }
       : { field: OptField<Opts>; select: { _aggregate: OptAgg<Opts> } }
-  : T extends string
-    ? ResolveDotPath<T>
-    : T
+  : Target extends string
+    ? ResolveDotPath<Target>
+    : Target
 
 // ResolveAggregate extracts the aggregate structure from a callback function
-type ResolveAggregate<T> =
-  ResolveIncludeArgs<T> extends {
-    field: infer F extends string | number | symbol
-    select: { _aggregate: infer A }
+type ResolveAggregate<Target> =
+  ResolveIncludeArgs<Target> extends {
+    field: infer QueryArg extends string | number | symbol
+    select: { _aggregate: infer Agg }
   }
-    ? { [K in F]: A }
+    ? { [Key in QueryArg]: Agg }
     : never
 
 // Helper type to simplify include signature
-type AnyQuery<S extends { types: any; locales?: any }> = Query<S, any, any>
+type AnyQuery<Schema extends { types: any; locales?: any }> = Query<Schema, any, any>
 
 // Helper type to simplify method return types
 type NextBranch<
-  S extends { types: any; locales?: any },
-  T extends keyof S['types'],
+  Schema extends { types: any; locales?: any },
+  Type extends keyof Schema['types'],
   Opts extends QueryOpts,
-> = OptRoot<Opts> extends true ? BasedQuery2<S, T, Opts> : Query<S, T, Opts>
+> = OptRoot<Opts> extends true ? BasedQuery2<Schema, Type, Opts> : Query<Schema, Type, Opts>
 
 function traverse(target: any, prop: string) {
   const path = prop.split('.')

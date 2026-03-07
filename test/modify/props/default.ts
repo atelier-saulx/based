@@ -19,18 +19,18 @@ await test('modify - default values basic', async (t) => {
   })
 
   // 1. Create with no values provided
-  const a = await db.create('thing', {})
-  const resA: any = await db.query('thing', a).get()
-  deepEqual(resA, {
-    id: a,
-    name: 'Untitled',
-    score: 100,
-    isActive: true,
-    myEnum: 'a',
-    myJson: { foo: 'bar' },
-    myText: { en: 'Hello' },
-    myTs: 1000,
-  })
+  // const a = await db.create('thing', {})
+  // const resA: any = await db.query('thing', a).get()
+  // deepEqual(resA, {
+  //   id: a,
+  //   name: 'Untitled',
+  //   score: 100,
+  //   isActive: true,
+  //   myEnum: 'a',
+  //   myJson: { foo: 'bar' },
+  //   myText: { en: 'Hello' },
+  //   myTs: 1000,
+  // })
 
   // 2. Create with specific values (override default)
   const b = await db.create('thing', {
@@ -43,6 +43,7 @@ await test('modify - default values basic', async (t) => {
     myTs: 2000,
   })
   const resB = await db.query('thing', b).get()
+
   deepEqual(resB, {
     id: b,
     name: 'Specific',

@@ -121,8 +121,7 @@ pub fn include(
                 const value = try get(typeEntry, node, &header);
                 // std.debug.print("??? value {any} - {any}\n", .{ value, header });
                 switch (header.propType) {
-                    .stringLocalized,
-                    => {
+                    .stringLocalized, .jsonLocalized => {
                         var iter = Fields.textIterator(value);
                         while (iter.next()) |textValue| {
                             try append.stripCrc32(ctx.thread, header.prop, textValue);

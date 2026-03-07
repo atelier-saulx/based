@@ -26,7 +26,6 @@ const isValidation = (v: unknown): v is Validation => isFunction(v)
 export const parseBase = <T extends SchemaProp<true>>(
   def: Record<string, unknown>,
   result: T,
-  skipValidation = false,
 ): T => {
   assert(
     def.required === undefined || isBoolean(def.required),
@@ -54,7 +53,7 @@ export const parseBase = <T extends SchemaProp<true>>(
 
   assertExpectedProps(result, def)
 
-  if (!skipValidation && 'default' in result && result.default !== undefined) {
+  if ('default' in result && result.default !== undefined) {
     // TODO make this nicer
     const PropDef = defs[result.type]
     const spec = new PropDef(
