@@ -22,22 +22,11 @@ await test('include', async (t) => {
         y: 'uint32',
       },
       user: {
-        derp: { type: 'string', maxBytes: 2 },
         name: 'string',
         big: { type: 'string', compression: 'none' },
         localized: {
           type: 'string',
           localized: true,
-        },
-        x: 'boolean',
-        flap: 'uint32',
-        enum: ['ok', 'bad', 'great'],
-        y: 'uint32',
-        cook: {
-          type: 'object',
-          props: {
-            cookie: 'number',
-          },
         },
         mrFriend: {
           ref: 'user',
@@ -51,6 +40,18 @@ await test('include', async (t) => {
             $level: 'number',
           },
         },
+        // ----------------------------
+        derp: { type: 'string', maxBytes: 2 },
+        x: 'boolean',
+        flap: 'uint32',
+        enum: ['ok', 'bad', 'great'],
+        y: 'uint32',
+        cook: {
+          type: 'object',
+          props: {
+            cookie: 'number',
+          },
+        },
       },
     },
   })
@@ -61,29 +62,29 @@ await test('include', async (t) => {
   //   syntheticData += 'ab'
   // }
 
-  // for (let i = 0; i < 200; i++) {
-  //   syntheticData += 'ab'
-  // }
+  for (let i = 0; i < 200; i++) {
+    syntheticData += 'ab '
+  }
 
-  syntheticData = italy
+  // syntheticData = italy
 
   // syntheticData = 'my snurfelbag my snurfelBag my snurfelbag my snurfelbag'
 
   const a = client.create('user', {
-    name: 'mr jim',
-    localized: {
-      en: 'mr jim EN',
-      nl: 'derpi yuz NL',
-    },
-    enum: 'ok',
-    derp: 'aa',
-    big: 'mr jim',
+    // name: 'mr jim',
+    // localized: {
+    //   en: 'mr jim EN',
+    //   nl: 'derpi yuz NL',
+    // },
+    // enum: 'ok',
+    // derp: 'aa',
+    // big: 'mr jim',
     y: 15,
-    x: false,
-    flap: 9999,
-    cook: {
-      cookie: 1234,
-    },
+    // x: false,
+    // flap: 9999,
+    // cook: {
+    //   cookie: 1234,
+    // },
   })
 
   // const b = await client.create('user', {
@@ -105,19 +106,19 @@ await test('include', async (t) => {
 
   for (let i = 0; i < 1e6; i++) {
     client.create('user', {
-      // big: syntheticData,
-      name: `mr snurf ${i}`,
-      derp: 'cc',
-      y: i,
-      localized: {
-        nl: 'giraffe NL',
-      },
-      x: !!(i % 2),
-      enum: i % 2 ? 'great' : null,
-      flap: 9999,
-      cook: {
-        cookie: 1234,
-      },
+      big: syntheticData,
+      // name: `mr snurf ${i}`,
+      // localized: {
+      //   nl: 'giraffe NL',
+      // },
+      // derp: 'cc',
+      // y: i,
+      // x: !!(i % 2),
+      // enum: i % 2 ? 'great' : null,
+      // flap: 9999,
+      // cook: {
+      //   cookie: 1234,
+      // },
       // friends: [
       //   { id: a, $level: rand(0, 200) },
       //   { id: b, $level: rand(0, 200) },
@@ -151,10 +152,10 @@ await test('include', async (t) => {
     range: { start: 0, end: 1e6 },
     filter: {
       props: {
-        y: {
+        big: {
           ops: [
-            { op: '=', val: [10, 13, 32, 123, 12, 15, 24, 21, 34] },
-            // { op: 'includes', val: 'giraffe' },
+            // { op: '=', val: [10, 16, 20, 12] },
+            { op: 'like', val: 'abha' },
 
             // { op: '=', val: ['giraffe', 'mr jim', 'yuzi'] },
             // bigArray
@@ -173,19 +174,19 @@ await test('include', async (t) => {
       },
     },
     props: {
-      big: { include: {} },
+      // big: { include: {} },
       y: { include: {} },
-      name: { include: {} },
-      derp: { include: {} },
-      x: { include: {} },
-      enum: { include: {} },
-      friends: {
-        props: {
-          name: { include: {} },
-          y: { include: {} },
-          x: { include: {} },
-        },
-      },
+      // name: { include: {} },
+      // derp: { include: {} },
+      // x: { include: {} },
+      // enum: { include: {} },
+      // friends: {
+      //   props: {
+      //     name: { include: {} },
+      //     y: { include: {} },
+      //     x: { include: {} },
+      //   },
+      // },
     },
   }
 
