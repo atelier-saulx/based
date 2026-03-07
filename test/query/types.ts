@@ -32,7 +32,12 @@ await test.skip('query types', async (t) => {
             a: 'string',
           },
         },
-        myRef: { type: 'reference', ref: 'user', prop: 'backRef' },
+        myRef: {
+          type: 'reference',
+          ref: 'user',
+          prop: 'backRef',
+          $rank: 'uint8',
+        },
         myRefs: {
           type: 'references',
           items: { ref: 'user', prop: 'backRefs' },
@@ -150,7 +155,6 @@ await test.skip('query types', async (t) => {
       const res = data[0]
 
       // references
-      // const myRef: { id: number } = res.myRef
       const myRefs: { id: number }[] = res.myRefs
       const id: number = res.id
 
@@ -161,6 +165,9 @@ await test.skip('query types', async (t) => {
       const s: string = res.s
       // @ts-expect-error
       const myEnum: 'a' | 'b' | null = res.myEnum
+
+      // we also want edges to be there
+      const myRefRank: number = res.myRef!.$rank
     }
   }
 
@@ -235,7 +242,7 @@ await test.skip('query types', async (t) => {
   {
     const query = db
       .query('everything', 1)
-      .include((select) => select('myRefs').include('isNice'))
+      .include((select) => select('myRefs'))
     const data = await query.get()
     // if ('myRefs' in data) {
     //   for (const item of data.myRefs) {
@@ -307,22 +314,4 @@ await test.skip('query types', async (t) => {
       }
     }
   }
-})
-
-await test('query types', async (t) => {
-  const db = await testDb(t, {
-    types: {
-      user: {
-        isNice: 'boolean',
-        name: {
-          type: 'string',
-          required: true,
-        },
-      },
-    },
-  })
-
-  //   const id = await db.create('user', {
-  //     isNice: true,
-  //   })
 })

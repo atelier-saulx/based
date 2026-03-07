@@ -1,14 +1,16 @@
 import type { ResolvedProps } from '../../schema/index.js'
 import type { TypedArray } from '../../schema/index.js'
 
+export type GetLocales<S extends { locales?: any }> = S['locales'] extends
+  | string
+  | Record<string, any>
+  ? S['locales']
+  : {}
+
 export type InferSchemaOutput<
   S extends { types: any; locales?: any },
   T extends keyof S['types'],
-> = InferType<
-  ResolvedProps<S['types'], T>,
-  S['types'],
-  S['locales'] extends string | Record<string, any> ? S['locales'] : {}
-> & { id: number }
+> = InferType<ResolvedProps<S['types'], T>, S> & { id: number }
 
 type TypeMap = {
   string: string
@@ -53,28 +55,14 @@ type PickOutputFromProps<
       ? number
       : P extends keyof Props
         ? IsRefProp<Props[P]> extends true
-          ? InferProp<
-              Props[P],
-              S['types'],
-              S['locales'] extends string | Record<string, any>
-                ? S['locales']
-                : {},
-              '-*'
-            >
-          : InferProp<
-              Props[P],
-              S['types'],
-              S['locales'] extends string | Record<string, any>
-                ? S['locales']
-                : {}
-            >
+          ? InferProp<Props[P], S, '*'>
+          : InferProp<Props[P], S>
         : never
   } & {
     [Field in Extract<K, { field: any; select: any }>['field'] &
       keyof Props]: InferProp<
       Props[Field],
-      S['types'],
-      S['locales'] extends string | Record<string, any> ? S['locales'] : {},
+      S,
       Extract<K, { field: Field; select: any }>['select']
     >
   }
@@ -82,39 +70,37 @@ type PickOutputFromProps<
 
 export type InferProp<
   Prop,
-  Types,
-  Locales extends string | Record<string, any> = Record<string, any>,
+  S extends { types: any; locales?: any },
   Selection = never,
 > =
   IsSelected<Selection> extends false
-    ? InferPropLogic<Prop, Types, Locales, Selection>
+    ? InferPropLogic<Prop, S, Selection>
     : [Selection] extends [{ _aggregate: infer Agg }]
       ? Agg
-      : InferPropLogic<Prop, Types, Locales, Selection>
+      : InferPropLogic<Prop, S, Selection>
 
 type InferPropLogic<
   Prop,
-  Types,
-  Locales extends string | Record<string, any> = Record<string, any>,
+  S extends { types: any; locales?: any },
   Selection = never,
 > = Prop extends LocalizedString
-  ? Locales extends string
+  ? GetLocales<S> extends string
     ? string
-    : { [K in Exclude<keyof Locales, symbol | number>]-?: string }
+    : { [K in Exclude<keyof GetLocales<S>, symbol | number>]-?: string }
   : Prop extends { type: 'object'; props: infer P }
-    ? InferType<P, Types, Locales>
+    ? InferType<P, S>
     : Prop extends { type: infer T extends keyof TypeMap }
       ? TypeMap[T]
       : Prop extends { enum: infer E extends readonly any[] }
         ? E[number] | null
         : Prop extends { ref: infer R extends string }
           ? IsSelected<Selection> extends true
-            ? R extends keyof Types
+            ? R extends keyof S['types']
               ? PickOutputFromProps<
-                  { types: Types; locales: Locales },
-                  ResolvedProps<Types, R> & FilterEdges<Prop>,
+                  S,
+                  ResolvedProps<S['types'], R> & FilterEdges<Prop>,
                   ResolveInclude<
-                    ResolvedProps<Types, R> & FilterEdges<Prop>,
+                    ResolvedProps<S['types'], R> & FilterEdges<Prop>,
                     Selection
                   >
                 > | null
@@ -124,12 +110,12 @@ type InferPropLogic<
                 items: { ref: infer R extends string } & infer Items
               }
             ? IsSelected<Selection> extends true
-              ? R extends keyof Types
+              ? R extends keyof S['types']
                 ? PickOutputFromProps<
-                    { types: Types; locales: Locales },
-                    ResolvedProps<Types, R> & FilterEdges<Items>,
+                    S,
+                    ResolvedProps<S['types'], R> & FilterEdges<Items>,
                     ResolveInclude<
-                      ResolvedProps<Types, R> & FilterEdges<Items>,
+                      ResolvedProps<S['types'], R> & FilterEdges<Items>,
                       Selection
                     >
                   >[]
@@ -137,12 +123,8 @@ type InferPropLogic<
               : number[] // IDs
             : unknown
 
-type InferType<
-  Props,
-  Types,
-  Locales extends string | Record<string, any> = Record<string, any>,
-> = {
-  [K in keyof Props]: InferProp<Props[K], Types, Locales>
+type InferType<Props, S extends { types: any; locales?: any }> = {
+  [K in keyof Props]: InferProp<Props[K], S>
 }
 
 // Helpers for include
@@ -162,54 +144,19 @@ export type RefKeys<Props> = {
   [K in keyof Props]: IsRefProp<Props[K]> extends true ? K : never
 }[keyof Props]
 
-export type NonRefNonEdgeKeys<Props> = {
-  [K in keyof Props]: IsRefProp<Props[K]> extends true
-    ? never
-    : K extends `$${string}`
-      ? never
-      : K
-}[keyof Props]
-
 export type ResolveInclude<Props, K> = K extends any
   ? K extends '*'
     ? NonRefKeys<Props>
-    : K extends '-*'
-      ? NonRefNonEdgeKeys<Props>
-      : K extends '**'
-        ? RefKeys<Props>
-        : K
+    : K extends '**'
+      ? RefKeys<Props>
+      : K
   : never
 
 export type PickOutput<
   S extends { types: any; locales?: any },
   T extends keyof S['types'],
   K,
-> = Prettify<
-  {
-    [P in
-      | Extract<K, keyof InferSchemaOutput<S, T>>
-      | 'id']: P extends keyof ResolvedProps<S['types'], T>
-      ? IsRefProp<ResolvedProps<S['types'], T>[P]> extends true
-        ? InferProp<
-            ResolvedProps<S['types'], T>[P],
-            S['types'],
-            S['locales'] extends string | Record<string, any>
-              ? S['locales']
-              : {},
-            '-*'
-          >
-        : InferSchemaOutput<S, T>[P]
-      : InferSchemaOutput<S, T>[P]
-  } & {
-    [Field in Extract<K, { field: any; select: any }>['field'] &
-      keyof ResolvedProps<S['types'], T>]: InferProp<
-      ResolvedProps<S['types'], T>[Field],
-      S['types'],
-      S['locales'] extends string | Record<string, any> ? S['locales'] : {},
-      Extract<K, { field: Field; select: any }>['select']
-    >
-  }
->
+> = PickOutputFromProps<S, ResolvedProps<S['types'], T>, K>
 
 export type FilterOpts = {
   lowerCase?: boolean
@@ -277,7 +224,7 @@ type PropsPath<
               : Props[K] extends LocalizedString
                 ? S['locales'] extends string
                   ? never
-                  : `${K}.${keyof (S['locales'] extends Record<string, any> ? S['locales'] : Record<string, any>) & string}`
+                  : `${K}.${keyof GetLocales<S> & string}`
                 : Props[K] extends {
                       items: { ref: infer R extends string } & infer Items
                     }
@@ -308,42 +255,26 @@ type InferPropsPathType<
 > = P extends 'id'
   ? number
   : P extends keyof Props
-    ? InferProp<
-        Props[P],
-        S['types'],
-        S['locales'] extends Record<string, any> ? S['locales'] : {}
-      >
+    ? InferProp<Props[P], S>
     : P extends `${infer Head}.${infer Tail}`
       ? Head extends keyof Props
         ? Props[Head] extends { ref: infer R extends string }
           ? Tail extends keyof FilterEdges<Props[Head]>
-            ? InferProp<
-                Props[Head][Tail & keyof Props[Head]],
-                S['types'],
-                S['locales'] extends Record<string, any> ? S['locales'] : {}
-              >
+            ? InferProp<Props[Head][Tail & keyof Props[Head]], S>
             : InferPathType<S, R & keyof S['types'], Tail>
           : Props[Head] extends { props: infer NestedProps }
             ? InferPropsPathType<S, NestedProps, Tail>
             : Props[Head] extends LocalizedString
               ? S['locales'] extends string
                 ? never
-                : Tail extends keyof (S['locales'] extends Record<string, any>
-                      ? S['locales']
-                      : Record<string, any>)
+                : Tail extends keyof GetLocales<S>
                   ? string
                   : never
               : Props[Head] extends {
                     items: { ref: infer R extends string } & infer Items
                   }
                 ? Tail extends keyof FilterEdges<Items>
-                  ? InferProp<
-                      Items[Tail & keyof Items],
-                      S['types'],
-                      S['locales'] extends string | Record<string, any>
-                        ? S['locales']
-                        : {}
-                    >
+                  ? InferProp<Items[Tail & keyof Items], S>
                   : InferPathType<S, R & keyof S['types'], Tail>
                 : never
         : never

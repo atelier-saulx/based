@@ -11,7 +11,7 @@ import { SCHEMA_FILE } from '../index.js'
 import { getTypeDefs, propIndexOffset } from '../schema/defs/getTypeDefs.js'
 import { AutoSizedUint8Array } from '../utils/AutoSizedUint8Array.js'
 
-const BLOCK_CAPACITY_DEFAULT = 100_000
+export const BLOCK_CAPACITY_DEFAULT = 100_000
 
 export const setSchemaOnServer = async (
   server: DbServer,
