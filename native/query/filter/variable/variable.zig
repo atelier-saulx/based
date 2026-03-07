@@ -11,21 +11,20 @@ const deflate = @import("./deflate.zig");
 const include = @import("./includes.zig");
 const likeInner = @import("./like.zig").like;
 
-pub fn parse(
+// This is a trick to lower the amount of comptime generated options
+// pub const Fixed = @import("./types.zig").Fixed;
+// pub const Localized = @import("./types.zig").Localized;
+
+pub const Type = @import("./types.zig").Type;
+
+inline fn valueType(
     thread: *Thread.Thread,
-    q: []u8,
+    query: []const u8,
     v: []const u8,
-    i: usize,
-    c: *t.FilterCondition,
-    comptime fixedLen: bool,
     compare: anytype,
 ) bool {
-    const query: []u8 = q[i .. c.size + i];
     var value: []const u8 = undefined;
-    if (fixedLen) {
-        // Can add assertion with unreachable for 64
-        value = v[1 + c.start .. v[c.start] + 1 + c.start];
-    } else if (v.len == 0) {
+    if (v.len == 0) {
         return false;
     } else if (v[1] == 1) {
         return deflate.decompress(thread, void, compare, query, v, undefined);
@@ -33,6 +32,40 @@ pub fn parse(
         value = v[2 .. v.len - 4];
     }
     return compare(query, value);
+}
+
+pub fn parse(
+    comptime T: Type,
+    thread: *Thread.Thread,
+    q: []const u8,
+    v: []const u8,
+    i: usize,
+    c: *t.FilterCondition,
+    compare: anytype,
+) bool {
+    const query: []const u8 = q[i .. c.size + i];
+    if (T == .localized) {
+        if (c.lang == t.LangCode.none) {
+            var iter = Fields.textIterator(@constCast(v));
+            while (iter.next()) |value| {
+                if (valueType(thread, query, value, compare)) {
+                    return true;
+                }
+            }
+            return false;
+        } else {
+            return valueType(
+                thread,
+                query,
+                Fields.textFromValue(@constCast(v), c.lang),
+                compare,
+            );
+        }
+    } else if (T == .fixed) {
+        return compare(query, v[1 + c.start .. v[c.start] + 1 + c.start]);
+    } else {
+        return valueType(thread, query, v, compare);
+    }
 }
 
 // ---- Includes --------

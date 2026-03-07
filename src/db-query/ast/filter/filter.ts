@@ -21,13 +21,7 @@ type WalkCtx = {
   main: { prop: PropDef; ops: FilterOp[] }[]
 }
 
-const walk = (
-  ast: FilterAst,
-  ctx: Ctx,
-  typeDef: TypeDef,
-  walkCtx: WalkCtx,
-  // edgeType?: TypeDef,
-) => {
+const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
   const { tree, main } = walkCtx
 
   for (const field in ast.props) {
@@ -48,7 +42,13 @@ const walk = (
           walkCtx.prop = prop.id
           for (const op of ops) {
             // can prob just push this directly
-            const condition = comparison(prop, op.op, op.val, op.opts)
+            const condition = comparison(
+              prop,
+              op.op,
+              op.val,
+              ctx.locale,
+              op.opts,
+            )
             ctx.query.set(condition, ctx.query.length)
           }
         }
@@ -122,7 +122,7 @@ export const filter = (
   for (const { prop, ops } of main) {
     walkCtx.prop = prop.id
     for (const op of ops) {
-      const condition = comparison(prop, op.op, op.val, op.opts)
+      const condition = comparison(prop, op.op, op.val, ctx.locale, op.opts)
       ctx.query.set(condition, ctx.query.length)
     }
   }
@@ -179,7 +179,6 @@ export const filter = (
     }
 
     if (andOrReplace) {
-      // REMOVE THIS! FIX
       let index = indexOf(
         ctx.query.data,
         andOrReplace,

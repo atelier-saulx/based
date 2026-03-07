@@ -4304,11 +4304,12 @@ export type FilterCondition = {
   prop: number
   start: number
   len: number
+  lang: LangCodeEnum
   fieldSchema: number
   offset: number
 }
 
-export const FilterConditionByteSize = 19
+export const FilterConditionByteSize = 20
 
 export const FilterConditionAlignOf = 16
 
@@ -4326,6 +4327,8 @@ export const writeFilterCondition = (
   writeUint16(buf, Number(header.start), offset)
   offset += 2
   buf[offset] = Number(header.len)
+  offset += 1
+  buf[offset] = Number(header.lang)
   offset += 1
   writeUint64(buf, header.fieldSchema, offset)
   offset += 8
@@ -4350,11 +4353,14 @@ export const writeFilterConditionProps = {
   len: (buf: Uint8Array, value: number, offset: number) => {
     buf[offset + 9] = Number(value)
   },
+  lang: (buf: Uint8Array, value: LangCodeEnum, offset: number) => {
+    buf[offset + 10] = Number(value)
+  },
   fieldSchema: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint64(buf, value, offset + 10)
+    writeUint64(buf, value, offset + 11)
   },
   offset: (buf: Uint8Array, value: number, offset: number) => {
-    buf[offset + 18] = Number(value)
+    buf[offset + 19] = Number(value)
   },
 }
 
@@ -4368,8 +4374,9 @@ export const readFilterCondition = (
     prop: buf[offset + 6],
     start: readUint16(buf, offset + 7),
     len: buf[offset + 9],
-    fieldSchema: readUint64(buf, offset + 10),
-    offset: buf[offset + 18],
+    lang: (buf[offset + 10]) as LangCodeEnum,
+    fieldSchema: readUint64(buf, offset + 11),
+    offset: buf[offset + 19],
   }
   return value
 }
@@ -4380,8 +4387,9 @@ export const readFilterConditionProps = {
     prop: (buf: Uint8Array, offset: number) => buf[offset + 6],
     start: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 7),
     len: (buf: Uint8Array, offset: number) => buf[offset + 9],
-    fieldSchema: (buf: Uint8Array, offset: number) => readUint64(buf, offset + 10),
-    offset: (buf: Uint8Array, offset: number) => buf[offset + 18],
+    lang: (buf: Uint8Array, offset: number) => (buf[offset + 10]) as LangCodeEnum,
+    fieldSchema: (buf: Uint8Array, offset: number) => readUint64(buf, offset + 11),
+    offset: (buf: Uint8Array, offset: number) => buf[offset + 19],
 }
 
 export const createFilterCondition = (header: FilterCondition): Uint8Array => {
@@ -4400,6 +4408,7 @@ export const pushFilterCondition = (
   buf.pushUint8(Number(header.prop))
   buf.pushUint16(Number(header.start))
   buf.pushUint8(Number(header.len))
+  buf.pushUint8(Number(header.lang))
   buf.pushUint64(header.fieldSchema)
   buf.pushUint8(Number(header.offset))
   return index

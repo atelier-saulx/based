@@ -7,6 +7,7 @@ import { Ctx, QueryAst } from './ast.js'
 import { defaultMultiple } from './multiple.js'
 import { getReaderLocales, readSchema } from './readSchema.js'
 import { defaultSingle } from './single.js'
+import { LangCode, LangCodeEnum } from '../../zigTsExports.js'
 
 export const astToQueryCtx = (
   schema: SchemaOut,
@@ -33,10 +34,22 @@ export const astToQueryCtx = (
 
   const queryIdPos = query.reserveUint32()
 
+  let locale: LangCodeEnum = LangCode.none
+  const locales = getReaderLocales(schema)
+
+  if (ast.locale) {
+    const code = LangCode[ast.locale]
+    if (!(code in locales)) {
+      throw new Error(`Invalid locale ${ast.locale}`)
+    }
+    locale = code
+  }
+
   const ctx: Ctx = {
     query,
     readSchema: readSchema(),
-    locales: getReaderLocales(schema),
+    locales,
+    locale: locale,
   }
 
   if (ast.target && !Array.isArray(ast.target)) {

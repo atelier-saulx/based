@@ -1,11 +1,11 @@
 const t = @import("../../../types.zig");
 const utils = @import("../../../utils.zig");
 const std = @import("std");
-
-// inline read crc32
+const Localized = @import("./types.zig").Localized;
 
 pub fn eqCrc32(
-    q: []u8,
+    // T: type,
+    q: []const u8,
     v: []const u8,
     i: usize,
     c: *t.FilterCondition,
@@ -33,6 +33,7 @@ inline fn pack(high: u32, low: u32) u64 {
 }
 
 pub fn eqCrc32Batch(
+    // T: type,
     q: []u8,
     v: []const u8,
     i: usize,
@@ -41,6 +42,10 @@ pub fn eqCrc32Batch(
     if (v.len == 0) {
         return false;
     }
+    // if (T == Localized) {
+    //     std.debug.print("DERP#!@ \n", .{});
+    // } else {}
+
     var value: u64 = undefined;
     if (v[1] == 1) {
         value = pack(utils.read(u32, v, v.len - 4), utils.read(u32, v, 2));

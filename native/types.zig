@@ -905,11 +905,12 @@ pub const FilterOp = packed struct {
 };
 
 pub const FilterCondition = packed struct {
-    op: FilterOp, // this can become a u16 that holds the [OP,PROP_TYPE]
+    op: FilterOp,
     size: u32,
     prop: u8,
     start: u16,
     len: u8,
+    lang: LangCode,
     fieldSchema: Schema.FieldSchema,
     offset: u8,
 };

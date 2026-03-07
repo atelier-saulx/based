@@ -1,10 +1,10 @@
 import native from '../../../native.js'
 import { PropDef } from '../../../schema/defs/index.js'
-import { debugBuffer } from '../../../sdk.js'
 import { canBitwiseLowerCase } from '../../../utils/canBitwiseLowerCase.js'
 import { combineToUint64, ENCODER, writeUint32 } from '../../../utils/uint8.js'
 import {
-  FilterOpCompareInverse,
+  LangCode,
+  LangCodeEnum,
   FilterOpCompare as Op,
 } from '../../../zigTsExports.js'
 import { FilterOpts, Operator } from '../ast.js'
@@ -17,12 +17,13 @@ export const variableComparison = (
   prop: PropDef,
   operator: Operator,
   val: any[],
+  lang: LangCodeEnum,
   opts?: FilterOpts,
 ) => {
   let op = operatorToEnum(operator)
 
   for (const v of val) {
-    prop.validate(v)
+    prop.validate(v, lang || LangCode.en)
   }
 
   if ((op === Op.like || op === Op.nlike) && val.length > 1) {
@@ -35,7 +36,7 @@ export const variableComparison = (
     }
     op = Op.like ? Op.likeBatch : Op.nlikeBatch
     const minScore = opts?.score ?? 3
-    const { condition, offset } = createCondition(prop, op, size, 0)
+    const { condition, offset } = createCondition(prop, op, size, 0, lang)
     condition[offset] = minScore
     let i = offset + 1
     for (const value of values) {
@@ -50,7 +51,7 @@ export const variableComparison = (
     const minScore = opts?.score ?? 3
     const value = val[0].normalize('NFKD')
     const size = native.stringByteLength(value) + 1
-    const { condition, offset } = createCondition(prop, op, size, 0)
+    const { condition, offset } = createCondition(prop, op, size, 0, lang)
     condition[offset] = minScore
     ENCODER.encodeInto(value, condition.subarray(offset + 1))
     return condition
@@ -82,7 +83,7 @@ export const variableComparison = (
       }
       op = Op.inc ? Op.incBatch : Op.nincBatch
     }
-    const { condition, offset } = createCondition(prop, op, size, 0)
+    const { condition, offset } = createCondition(prop, op, size, 0, lang)
     let i = offset
     for (const value of values) {
       const size = ENCODER.encodeInto(value, condition.subarray(i + 4)).written
@@ -105,7 +106,7 @@ export const variableComparison = (
       value = val[0].normalize('NFKD')
     }
     const size = native.stringByteLength(value)
-    const { condition, offset } = createCondition(prop, op, size, 0)
+    const { condition, offset } = createCondition(prop, op, size, 0, lang)
     ENCODER.encodeInto(value, condition.subarray(offset))
     return condition
   }
@@ -123,7 +124,7 @@ export const variableComparison = (
       values.push(value)
       size += native.stringByteLength(value) + 1 // 1 extra for string size
     }
-    const { condition, offset } = createCondition(prop, op, size, 0)
+    const { condition, offset } = createCondition(prop, op, size, 0, lang)
     let i = offset
     for (const value of values) {
       const size = ENCODER.encodeInto(value, condition.subarray(i + 1)).written
@@ -137,7 +138,7 @@ export const variableComparison = (
     op = op === Op.eq ? Op.eqVar : Op.neqVar
     const value = val[0].normalize('NFKD')
     const size = native.stringByteLength(value)
-    const { condition, offset } = createCondition(prop, op, size, 0)
+    const { condition, offset } = createCondition(prop, op, size, 0, lang)
     ENCODER.encodeInto(value, condition.subarray(offset))
     return condition
   }
@@ -153,6 +154,7 @@ export const variableComparison = (
       op,
       size + empty,
       propSize,
+      lang,
     )
     let i = offset
     for (const v of val) {
@@ -169,7 +171,7 @@ export const variableComparison = (
 
   if (op === Op.eq || op === Op.neq) {
     op = op === Op.eq ? Op.eqCrc32 : Op.neqCrc32
-    const { condition, offset } = createCondition(prop, op, 8, 4)
+    const { condition, offset } = createCondition(prop, op, 8, 4, lang)
     const buf = ENCODER.encode(val[0].normalize('NFKD'))
     writeUint32(condition, native.crc32(buf), offset)
     writeUint32(condition, buf.byteLength, offset + 4)
