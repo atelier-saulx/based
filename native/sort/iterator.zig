@@ -120,7 +120,7 @@ fn fillSortIndex(
             const fieldSchema = try Schema.getFieldSchema(edgeType, header.prop);
             while (it.nextRef()) |ref| {
                 const data = switch (header.propType) {
-                    .stringLocalized => Fields.getText(typeEntry, ref.edge, fieldSchema, header.propType, header.lang),
+                    .stringLocalized, .jsonLocalized => Fields.getText(typeEntry, ref.edge, fieldSchema, header.propType, header.lang),
                     else => Fields.get(typeEntry, ref.edge, fieldSchema, header.propType),
                 };
                 Sort.insert(decompressor, sortIndex, data, &ref);
@@ -138,7 +138,7 @@ fn fillSortIndex(
             const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
             while (it.nextRef()) |ref| {
                 const data = switch (header.propType) {
-                    .stringLocalized => Fields.getText(typeEntry, ref.node, fieldSchema, header.propType, header.lang),
+                    .stringLocalized, .jsonLocalized => Fields.getText(typeEntry, ref.node, fieldSchema, header.propType, header.lang),
                     else => Fields.get(typeEntry, ref.node, fieldSchema, header.propType),
                 };
                 Sort.insert(decompressor, sortIndex, data, &ref);
@@ -159,7 +159,7 @@ fn fillSortIndex(
             const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
             while (it.next()) |node| {
                 const data = switch (header.propType) {
-                    .stringLocalized => Fields.getText(typeEntry, node, fieldSchema, header.propType, header.lang),
+                    .stringLocalized, .jsonLocalized => Fields.getText(typeEntry, node, fieldSchema, header.propType, header.lang),
                     else => Fields.get(typeEntry, node, fieldSchema, header.propType),
                 };
                 Sort.insert(decompressor, sortIndex, data, node);
@@ -200,7 +200,7 @@ fn getSortIndex(
         .number, .timestamp => {
             return if (isEdge) thread.tmpSortDoubleEdge else thread.tmpSortDouble;
         },
-        .stringFixed, .binaryFixed, .jsonFixed, .string, .stringLocalized, .alias, .binary => {
+        .stringFixed, .binaryFixed, .jsonFixed, .string, .stringLocalized, .json, .jsonLocalized, .alias, .binary => {
             return if (isEdge) thread.tmpSortBinaryEdge else thread.tmpSortBinary;
         },
         else => {

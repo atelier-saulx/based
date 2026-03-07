@@ -156,7 +156,8 @@ await test('separate', async (t) => {
             default: 'Default Name',
           },
           flap: {
-            type: 'text',
+            type: 'string',
+            localized: true,
             default: {
               en: 'Untitled',
               fi: 'Nimeton',
@@ -245,7 +246,8 @@ await test('default values for all props in user type', async (t) => {
             default: defaultBinary,
           },
           label: {
-            type: 'text',
+            type: 'string',
+            localized: true,
             default: defaultText,
           },
           friends: {

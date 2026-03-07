@@ -1187,6 +1187,7 @@ export const PropType = {
   vector: 27,
   json: 28,
   jsonFixed: 29,
+  jsonLocalized: 32,
   object: 30,
   colVec: 31,
   id: 255,
@@ -1218,6 +1219,7 @@ export const PropTypeInverse = {
   27: 'vector',
   28: 'json',
   29: 'jsonFixed',
+  32: 'jsonLocalized',
   30: 'object',
   31: 'colVec',
   255: 'id',
@@ -1249,6 +1251,7 @@ export const PropTypeInverse = {
   vector, 
   json, 
   jsonFixed, 
+  jsonLocalized, 
   object, 
   colVec, 
   id 

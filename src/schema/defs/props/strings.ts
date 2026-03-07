@@ -1,6 +1,6 @@
 import native from '../../../native.js'
 import { COMPRESSED, NOT_COMPRESSED } from '../../../protocol/index.js'
-import type { SchemaString, SchemaText } from '../../../schema/index.js'
+import type { SchemaJson, SchemaString } from '../../../schema/index.js'
 import {
   PropType,
   type LangCodeEnum,
@@ -11,6 +11,7 @@ import {
   pushSelvaSchemaText,
   LangCode,
   writeSelvaSchemaStringProps,
+  Modify,
 } from '../../../zigTsExports.js'
 import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import { BasePropDef } from './base.js'
@@ -44,25 +45,31 @@ function validateString(
 export const string = class String extends BasePropDef {
   constructor(prop: SchemaString, path: string[], typeDef: TypeDef) {
     super(prop, path, typeDef)
-    if (prop.maxBytes && prop.maxBytes <= 64) {
+    if (prop.localized) {
+      this.pushValue = this.pushLocalizedValue
+      this.pushSelvaSchema = this.pushSelvaSchemaLocalized
+      this.deflate = prop.compression !== 'none'
+      this.type = PropType.stringLocalized
+    } else if (prop.maxBytes && prop.maxBytes <= 64) {
       // 64 bytes fit in 1 cpu instruction to read */
       this.size = prop.maxBytes + 1
+      this.type = PropType.stringFixed
+      this.pushValue = this.pushFixedValue
     } else if (prop.max && prop.max <= 32) {
       // We estimate that size is probably * 2 maxium for strings len
       // this is an estimation so might be incorrect
       this.size = prop.max * 2 + 1
-    }
-    if (this.size) {
       this.type = PropType.stringFixed
       this.pushValue = this.pushFixedValue
-    } else if (prop.compression === 'none') {
-      this.deflate = false
+    } else {
+      this.pushValue = this.pushStringValue
+      this.deflate = prop.compression !== 'none'
     }
   }
   deflate = true
   declare schema: SchemaString
   override type: PropTypeEnum = PropType.string
-  override pushValue(
+  pushStringValue(
     buf: AutoSizedUint8Array,
     value: unknown,
     _op?: ModifyEnum,
@@ -117,29 +124,7 @@ export const string = class String extends BasePropDef {
     }
   }
 
-  override pushSelvaSchema(buf: AutoSizedUint8Array) {
-    const index = pushSelvaSchemaString(buf, {
-      type: PropTypeSelva.string,
-      fixedLenHint: this.schema.maxBytes ?? 0, // Note that selva doesn't do actual validation
-      defaultLen: 0, // TODO also check that defaultLen <= maxBytes
-    })
-    if (this.schema.default) {
-      const start = buf.length
-      this.pushValue(buf, this.schema.default)
-      writeSelvaSchemaStringProps.defaultLen(
-        buf.data,
-        buf.length - start,
-        index,
-      )
-    }
-  }
-}
-
-export const text = class Text extends string {
-  override type = PropType.stringLocalized
-  // @ts-ignore
-  declare schema: SchemaText
-  override pushValue(
+  pushLocalizedValue(
     buf: AutoSizedUint8Array,
     value: unknown,
     op?: ModifyEnum,
@@ -153,7 +138,7 @@ export const text = class Text extends string {
       }
       const index = buf.reserveUint32()
       const start = buf.length
-      super.pushValue(buf, value, op, lang)
+      this.pushStringValue(buf, value, op, lang)
       buf.writeUint32(buf.length - start, index)
     } else if (typeof value === 'object' && value !== null) {
       if (Array.isArray(value)) {
@@ -167,20 +152,38 @@ export const text = class Text extends string {
         }
         const index = buf.reserveUint32()
         const start = buf.length
-        super.pushValue(buf, value[key], op, LangCode[key])
+        this.pushStringValue(buf, value[key], op, LangCode[key])
         buf.writeUint32(buf.length - start, index)
       }
     } else {
       throw new Error('Invalid type for text ' + this.path.join('.'))
     }
   }
+
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    const index = pushSelvaSchemaString(buf, {
+      type: PropTypeSelva.string,
+      fixedLenHint: this.schema.maxBytes ?? 0, // Note that selva doesn't do actual validation
+      defaultLen: 0, // TODO also check that defaultLen <= maxBytes
+    })
+    if (this.schema.default) {
+      const start = buf.length
+      this.pushValue(buf, this.schema.default, Modify.create, LangCode.none)
+      writeSelvaSchemaStringProps.defaultLen(
+        buf.data,
+        buf.length - start,
+        index,
+      )
+    }
+  }
+
+  pushSelvaSchemaLocalized(buf: AutoSizedUint8Array) {
     if (this.schema.default) {
       pushSelvaSchemaText(buf, {
         type: PropTypeSelva.text,
         nrDefaults: Object.keys(this.schema.default).length,
       })
-      this.pushValue(buf, this.schema.default)
+      this.pushValue(buf, this.schema.default, Modify.create, LangCode.none)
     } else {
       pushSelvaSchemaText(buf, {
         type: PropTypeSelva.text,
@@ -191,11 +194,14 @@ export const text = class Text extends string {
 }
 
 export const json = class Json extends string {
-  override type = PropType.json
+  constructor(prop: SchemaJson, path: string[], typeDef: TypeDef) {
+    super(prop as any, path, typeDef)
+    this.type = prop.localized ? PropType.jsonLocalized : PropType.json
+  }
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
-    op?: ModifyEnum,
+    op: ModifyEnum,
     lang: LangCodeEnum = LangCode.none,
   ) {
     super.pushValue(buf, JSON.stringify(value), op, lang)

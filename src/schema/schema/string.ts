@@ -1,6 +1,7 @@
-import { isString, isNatural, assert } from './shared.js'
+import { isString, isNatural, assert, isBoolean, isRecord } from './shared.js'
 import { parseBase, type Base } from './base.js'
 import v from 'validator'
+import type { SchemaOut } from './schema.js'
 
 const validators = {
   email: v.isEmail,
@@ -114,20 +115,34 @@ export const isCompression = (v: unknown): v is StringCompression =>
 
 export type SchemaString = Base & {
   type: 'string'
-  default?: string
   maxBytes?: number
   min?: number
   max?: number
   mime?: Mime
   format?: StringFormat
   compression?: StringCompression
-}
-
-export const parseString = (def: Record<string, unknown>): SchemaString => {
-  assert(
-    def.default === undefined || isString(def.default),
-    'Default should be string',
+} & (
+    | {
+        localized?: false
+        default?: string
+      }
+    | {
+        localized: true
+        default?: Record<string, string>
+      }
   )
+
+const isLocalized = (
+  val: unknown,
+  locales: SchemaOut['locales'] = {},
+): val is Record<string, string> =>
+  isRecord(val) &&
+  Object.entries(val).every(([key, val]) => key in locales && isString(val))
+
+export const parseString = (
+  def: Record<string, unknown>,
+  locales: SchemaOut['locales'],
+): SchemaString => {
   assert(
     def.maxBytes === undefined || isNatural(def.maxBytes),
     'Max bytes should be natural number',
@@ -146,7 +161,36 @@ export const parseString = (def: Record<string, unknown>): SchemaString => {
     def.compression === undefined || isCompression(def.compression),
     'Invalid compression',
   )
+  assert(
+    def.localized === undefined || isBoolean(def.localized),
+    'Invalid localized',
+  )
 
+  if (def.localized) {
+    assert(
+      isRecord(locales) && Object.keys(locales).length > 0,
+      'Locales should be defined',
+    )
+    assert(
+      def.default === undefined || isLocalized(def.default, locales),
+      'Default should be record of strings',
+    )
+    return parseBase<SchemaString>(def, {
+      type: 'string',
+      default: def.default,
+      maxBytes: def.maxBytes,
+      min: def.min,
+      max: def.max,
+      mime: def.mime,
+      format: def.format,
+      compression: def.compression,
+      localized: def.localized,
+    })
+  }
+  assert(
+    def.default === undefined || isString(def.default),
+    'Default should be string',
+  )
   return parseBase<SchemaString>(def, {
     type: 'string',
     default: def.default,

@@ -13,7 +13,6 @@ type TypeMap = {
   int32: NumInc
   uint32: NumInc
   boolean: boolean
-  text: string | Record<string, string>
   json: any
   timestamp: NumInc | string | Date
   binary: Uint8Array
@@ -74,8 +73,8 @@ type InferProp<
   Prop,
   Types,
   Locales extends Record<string, any> = Record<string, any>,
-> = Prop extends { type: 'text' }
-  ? string | Partial<Record<keyof Locales, string>>
+> = Prop extends { type: 'string'; localized: true }
+  ? Partial<Record<keyof Locales, string>>
   : Prop extends { type: 'object'; props: infer P }
     ? InferType<P, Types, Locales>
     : Prop extends { type: infer T extends keyof TypeMap }
