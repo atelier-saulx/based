@@ -11,27 +11,29 @@ const deflate = @import("./deflate.zig");
 const include = @import("./includes.zig");
 const likeInner = @import("./like.zig").like;
 
+const Instruction = @import("../instruction.zig");
+
 // This is a trick to lower the amount of comptime generated options
 // pub const Fixed = @import("./types.zig").Fixed;
 // pub const Localized = @import("./types.zig").Localized;
 
-pub const Type = @import("./types.zig").Type;
+const Type = @import("./types.zig").Type;
 
 inline fn valueType(
     thread: *Thread.Thread,
     query: []const u8,
     v: []const u8,
-    compare: anytype,
+    compareFn: anytype,
 ) bool {
     var value: []const u8 = undefined;
     if (v.len == 0) {
         return false;
     } else if (v[1] == 1) {
-        return deflate.decompress(thread, void, compare, query, v, undefined);
+        return deflate.decompress(thread, void, compareFn, query, v, undefined);
     } else {
         value = v[2 .. v.len - 4];
     }
-    return compare(query, value);
+    return compareFn(query, value);
 }
 
 pub fn parse(
@@ -41,14 +43,14 @@ pub fn parse(
     v: []const u8,
     i: usize,
     c: *t.FilterCondition,
-    compare: anytype,
+    compareFn: anytype,
 ) bool {
     const query: []const u8 = q[i .. c.size + i];
     if (T == .localized) {
         if (c.lang == t.LangCode.none) {
             var iter = Fields.textIterator(@constCast(v));
             while (iter.next()) |value| {
-                if (valueType(thread, query, value, compare)) {
+                if (valueType(thread, query, value, compareFn)) {
                     return true;
                 }
             }
@@ -58,13 +60,13 @@ pub fn parse(
                 thread,
                 query,
                 Fields.textFromValue(@constCast(v), c.lang),
-                compare,
+                compareFn,
             );
         }
     } else if (T == .fixed) {
-        return compare(query, v[1 + c.start .. v[c.start] + 1 + c.start]);
+        return compareFn(query, v[1 + c.start .. v[c.start] + 1 + c.start]);
     } else {
-        return valueType(thread, query, v, compare);
+        return valueType(thread, query, v, compareFn);
     }
 }
 
@@ -136,3 +138,36 @@ pub const eqCrc32Batch = @import("./eqCrc32.zig").eqCrc32Batch;
 pub const eq = @import("./eq.zig").eq;
 
 pub const eqBatch = @import("./eq.zig").eqBatch;
+
+pub inline fn compare(
+    T: Type, //
+    comptime op: t.FilterOpCompare,
+    q: []u8,
+    v: []const u8,
+    index: usize,
+    c: *t.FilterCondition,
+    thread: *Thread.Thread,
+) bool {
+    const meta = comptime Instruction.parseOp(op, true);
+    const res = switch (meta.func) {
+        // --------------------
+        .eqCrc32 => eqCrc32(q, v, index, c),
+        .eqCrc32Batch => eqCrc32Batch(q, v, index, c),
+        // --------------------
+        // *Can be wrapped like crc32
+        .eqVar => parse(T, thread, q, v, index, c, eq),
+        .eqVarBatch => parse(T, thread, q, v, index, c, eqBatch),
+        // --------------------
+        .inc => parse(T, thread, q, v, index, c, inc),
+        .incLcase => parse(T, thread, q, v, index, c, incLcase),
+        .incLcaseFast => parse(T, thread, q, v, index, c, incLcaseFast),
+        .incBatch => parse(T, thread, q, v, index, c, incBatch),
+        .incBatchLcase => parse(T, thread, q, v, index, c, incBatchLcase),
+        .incBatchLcaseFast => parse(T, thread, q, v, index, c, incBatchLcaseFast),
+        // --------------------
+        .like => parse(T, thread, q, v, index, c, like),
+        .likeBatch => parse(T, thread, q, v, index, c, likeBatch),
+        // --------------------
+    };
+    return if (meta.invert) !res else res;
+}

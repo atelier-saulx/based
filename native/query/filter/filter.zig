@@ -10,7 +10,6 @@ const Fixed = @import("fixed.zig");
 const Variable = @import("./variable/variable.zig");
 const Thread = @import("../../thread/thread.zig");
 
-const Instruction = @import("instruction.zig");
 const COND_ALIGN_BYTES = @alignOf(t.FilterCondition);
 
 pub fn prepare(
@@ -85,64 +84,6 @@ pub fn recursionErrorBoundary(
     };
 }
 
-inline fn compareFixed(
-    T: type,
-    comptime op: t.FilterOpCompare,
-    q: []u8,
-    v: []const u8,
-    index: usize,
-    c: *t.FilterCondition,
-) bool {
-    const meta = comptime Instruction.parseOp(op, false);
-    const res = switch (meta.func) {
-        // --------------------
-        .le => Fixed.le(T, q, v, index, c),
-        .lt => Fixed.lt(T, q, v, index, c),
-        .ge => Fixed.ge(T, q, v, index, c),
-        .gt => Fixed.gt(T, q, v, index, c),
-        // --------------------
-        .range => Fixed.range(T, q, v, index, c),
-        // --------------------
-        .eq => Fixed.eq(T, q, v, index, c),
-        .eqBatch => Fixed.eqBatch(T, q, v, index, c),
-        .eqBatchSmall => Fixed.eqBatchSmall(T, q, v, index, c),
-    };
-    return if (meta.invert) !res else res;
-}
-
-inline fn compareVariable(
-    T: Variable.Type, //
-    comptime op: t.FilterOpCompare,
-    q: []u8,
-    v: []const u8,
-    index: usize,
-    c: *t.FilterCondition,
-    thread: *Thread.Thread,
-) bool {
-    const meta = comptime Instruction.parseOp(op, true);
-    const res = switch (meta.func) {
-        // --------------------
-        .eqCrc32 => Variable.eqCrc32(q, v, index, c),
-        .eqCrc32Batch => Variable.eqCrc32Batch(q, v, index, c),
-        // --------------------
-        // *Can be wrapped like crc32
-        .eqVar => Variable.parse(T, thread, q, v, index, c, Variable.eq),
-        .eqVarBatch => Variable.parse(T, thread, q, v, index, c, Variable.eqBatch),
-        // --------------------
-        .inc => Variable.parse(T, thread, q, v, index, c, Variable.inc),
-        .incLcase => Variable.parse(T, thread, q, v, index, c, Variable.incLcase),
-        .incLcaseFast => Variable.parse(T, thread, q, v, index, c, Variable.incLcaseFast),
-        .incBatch => Variable.parse(T, thread, q, v, index, c, Variable.incBatch),
-        .incBatchLcase => Variable.parse(T, thread, q, v, index, c, Variable.incBatchLcase),
-        .incBatchLcaseFast => Variable.parse(T, thread, q, v, index, c, Variable.incBatchLcaseFast),
-        // --------------------
-        .like => Variable.parse(T, thread, q, v, index, c, Variable.like),
-        .likeBatch => Variable.parse(T, thread, q, v, index, c, Variable.likeBatch),
-        // --------------------
-    };
-    return if (meta.invert) !res else res;
-}
-
 pub inline fn filter(
     node: Node.Node,
     ctx: *Query.QueryCtx,
@@ -202,11 +143,11 @@ pub inline fn filter(
             .gt,
             => |op| blk: {
                 break :blk switch (c.op.prop) {
-                    .id, .uint32, .int32 => compareFixed(u32, op, q, v, index, c),
-                    .uint16, .int16 => compareFixed(u16, op, q, v, index, c),
-                    .number => compareFixed(f64, op, q, v, index, c),
-                    .timestamp => compareFixed(u64, op, q, v, index, c),
-                    else => compareFixed(u8, op, q, v, index, c),
+                    .id, .uint32, .int32 => Fixed.compare(u32, op, q, v, index, c),
+                    .uint16, .int16 => Fixed.compare(u16, op, q, v, index, c),
+                    .number => Fixed.compare(f64, op, q, v, index, c),
+                    .timestamp => Fixed.compare(u64, op, q, v, index, c),
+                    else => Fixed.compare(u8, op, q, v, index, c),
                 };
             },
             inline .eqCrc32,
@@ -236,9 +177,9 @@ pub inline fn filter(
             => |op| blk: {
                 @setEvalBranchQuota(2000);
                 break :blk switch (c.op.prop) {
-                    .string, .json, .binary => compareVariable(.default, op, q, v, index, c, ctx.thread),
-                    .stringFixed, .jsonFixed, .binaryFixed => compareVariable(.fixed, op, q, v, index, c, ctx.thread),
-                    .stringLocalized, .jsonLocalized => compareVariable(.localized, op, q, v, index, c, ctx.thread),
+                    .string, .json, .binary => Variable.compare(.default, op, q, v, index, c, ctx.thread),
+                    .stringFixed, .jsonFixed, .binaryFixed => Variable.compare(.fixed, op, q, v, index, c, ctx.thread),
+                    .stringLocalized, .jsonLocalized => Variable.compare(.localized, op, q, v, index, c, ctx.thread),
                     else => false,
                 };
             },
