@@ -12,7 +12,8 @@ import {
   writeFilterConditionProps,
 } from '../../../zigTsExports.js'
 import { Ctx, FilterAst, FilterOp } from '../ast.js'
-import { comparison, conditionByteSize, createCondition } from './comparison.js'
+import { comparison } from './comparison.js'
+import { conditionByteSize, createCondition } from './condition.js'
 
 type WalkCtx = {
   tree: PropTree

@@ -109,6 +109,7 @@ inline fn compare(
         .incLcase => Variable.parse(thread, q, v, index, c, fixedLen, Variable.incLcase),
         .incLcaseFast => Variable.parse(thread, q, v, index, c, fixedLen, Variable.incLcaseFast),
         .eqVar => Variable.parse(thread, q, v, index, c, fixedLen, Variable.eq),
+        .eqVarBatch => Variable.parse(thread, q, v, index, c, fixedLen, Variable.eqBatch),
         .like => Variable.parse(thread, q, v, index, c, fixedLen, Variable.like),
     };
     return if (meta.invert) !res else res;

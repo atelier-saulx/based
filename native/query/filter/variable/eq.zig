@@ -3,6 +3,7 @@ const utils = @import("../../../utils.zig");
 const std = @import("std");
 
 const vectorLenU8 = std.simd.suggestVectorLength(u8) orelse 16;
+const MAX_FIXED_LEN = 64;
 
 pub fn eq(
     query: []u8,
@@ -10,6 +11,10 @@ pub fn eq(
 ) bool {
     var i: usize = 0;
     const l = value.len;
+
+    // Compiler optmization will unroll some while loops
+    if (l > MAX_FIXED_LEN) unreachable;
+
     const ql = query.len;
     if (l != ql) {
         return false;
@@ -38,4 +43,21 @@ pub fn eq(
         }
     }
     return true;
+}
+
+pub fn eqBatch(
+    query: []u8,
+    value: []const u8,
+) bool {
+    // this can be greatly optmized by making a smarter structure
+    var i: usize = 0; // len is not used now
+    while (i < query.len) {
+        const size = query[i];
+        const q = query[i + 1 .. i + 1 + size];
+        if (eq(q, value)) {
+            return true;
+        }
+        i += size + 1;
+    }
+    return false;
 }

@@ -44,11 +44,12 @@ function validateString(
 export const string = class String extends BasePropDef {
   constructor(prop: SchemaString, path: string[], typeDef: TypeDef) {
     super(prop, path, typeDef)
-    if (prop.maxBytes && prop.maxBytes < 61) {
-      // TODO explain why 61 bytes (1 byte is for size but why 60 byte and not 47 or 63? */
+    if (prop.maxBytes && prop.maxBytes <= 64) {
+      // 64 bytes fit in 1 cpu instruction to read */
       this.size = prop.maxBytes + 1
-    } else if (prop.max && prop.max < 31) {
-      // TODO Explain why this is here
+    } else if (prop.max && prop.max <= 32) {
+      // We estimate that size is probably * 2 maxium for strings len
+      // this is an estimation so might be incorrect
       this.size = prop.max * 2 + 1
     }
     if (this.size) {
@@ -74,7 +75,7 @@ export const string = class String extends BasePropDef {
       validateString(value, this.schema, this.path)
       const normalized = value.normalize('NFKD')
       buf.pushUint8(lang)
-      if (this.deflate && normalized.length > 200) {
+      if (this.deflate && normalized.length > 300) {
         buf.pushUint8(COMPRESSED)
         const sizePos = buf.reserveUint32()
         const stringPos = buf.length

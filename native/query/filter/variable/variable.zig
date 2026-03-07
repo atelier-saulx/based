@@ -10,19 +10,21 @@ const Thread = @import("../../../thread/thread.zig");
 const deflate = @import("./deflate.zig");
 const includeInner = @import("./includes.zig").include;
 const likeInner = @import("./like.zig").like;
+const MAX_FIXED_LEN = 64;
 
 pub fn parse(
     thread: *Thread.Thread,
     q: []u8,
     v: []const u8,
-    qI: usize,
+    i: usize,
     c: *t.FilterCondition,
     comptime fixedLen: bool,
     compare: anytype,
 ) bool {
-    const query: []u8 = q[qI .. c.size + qI];
+    const query: []u8 = q[i .. c.size + i];
     var value: []const u8 = undefined;
     if (fixedLen) {
+        // Can add assertion with unreachable for 64
         value = v[1 + c.start .. v[c.start] + 1 + c.start];
     } else if (v.len == 0) {
         return false;
@@ -56,3 +58,5 @@ pub fn like(query: []const u8, value: []const u8) bool {
 pub const eqCrc32 = @import("./eqCrc32.zig").eqCrc32;
 
 pub const eq = @import("./eq.zig").eq;
+
+pub const eqBatch = @import("./eq.zig").eqBatch;

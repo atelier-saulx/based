@@ -93,9 +93,9 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 1e4; i++) {
+  for (let i = 0; i < 1e6; i++) {
     client.create('user', {
-      big: syntheticData,
+      // big: syntheticData,
       name: `mr snurf ${i}`,
       derp: 'cc',
       y: i,
@@ -105,10 +105,10 @@ await test('include', async (t) => {
       cook: {
         cookie: 1234,
       },
-      friends: [
-        { id: a, $level: rand(0, 200) },
-        { id: b, $level: rand(0, 200) },
-      ],
+      // friends: [
+      //   { id: a, $level: rand(0, 200) },
+      //   { id: b, $level: rand(0, 200) },
+      // ],
     })
   }
 
@@ -127,17 +127,24 @@ await test('include', async (t) => {
   // FILTER REFS BY EDGE
   // ALIAS
 
+  const bigArray: string[] = []
+  for (let i = 0; i < 1e3; i++) {
+    bigArray.push(i % 2 ? 'xy' : 'xx')
+  }
+
   const ast: QueryAst = {
     type: 'user',
     range: { start: 0, end: 3 },
     filter: {
       props: {
-        big: {
+        derp: {
           ops: [
-            // { op: '=', val: ['ok', 'bad', 'great'] },
-            { op: 'includes', val: 'xbl@apx', opts: { lowerCase: true } },
-            // { op: 'like', val: 'xblapx' },
+            { op: '=', val: bigArray },
+            // bigArray
 
+            // { op: '=', val: ['ok', 'bad', 'great'] },
+            // { op: 'includes', val: 'xbl@apx', opts: { lowerCase: true } },
+            // { op: 'like', val: 'xblapx' },
             // { op: 'includes', val: ' xaderp', opts: { lowerCase: true } },
             // {
             //   op: 'includes',
@@ -149,7 +156,7 @@ await test('include', async (t) => {
       },
     },
     props: {
-      big: { include: {} },
+      // big: { include: {} },
       y: { include: {} },
       name: { include: {} },
       derp: { include: {} },
