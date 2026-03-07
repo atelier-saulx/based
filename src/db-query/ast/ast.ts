@@ -5,10 +5,10 @@ import type { IntervalString } from './aggregates.js'
 export type FilterOpts = {
   lowerCase?: boolean
   fn?:
-    | 'dotProduct'
-    | 'manhattanDistance'
-    | 'cosineSimilarity'
-    | 'euclideanDistance'
+  | 'dotProduct'
+  | 'manhattanDistance'
+  | 'cosineSimilarity'
+  | 'euclideanDistance'
   score?: number
 }
 
@@ -97,7 +97,7 @@ export type QueryAst = {
     timeZone?: string
     display?: Intl.DateTimeFormat
     enum?: string[]
-  }
+  }[]
 }
 
 export type Ctx = {
