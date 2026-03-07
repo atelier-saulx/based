@@ -18,7 +18,7 @@ await test.skip('query types', async (t) => {
         i32: 'int32',
         u32: 'uint32',
         b: 'boolean',
-        txt: 'text',
+        txt: { type: 'string', localized: true },
         js: 'json',
         ts: 'timestamp',
         bin: 'binary',
@@ -107,7 +107,7 @@ await test.skip('query types', async (t) => {
     const bin: Uint8Array = everything.bin
     const als: string = everything.als
     const card: number = everything.card
-    const myEnum: 'a' | 'b' = everything.myEnum
+    const myEnum: 'a' | 'b' | null = everything.myEnum
     const nestedA: string = everything.nested.a
     const id: number = everything.id
 
@@ -124,7 +124,7 @@ await test.skip('query types', async (t) => {
     const data = await query.get()
     if (data.length > 0) {
       const res = data[0]
-      const myEnum: 'a' | 'b' = res.myEnum
+      const myEnum: 'a' | 'b' | null = res.myEnum
       const id: number = res.id
       // @ts-expect-error
       const n: number = res.n
@@ -138,7 +138,7 @@ await test.skip('query types', async (t) => {
       const res = data[0]
       const n: number = res.n
       const s: string = res.s
-      const myEnum: 'a' | 'b' = res.myEnum
+      const myEnum: 'a' | 'b' | null = res.myEnum
       // @ts-expect-error
       const myRef = res.myRef
     }
@@ -160,7 +160,7 @@ await test.skip('query types', async (t) => {
       // @ts-expect-error
       const s: string = res.s
       // @ts-expect-error
-      const myEnum: 'a' | 'b' = res.myEnum
+      const myEnum: 'a' | 'b' | null = res.myEnum
     }
   }
 
@@ -171,7 +171,7 @@ await test.skip('query types', async (t) => {
     if (data.length > 0) {
       const res = data[0]
 
-      const myEnum: 'a' | 'b' = res.myEnum
+      const myEnum: 'a' | 'b' | null = res.myEnum
       // const myRef: { id: number } = res.myRef
       const myRefs: { id: number }[] = res.myRefs
 
@@ -194,7 +194,7 @@ await test.skip('query types', async (t) => {
 
       // Missing
       // @ts-expect-error
-      const myEnum: 'a' | 'b' = res.myEnum
+      const myEnum: 'a' | 'b' | null = res.myEnum
     }
   }
 
