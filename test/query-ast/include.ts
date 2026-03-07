@@ -137,9 +137,11 @@ await test('include', async (t) => {
     range: { start: 0, end: 3 },
     filter: {
       props: {
-        name: {
+        y: {
           ops: [
-            { op: '=', val: ['flap', 'xx', 'aa', 'zz', 'mr jim'] },
+            { op: '=', val: [10, 13, 32, 123, 12, 15, 24, 21, 34] },
+
+            // { op: '=', val: ['flap', 'xx', 'aa', 'zz', 'mr jim'] },
             // bigArray
 
             // { op: '=', val: ['ok', 'bad', 'great'] },
