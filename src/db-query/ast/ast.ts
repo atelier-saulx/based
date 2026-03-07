@@ -1,5 +1,6 @@
 import { ReaderLocales, ReaderSchema } from '../../protocol/index.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
+import { LangCodeEnum } from '../../zigTsExports.js'
 import type { IntervalString } from './aggregates.js'
 
 export type FilterOpts = {
@@ -104,4 +105,5 @@ export type Ctx = {
   query: AutoSizedUint8Array
   readSchema: ReaderSchema
   locales: ReaderLocales
+  locale: LangCodeEnum
 }

@@ -16,6 +16,7 @@ await test('include', async (t) => {
   await db.start({ clean: true })
   t.after(() => db.destroy())
   const client = await db.setSchema({
+    locales: ['nl', 'en', 'fr', 'aa', 'ab', 'el', 'fi', 'pt'],
     types: {
       friend: {
         y: 'uint32',
@@ -24,6 +25,10 @@ await test('include', async (t) => {
         derp: { type: 'string', maxBytes: 2 },
         name: 'string',
         big: { type: 'string', compression: 'none' },
+        localized: {
+          type: 'string',
+          localized: true,
+        },
         x: 'boolean',
         flap: 'uint32',
         enum: ['ok', 'bad', 'great'],
@@ -66,10 +71,14 @@ await test('include', async (t) => {
 
   const a = client.create('user', {
     name: 'mr jim',
+    localized: {
+      en: 'mr jim EN',
+      nl: 'derpi yuz NL',
+    },
     enum: 'ok',
     derp: 'aa',
     big: 'mr jim',
-    y: 4,
+    y: 15,
     x: false,
     flap: 9999,
     cook: {
@@ -77,29 +86,32 @@ await test('include', async (t) => {
     },
   })
 
-  const b = await client.create('user', {
-    name: 'mr snurf b',
-    derp: 'bb',
-    y: 15,
-    x: true,
-    big: 'mr giraffe man',
-    flap: 9999,
-    cook: {
-      cookie: 1234,
-    },
-    mrFriend: { id: a, $level: 67 },
-  })
+  // const b = await client.create('user', {
+  //   name: 'mr snurf b',
+  //   derp: 'bb',
+  //   y: 15,
+  //   x: true,
+  //   big: 'mr giraffe man',
+  //   flap: 9999,
+  //   cook: {
+  //     cookie: 1234,
+  //   },
+  //   mrFriend: { id: a, $level: 67 },
+  // })
 
   let d = Date.now()
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 1e6; i++) {
     client.create('user', {
-      big: syntheticData,
+      // big: syntheticData,
       name: `mr snurf ${i}`,
       derp: 'cc',
       y: i,
+      localized: {
+        nl: 'giraffe NL',
+      },
       x: !!(i % 2),
       enum: i % 2 ? 'great' : null,
       flap: 9999,
@@ -135,15 +147,16 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
+    // locale: 'en',
     range: { start: 0, end: 1e6 },
     filter: {
       props: {
-        big: {
+        y: {
           ops: [
-            // { op: '=', val: [10, 13, 32, 123, 12, 15, 24, 21, 34] },
+            { op: '=', val: [10, 13, 32, 123, 12, 15, 24, 21, 34] },
             // { op: 'includes', val: 'giraffe' },
 
-            { op: 'includes', val: ['giraffe', 'mr jim'] },
+            // { op: '=', val: ['giraffe', 'mr jim', 'yuzi'] },
             // bigArray
 
             // { op: '=', val: ['ok', 'bad', 'great'] },
@@ -218,7 +231,7 @@ await test('include', async (t) => {
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
-  console.dir(obj, { depth: 10 })
+  // console.dir(obj, { depth: 10 })
 
   await wait(1000)
 

@@ -18,7 +18,7 @@ await test.skip('query types', async (t) => {
         i32: 'int32',
         u32: 'uint32',
         b: 'boolean',
-        txt: 'text',
+        txt: { type: 'string', localized: true },
         js: 'json',
         ts: 'timestamp',
         bin: 'binary',
@@ -32,7 +32,12 @@ await test.skip('query types', async (t) => {
             a: 'string',
           },
         },
-        myRef: { type: 'reference', ref: 'user', prop: 'backRef' },
+        myRef: {
+          type: 'reference',
+          ref: 'user',
+          prop: 'backRef',
+          $rank: 'uint8',
+        },
         myRefs: {
           type: 'references',
           items: { ref: 'user', prop: 'backRefs' },
@@ -107,7 +112,7 @@ await test.skip('query types', async (t) => {
     const bin: Uint8Array = everything.bin
     const als: string = everything.als
     const card: number = everything.card
-    const myEnum: 'a' | 'b' = everything.myEnum
+    const myEnum: 'a' | 'b' | null = everything.myEnum
     const nestedA: string = everything.nested.a
     const id: number = everything.id
 
@@ -124,7 +129,7 @@ await test.skip('query types', async (t) => {
     const data = await query.get()
     if (data.length > 0) {
       const res = data[0]
-      const myEnum: 'a' | 'b' = res.myEnum
+      const myEnum: 'a' | 'b' | null = res.myEnum
       const id: number = res.id
       // @ts-expect-error
       const n: number = res.n
@@ -138,7 +143,7 @@ await test.skip('query types', async (t) => {
       const res = data[0]
       const n: number = res.n
       const s: string = res.s
-      const myEnum: 'a' | 'b' = res.myEnum
+      const myEnum: 'a' | 'b' | null = res.myEnum
       // @ts-expect-error
       const myRef = res.myRef
     }
@@ -150,7 +155,6 @@ await test.skip('query types', async (t) => {
       const res = data[0]
 
       // references
-      // const myRef: { id: number } = res.myRef
       const myRefs: { id: number }[] = res.myRefs
       const id: number = res.id
 
@@ -160,7 +164,10 @@ await test.skip('query types', async (t) => {
       // @ts-expect-error
       const s: string = res.s
       // @ts-expect-error
-      const myEnum: 'a' | 'b' = res.myEnum
+      const myEnum: 'a' | 'b' | null = res.myEnum
+
+      // we also want edges to be there
+      const myRefRank: number = res.myRef!.$rank
     }
   }
 
@@ -171,7 +178,7 @@ await test.skip('query types', async (t) => {
     if (data.length > 0) {
       const res = data[0]
 
-      const myEnum: 'a' | 'b' = res.myEnum
+      const myEnum: 'a' | 'b' | null = res.myEnum
       // const myRef: { id: number } = res.myRef
       const myRefs: { id: number }[] = res.myRefs
 
@@ -194,7 +201,7 @@ await test.skip('query types', async (t) => {
 
       // Missing
       // @ts-expect-error
-      const myEnum: 'a' | 'b' = res.myEnum
+      const myEnum: 'a' | 'b' | null = res.myEnum
     }
   }
 
@@ -219,29 +226,26 @@ await test.skip('query types', async (t) => {
     const query = db.query('everything', 1).include('*', 'myRefs')
     const data = await query.get()
 
-    // if ('n' in data) {
-    //   // Check it's a single item (not array)
-    //   const n: number = data.n
-    //   const myRefs: { id: number }[] = data.myRefs
+    if (data) {
+      // Check it's a single item (not array)
+      const n: number = data.n
+      const myRefs: { id: number }[] = data.myRefs
 
-    //   // @ts-expect-error
-    //   data.map
+      // @ts-expect-error
+      data.map
 
-    //   // @ts-expect-error
-    //   const myRef: number = data.myRef
-    // }
+      // @ts-expect-error
+      const myRef: number = data.myRef
+    }
   }
 
   {
-    const query = db
-      .query('everything', 1)
-      .include((select) => select('myRefs').include('isNice'))
+    const query = db.query('everything', 1).include((select) => select('myRef'))
     const data = await query.get()
-    // if ('myRefs' in data) {
-    //   for (const item of data.myRefs) {
-    //     const isNice: boolean = item.isNice
-    //   }
-    // }
+
+    if (data && data.myRef) {
+      const isNice: boolean = data.myRef.isNice
+    }
   }
 
   {
@@ -250,9 +254,19 @@ await test.skip('query types', async (t) => {
       .include((select) => select('backRefs').include('myEnum'))
     const data = await query.get()
 
-    // for (const { id, myEnum, nonExistent } of data.backRefs) {
-    //   console.log({ id, myEnum, nonExistent })
-    // }
+    if (data && data.backRefs) {
+      for (const item of data.backRefs) {
+        const id: number = item.id
+        const myEnum: 'a' | 'b' | null = item.myEnum
+
+        // @ts-expect-error
+        const nonExistent = item.nonExistent
+
+        // because we explicitly selected 'myEnum', 'n' should not be present
+        // @ts-expect-error
+        const n: number = item.n
+      }
+    }
   }
 
   {
@@ -307,22 +321,4 @@ await test.skip('query types', async (t) => {
       }
     }
   }
-})
-
-await test('query types', async (t) => {
-  const db = await testDb(t, {
-    types: {
-      user: {
-        isNice: 'boolean',
-        name: {
-          type: 'string',
-          required: true,
-        },
-      },
-    },
-  })
-
-  //   const id = await db.create('user', {
-  //     isNice: true,
-  //   })
 })

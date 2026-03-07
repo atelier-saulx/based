@@ -885,7 +885,8 @@ pub const FilterOpCompare = enum(u8) {
     // ----------
     like = 42,
     nlike = 43,
-    // batch later... important for search
+    likeBatch = 44,
+    nlikeBatch = 45,
     // ----------
 
     selectLargeRefs = 203,
@@ -904,11 +905,12 @@ pub const FilterOp = packed struct {
 };
 
 pub const FilterCondition = packed struct {
-    op: FilterOp, // this can become a u16 that holds the [OP,PROP_TYPE]
+    op: FilterOp,
     size: u32,
     prop: u8,
     start: u16,
     len: u8,
+    lang: LangCode,
     fieldSchema: Schema.FieldSchema,
     offset: u8,
 };

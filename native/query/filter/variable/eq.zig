@@ -6,7 +6,7 @@ const vectorLenU8 = std.simd.suggestVectorLength(u8) orelse 16;
 const MAX_FIXED_LEN = 64;
 
 pub fn eq(
-    query: []u8,
+    query: []const u8,
     value: []const u8,
 ) bool {
     var i: usize = 0;
@@ -46,7 +46,7 @@ pub fn eq(
 }
 
 pub fn eqBatch(
-    query: []u8,
+    query: []const u8,
     value: []const u8,
 ) bool {
     var i: usize = 0;

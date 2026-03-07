@@ -5,6 +5,7 @@ const Node = @import("../../selva/node.zig");
 const Schema = @import("../../selva/schema.zig");
 const Fields = @import("../../selva/fields.zig");
 const t = @import("../../types.zig");
+const Instruction = @import("instruction.zig");
 
 pub fn eqBatch(T: type, q: []u8, v: []const u8, i: usize, c: *t.FilterCondition) bool {
     const size = utils.sizeOf(T);
@@ -73,4 +74,29 @@ pub fn range(T: type, q: []u8, v: []const u8, i: usize, c: *t.FilterCondition) b
     // 3,8
     return (utils.readPtr(T, v, c.start).* -% utils.readPtr(T, q, i + @alignOf(T) - c.offset).*) <=
         utils.readPtr(T, q, i + (size * 2) - c.offset).*;
+}
+
+pub inline fn compare(
+    T: type,
+    comptime op: t.FilterOpCompare,
+    q: []u8,
+    v: []const u8,
+    index: usize,
+    c: *t.FilterCondition,
+) bool {
+    const meta = comptime Instruction.parseOp(op, false);
+    const res = switch (meta.func) {
+        // --------------------
+        .le => le(T, q, v, index, c),
+        .lt => lt(T, q, v, index, c),
+        .ge => ge(T, q, v, index, c),
+        .gt => gt(T, q, v, index, c),
+        // --------------------
+        .range => range(T, q, v, index, c),
+        // --------------------
+        .eq => eq(T, q, v, index, c),
+        .eqBatch => eqBatch(T, q, v, index, c),
+        .eqBatchSmall => eqBatchSmall(T, q, v, index, c),
+    };
+    return if (meta.invert) !res else res;
 }

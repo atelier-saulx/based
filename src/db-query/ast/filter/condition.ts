@@ -4,6 +4,8 @@ import {
   writeFilterCondition,
   PropTypeEnum,
   FilterOpCompareEnum as OpEnum,
+  LangCode,
+  LangCodeEnum,
 } from '../../../zigTsExports.js'
 
 export const conditionByteSize = (propSize: number, size: number) => {
@@ -15,6 +17,7 @@ export const createCondition = (
   op: OpEnum,
   size: number = prop.size,
   propSize: number = prop.size,
+  lang: LangCodeEnum = LangCode.none,
 ) => {
   const conditionBuffer = new Uint8Array(conditionByteSize(propSize, size))
   conditionBuffer[0] = 255 // Means condition header is not aligned
@@ -26,6 +29,7 @@ export const createCondition = (
           prop: prop.type,
           compare: op,
         },
+        lang,
         start: prop.start || 0,
         prop: prop.id,
         fieldSchema: 0,

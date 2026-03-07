@@ -4,7 +4,7 @@ const std = @import("std");
 
 fn Ctx(dataType: type) type {
     return struct {
-        query: []u8,
+        query: []const u8,
         notFirstBlock: bool,
         data: dataType,
     };
@@ -13,7 +13,7 @@ fn Ctx(dataType: type) type {
 fn Compare(comptime DataType: type) type {
     if (DataType == void) {
         return (fn (
-            query: []u8,
+            query: []const u8,
             value: []u8,
         ) bool);
     } else {
@@ -63,7 +63,7 @@ fn comptimeCb(
     };
 }
 
-fn createCtx(comptime DataType: type, query: []u8, data: DataType) Ctx(DataType) {
+fn createCtx(comptime DataType: type, query: []const u8, data: DataType) Ctx(DataType) {
     if (DataType == void) {
         return .{
             .query = query,
@@ -79,28 +79,26 @@ fn createCtx(comptime DataType: type, query: []u8, data: DataType) Ctx(DataType)
     }
 }
 
-pub inline fn decompress(
+pub fn decompress(
     thread: *Thread.Thread,
     comptime DataType: type,
     comptime compare: Compare(DataType),
-    query: []u8,
+    query: []const u8,
     value: []const u8,
     data: DataType,
 ) bool {
     var ctx: Ctx(DataType) = createCtx(DataType, query, data);
     var loop: bool = true;
     var hasMatch: c_int = 0;
-
     while (loop) {
         const result = deflate.decompressStream(
             thread.decompressor,
             &thread.libdeflateBlockState,
-            value[6 .. value.len - 4], //[6..value.len], // value.len - 10,
+            value[6 .. value.len - 4],
             comptimeCb(DataType, compare).func,
             @ptrCast(&ctx),
             &hasMatch,
         );
-
         loop = result == .insufficientSpace and
             deflate.blockStateGrowbuf(&thread.libdeflateBlockState);
     }

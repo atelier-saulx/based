@@ -10,7 +10,6 @@ const Fixed = @import("fixed.zig");
 const Variable = @import("./variable/variable.zig");
 const Thread = @import("../../thread/thread.zig");
 
-const Instruction = @import("instruction.zig");
 const COND_ALIGN_BYTES = @alignOf(t.FilterCondition);
 
 pub fn prepare(
@@ -85,47 +84,6 @@ pub fn recursionErrorBoundary(
     };
 }
 
-inline fn compare(
-    T: type,
-    comptime meta: Instruction.OpMeta,
-    q: []u8,
-    v: []const u8,
-    index: usize,
-    c: *t.FilterCondition,
-    comptime fixedLen: bool,
-    thread: *Thread.Thread,
-) bool {
-    const res = switch (meta.func) {
-        // --------------------
-        .le => Fixed.le(T, q, v, index, c),
-        .lt => Fixed.lt(T, q, v, index, c),
-        .ge => Fixed.ge(T, q, v, index, c),
-        .gt => Fixed.gt(T, q, v, index, c),
-        .range => Fixed.range(T, q, v, index, c),
-        // --------------------
-        .eq => Fixed.eq(T, q, v, index, c),
-        .eqBatch => Fixed.eqBatch(T, q, v, index, c),
-        .eqBatchSmall => Fixed.eqBatchSmall(T, q, v, index, c),
-        // --------------------
-        .eqCrc32 => Variable.eqCrc32(q, v, index, c),
-        .eqCrc32Batch => Variable.eqCrc32Batch(q, v, index, c),
-        // --------------------
-        // *Can be wrapped like crc32
-        .eqVar => Variable.parse(thread, q, v, index, c, fixedLen, Variable.eq),
-        .eqVarBatch => Variable.parse(thread, q, v, index, c, fixedLen, Variable.eqBatch),
-        // --------------------
-        .inc => Variable.parse(thread, q, v, index, c, fixedLen, Variable.inc),
-        .incLcase => Variable.parse(thread, q, v, index, c, fixedLen, Variable.incLcase),
-        .incLcaseFast => Variable.parse(thread, q, v, index, c, fixedLen, Variable.incLcaseFast),
-        .incBatch => Variable.parse(thread, q, v, index, c, fixedLen, Variable.incBatch),
-        .incBatchLcase => Variable.parse(thread, q, v, index, c, fixedLen, Variable.incBatchLcase),
-        .incBatchLcaseFast => Variable.parse(thread, q, v, index, c, fixedLen, Variable.incBatchLcaseFast),
-        // --------------------
-        .like => Variable.parse(thread, q, v, index, c, fixedLen, Variable.like),
-    };
-    return if (meta.invert) !res else res;
-}
-
 pub inline fn filter(
     node: Node.Node,
     ctx: *Query.QueryCtx,
@@ -171,16 +129,58 @@ pub inline fn filter(
             .selectSmallRefs, .selectLargeRefsEdge, .selectLargeRefEdge, .selectLargeRefs => blk: {
                 break :blk true;
             },
-            inline else => |op| blk: {
-                const meta = comptime Instruction.parseOp(op);
+            inline .eq,
+            .neq,
+            .eqBatch,
+            .neqBatch,
+            .eqBatchSmall,
+            .neqBatchSmall,
+            .range,
+            .nrange,
+            .le,
+            .lt,
+            .ge,
+            .gt,
+            => |op| blk: {
                 break :blk switch (c.op.prop) {
-                    .id, .uint32, .int32 => compare(u32, meta, q, v, index, c, false, ctx.thread),
-                    .uint16, .int16 => compare(u16, meta, q, v, index, c, false, ctx.thread),
-                    .number => compare(f64, meta, q, v, index, c, false, ctx.thread),
-                    .timestamp => compare(u64, meta, q, v, index, c, false, ctx.thread),
-                    .string, .json, .binary => compare(u8, meta, q, v, index, c, false, ctx.thread),
-                    .stringFixed, .jsonFixed, .binaryFixed => compare(u8, meta, q, v, index, c, true, ctx.thread),
-                    else => compare(u8, meta, q, v, index, c, false, ctx.thread),
+                    .id, .uint32, .int32 => Fixed.compare(u32, op, q, v, index, c),
+                    .uint16, .int16 => Fixed.compare(u16, op, q, v, index, c),
+                    .number => Fixed.compare(f64, op, q, v, index, c),
+                    .timestamp => Fixed.compare(u64, op, q, v, index, c),
+                    else => Fixed.compare(u8, op, q, v, index, c),
+                };
+            },
+            inline .eqCrc32,
+            .neqCrc32,
+            .eqCrc32Batch,
+            .neqCrc32Batch,
+            .eqVar,
+            .neqVar,
+            .eqVarBatch,
+            .neqVarBatch,
+            .inc,
+            .ninc,
+            .incLcase,
+            .nincLcase,
+            .incLcaseFast,
+            .nincLcaseFast,
+            .incBatch,
+            .nincBatch,
+            .incBatchLcase,
+            .nincBatchLcase,
+            .incBatchLcaseFast,
+            .nincBatchLcaseFast,
+            .like,
+            .nlike,
+            .likeBatch,
+            .nlikeBatch,
+            => |op| blk: {
+                @setEvalBranchQuota(2000);
+                break :blk switch (c.op.prop) {
+                    .string, .json, .binary => Variable.compare(.default, op, q, v, index, c, ctx.thread),
+                    .stringFixed, .jsonFixed, .binaryFixed => Variable.compare(.fixed, op, q, v, index, c, ctx.thread),
+                    .stringLocalized, .jsonLocalized => Variable.compare(.localized, op, q, v, index, c, ctx.thread),
+                    else => false,
                 };
             },
         };
