@@ -96,25 +96,31 @@ inline fn compare(
     thread: *Thread.Thread,
 ) bool {
     const res = switch (meta.func) {
-        .eq => Fixed.eq(T, q, v, index, c),
+        // --------------------
         .le => Fixed.le(T, q, v, index, c),
         .lt => Fixed.lt(T, q, v, index, c),
         .ge => Fixed.ge(T, q, v, index, c),
         .gt => Fixed.gt(T, q, v, index, c),
         .range => Fixed.range(T, q, v, index, c),
+        // --------------------
+        .eq => Fixed.eq(T, q, v, index, c),
         .eqBatch => Fixed.eqBatch(T, q, v, index, c),
         .eqBatchSmall => Fixed.eqBatchSmall(T, q, v, index, c),
+        // --------------------
         .eqCrc32 => Variable.eqCrc32(q, v, index, c),
         .eqCrc32Batch => Variable.eqCrc32Batch(q, v, index, c),
         // --------------------
-        // Can be wrapped like crc32
+        // *Can be wrapped like crc32
         .eqVar => Variable.parse(thread, q, v, index, c, fixedLen, Variable.eq),
         .eqVarBatch => Variable.parse(thread, q, v, index, c, fixedLen, Variable.eqBatch),
         // --------------------
         .inc => Variable.parse(thread, q, v, index, c, fixedLen, Variable.inc),
         .incLcase => Variable.parse(thread, q, v, index, c, fixedLen, Variable.incLcase),
         .incLcaseFast => Variable.parse(thread, q, v, index, c, fixedLen, Variable.incLcaseFast),
-
+        .incBatch => Variable.parse(thread, q, v, index, c, fixedLen, Variable.incBatch),
+        .incBatchLcase => Variable.parse(thread, q, v, index, c, fixedLen, Variable.incBatchLcase),
+        .incBatchLcaseFast => Variable.parse(thread, q, v, index, c, fixedLen, Variable.incBatchLcaseFast),
+        // --------------------
         .like => Variable.parse(thread, q, v, index, c, fixedLen, Variable.like),
     };
     return if (meta.invert) !res else res;

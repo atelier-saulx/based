@@ -3,7 +3,10 @@ import { PropDef } from '../../../schema/defs/index.js'
 import { debugBuffer } from '../../../sdk.js'
 import { canBitwiseLowerCase } from '../../../utils/canBitwiseLowerCase.js'
 import { combineToUint64, ENCODER, writeUint32 } from '../../../utils/uint8.js'
-import { FilterOpCompare as Op } from '../../../zigTsExports.js'
+import {
+  FilterOpCompareInverse,
+  FilterOpCompare as Op,
+} from '../../../zigTsExports.js'
 import { FilterOpts, Operator } from '../ast.js'
 import { createCondition } from './condition.js'
 import { isFixedLenString, operatorToEnum } from './operatorToEnum.js'
@@ -18,20 +21,8 @@ export const variableComparison = (
 ) => {
   let op = operatorToEnum(operator)
 
-  if (op === Op.eq || op === Op.neq) {
-    if (isFixedLenString(prop)) {
-      if (val.length > 1) {
-        op = op === Op.neq ? Op.neqVarBatch : Op.eqVarBatch
-      } else {
-        op = op === Op.neq ? Op.neqVar : Op.eqVar
-      }
-    } else if (prop.size === 0) {
-      if (val.length > 1) {
-        op = op === Op.neq ? Op.neqCrc32Batch : Op.eqCrc32Batch
-      } else {
-        op = op === Op.neq ? Op.neqCrc32 : Op.eqCrc32
-      }
-    }
+  for (const v of val) {
+    prop.validate(v)
   }
 
   if (op === Op.like || op === Op.nlike) {
@@ -42,14 +33,51 @@ export const variableComparison = (
     return condition
   }
 
+  if ((op === Op.inc || op === Op.ninc) && val.length > 1) {
+    const values: string[] = []
+    let size = 0
+    if (opts?.lowerCase) {
+      let canUseFast = true
+      for (const v of val) {
+        const value = v.toLowerCase().normalize('NFKD')
+        size += native.stringByteLength(value) + 4 // 4 extra for size
+        values.push(value)
+        if (!canBitwiseLowerCase(value)) {
+          canUseFast = false
+        }
+      }
+      if (canUseFast) {
+        op = Op.inc ? Op.incBatchLcaseFast : Op.nincBatchLcaseFast
+      } else {
+        op = Op.inc ? Op.incBatchLcase : Op.nincBatchLcase
+      }
+    } else {
+      for (const v of val) {
+        const value = v.normalize('NFKD')
+        size += native.stringByteLength(value) + 4 // 4 extra for size
+        values.push(value)
+      }
+      op = Op.inc ? Op.incBatch : Op.nincBatch
+    }
+    const { condition, offset } = createCondition(prop, op, size, 0)
+    let i = offset
+    for (const value of values) {
+      const size = ENCODER.encodeInto(value, condition.subarray(i + 4)).written
+      writeUint32(condition, size, i)
+      i += size + 4
+    }
+    return condition
+  }
+
   if (op === Op.inc || op === Op.ninc) {
+    // -------------------------------
     let value: string
     if (opts?.lowerCase) {
       value = val[0].toLowerCase().normalize('NFKD')
       if (canBitwiseLowerCase(value)) {
         op = Op.inc ? Op.incLcaseFast : Op.nincLcaseFast
       } else {
-        op = Op.ninc ? Op.incLcase : Op.nincLcase
+        op = Op.inc ? Op.incLcase : Op.nincLcase
       }
     } else {
       value = val[0].normalize('NFKD')
@@ -60,7 +88,31 @@ export const variableComparison = (
     return condition
   }
 
-  if (op === Op.eqVar || op === Op.neqVar) {
+  if (
+    (op === Op.eq || op === Op.neq) &&
+    isFixedLenString(prop) &&
+    val.length > 1
+  ) {
+    op = op === Op.eq ? Op.eqVarBatch : Op.neqVarBatch
+    let size = 0
+    const values: string[] = []
+    for (const v of val) {
+      const value = v.normalize('NFKD')
+      values.push(value)
+      size += native.stringByteLength(value) + 1 // 1 extra for string size
+    }
+    const { condition, offset } = createCondition(prop, op, size, 0)
+    let i = offset
+    for (const value of values) {
+      const size = ENCODER.encodeInto(value, condition.subarray(i + 1)).written
+      condition[i] = size
+      i += size + 1
+    }
+    return condition
+  }
+
+  if ((op === Op.eq || op === Op.neq) && isFixedLenString(prop)) {
+    op = op === Op.eq ? Op.eqVar : Op.neqVar
     const value = val[0].normalize('NFKD')
     const size = native.stringByteLength(value)
     const { condition, offset } = createCondition(prop, op, size, 0)
@@ -68,15 +120,8 @@ export const variableComparison = (
     return condition
   }
 
-  if (op === Op.eqCrc32 || op === Op.neqCrc32) {
-    const { condition, offset } = createCondition(prop, op, 8, 4)
-    const buf = ENCODER.encode(val[0].normalize('NFKD'))
-    writeUint32(condition, native.crc32(buf), offset)
-    writeUint32(condition, buf.byteLength, offset + 4)
-    return condition
-  }
-
-  if (op === Op.eqCrc32Batch || op === Op.neqCrc32Batch) {
+  if ((op === Op.eq || op === Op.neq) && val.length > 1) {
+    op = op === Op.eq ? Op.eqCrc32Batch : Op.neqCrc32Batch
     const propSize = 8
     const size = val.length * propSize
     const empty = VECTOR_BYTES - (size % VECTOR_BYTES)
@@ -100,21 +145,12 @@ export const variableComparison = (
     return condition
   }
 
-  if (op === Op.eqVarBatch || op === Op.neqVarBatch) {
-    let size = 0
-    const values: string[] = []
-    for (const v of val) {
-      const value = v.normalize('NFKD')
-      values.push(value)
-      size += native.stringByteLength(value) + 1 // 1 extra for string size
-    }
-    const { condition, offset } = createCondition(prop, op, size, 0)
-    let i = offset
-    for (const value of values) {
-      const size = ENCODER.encodeInto(value, condition.subarray(i + 1)).written
-      condition[i] = size
-      i += size + 1
-    }
+  if (op === Op.eq || op === Op.neq) {
+    op = op === Op.eq ? Op.eqCrc32 : Op.neqCrc32
+    const { condition, offset } = createCondition(prop, op, 8, 4)
+    const buf = ENCODER.encode(val[0].normalize('NFKD'))
+    writeUint32(condition, native.crc32(buf), offset)
+    writeUint32(condition, buf.byteLength, offset + 4)
     return condition
   }
 

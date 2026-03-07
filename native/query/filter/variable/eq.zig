@@ -49,12 +49,10 @@ pub fn eqBatch(
     query: []u8,
     value: []const u8,
 ) bool {
-    // this can be greatly optmized by making a smarter structure
-    var i: usize = 0; // len is not used now
+    var i: usize = 0;
     while (i < query.len) {
         const size = query[i];
-        const q = query[i + 1 .. i + 1 + size];
-        if (eq(q, value)) {
+        if (eq(query[i + 1 .. i + 1 + size], value)) {
             return true;
         }
         i += size + 1;
