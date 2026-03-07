@@ -27,15 +27,17 @@ export const variableComparison = (
 
   if ((op === Op.like || op === Op.nlike) && val.length > 1) {
     const values: string[] = []
-    let size = 0
+    let size = 1
     for (const v of val) {
       const value = v.normalize('NFKD')
       size += native.stringByteLength(value) + 4 // 4 extra for size
       values.push(value)
     }
     op = Op.like ? Op.likeBatch : Op.nlikeBatch
+    const minScore = opts?.score ?? 3
     const { condition, offset } = createCondition(prop, op, size, 0)
-    let i = offset
+    condition[offset] = minScore
+    let i = offset + 1
     for (const value of values) {
       const size = ENCODER.encodeInto(value, condition.subarray(i + 4)).written
       writeUint32(condition, size, i)
@@ -45,10 +47,12 @@ export const variableComparison = (
   }
 
   if (op === Op.like || op === Op.nlike) {
+    const minScore = opts?.score ?? 3
     const value = val[0].normalize('NFKD')
-    const size = native.stringByteLength(value)
+    const size = native.stringByteLength(value) + 1
     const { condition, offset } = createCondition(prop, op, size, 0)
-    ENCODER.encodeInto(value, condition.subarray(offset))
+    condition[offset] = minScore
+    ENCODER.encodeInto(value, condition.subarray(offset + 1))
     return condition
   }
 

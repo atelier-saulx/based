@@ -75,16 +75,16 @@ pub fn incBatchLcaseFast(query: []const u8, value: []const u8) bool {
 // ---- Like --------
 
 pub fn like(query: []const u8, value: []const u8) bool {
-    // for search it passes a number might add a comptime var
-    const bla = likeInner(3, query, value);
-    return bla < 4; // make this config first number in query
+    const minScore = query[0];
+    return likeInner(minScore, query, value) <= minScore;
 }
 
 pub fn likeBatch(query: []const u8, value: []const u8) bool {
-    var i: usize = 0;
+    const minScore = query[0];
+    var i: usize = 1;
     while (i < query.len) {
         const size = utils.read(u32, query, i);
-        if (likeInner(3, query[i + 4 .. i + 4 + size], value) < 4) {
+        if (likeInner(minScore, query[i + 4 .. i + 4 + size], value) <= minScore) {
             return true;
         }
         i += size + 4;
