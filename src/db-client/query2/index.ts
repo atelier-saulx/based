@@ -26,11 +26,11 @@ class Query<
   S extends { types: any; locales?: any } = { types: any },
   T extends keyof S['types'] = any,
   K extends
-    | keyof ResolvedProps<S['types'], T>
-    | '*'
-    | '**'
-    | { field: any; select: any }
-    | string = '*', // Allow string for potential dot paths
+  | keyof ResolvedProps<S['types'], T>
+  | '*'
+  | '**'
+  | { field: any; select: any }
+  | string = '*', // Allow string for potential dot paths
   IsSingle extends boolean = false,
   SourceField extends string | number | symbol | undefined = undefined,
   IsRoot extends boolean = false,
@@ -45,7 +45,7 @@ class Query<
 
   locale<
     L extends string &
-      (S['locales'] extends Record<string, any> ? keyof S['locales'] : string),
+    (S['locales'] extends Record<string, any> ? keyof S['locales'] : string),
   >(
     locale: L,
   ): NextBranch<
@@ -358,7 +358,7 @@ class Query<
     IsRoot,
     EdgeProps,
     Aggregate &
-      UnionToIntersection<ExpandDotPath<P, { max: InferPathType<S, T, P> }>>,
+    UnionToIntersection<ExpandDotPath<P, { max: InferPathType<S, T, P> }>>,
     GroupedKey
   >
   max(
@@ -400,7 +400,7 @@ class Query<
     IsRoot,
     EdgeProps,
     Aggregate &
-      UnionToIntersection<ExpandDotPath<P, { min: InferPathType<S, T, P> }>>,
+    UnionToIntersection<ExpandDotPath<P, { min: InferPathType<S, T, P> }>>,
     GroupedKey
   >
   min(
@@ -582,8 +582,7 @@ class Query<
   }
 
   groupBy<P extends string>(
-    prop: P,
-    step?: StepInput,
+    ...args: (P | StepInput)[]
   ): NextBranch<
     S,
     T,
@@ -595,23 +594,32 @@ class Query<
     Aggregate,
     P
   > {
-    const parts = prop.split('.')
-    let target = this.ast
-    let field: string = prop
-    if (parts.length > 1) {
-      field = parts.pop()!
-      target = traverse(this.ast, parts.join('.'))
-    }
-    target.groupBy = { prop: field as any }
-    if (step) {
-      if (typeof step === 'object') {
-        const s = step as any
-        if (s.step) target.groupBy.step = s.step
-        if (s.timeZone) target.groupBy.timeZone = s.timeZone
-        if (s.display) target.groupBy.display = s.display
-      } else {
-        target.groupBy.step = step
+    const lastArg = args[args.length - 1]
+    const lastArgIsStep = typeof lastArg === 'object' || typeof lastArg === 'number'
+    const fields = (lastArgIsStep ? args.slice(0, -1) : args) as string[]
+    const step = lastArgIsStep ? (lastArg as StepInput) : undefined
+
+    for (const prop of fields) {
+      const parts = prop.split('.')
+      let target = this.ast
+      let field: string = prop
+      if (parts.length > 1) {
+        field = parts.pop()!
+        target = traverse(this.ast, parts.join('.'))
       }
+      target.groupBy ??= []
+      const entry: any = { prop: field }
+      if (step) {
+        if (typeof step === 'object') {
+          const s = step as any
+          if (s.step) entry.step = s.step
+          if (s.timeZone) entry.timeZone = s.timeZone
+          if (s.display) entry.display = s.display
+        } else {
+          entry.step = step
+        }
+      }
+      target.groupBy.push(entry)
     }
     return this as any
   }
@@ -631,7 +639,7 @@ class Query<
           : (this.#filterGroup!.and ??= {})
         const branch = new Query(target)
         branch.#filterGroup = target
-        ;(branch.filter as any)(...args)
+          ; (branch.filter as any)(...args)
         return branch
       })
       return this as any
@@ -677,11 +685,11 @@ export class BasedQuery2<
   S extends { types: any; locales?: any } = { types: any },
   T extends keyof S['types'] = any,
   K extends
-    | keyof ResolvedProps<S['types'], T>
-    | '*'
-    | '**'
-    | { field: any; select: any }
-    | string = '*',
+  | keyof ResolvedProps<S['types'], T>
+  | '*'
+  | '**'
+  | { field: any; select: any }
+  | string = '*',
   IsSingle extends boolean = false,
   Aggregate = {},
   GroupedKey extends string | undefined = undefined,
@@ -700,16 +708,16 @@ export class BasedQuery2<
   db: DbClient
   async get(): Promise<
     [GroupedKey] extends [string]
-      ? Record<string, Aggregate>
-      : [keyof Aggregate] extends [never]
-        ? IsSingle extends true
-          ? PickOutput<
-              S,
-              T,
-              ResolveInclude<ResolvedProps<S['types'], T>, K>
-            > | null
-          : PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>[]
-        : Aggregate
+    ? Record<string, Aggregate>
+    : [keyof Aggregate] extends [never]
+    ? IsSingle extends true
+    ? PickOutput<
+      S,
+      T,
+      ResolveInclude<ResolvedProps<S['types'], T>, K>
+    > | null
+    : PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>[]
+    : Aggregate
   > {
     if (
       !this.ast.props &&
@@ -794,20 +802,20 @@ type SelectFn<
 ) => Query<
   S,
   ResolvedProps<S['types'], T>[P] extends { ref: infer R extends string }
-    ? R
-    : ResolvedProps<S['types'], T>[P] extends {
-          items: { ref: infer R extends string }
-        }
-      ? R
-      : never,
+  ? R
+  : ResolvedProps<S['types'], T>[P] extends {
+    items: { ref: infer R extends string }
+  }
+  ? R
+  : never,
   '*',
   false,
   P,
   false,
   FilterEdges<ResolvedProps<S['types'], T>[P]> &
-    (ResolvedProps<S['types'], T>[P] extends { items: infer Items }
-      ? FilterEdges<Items>
-      : {})
+  (ResolvedProps<S['types'], T>[P] extends { items: infer Items }
+    ? FilterEdges<Items>
+    : {})
 >
 
 // ResolveIncludeArgs needs to stay here because it refers to Query
@@ -825,16 +833,16 @@ export type ResolveIncludeArgs<T> = T extends (
   infer GroupedKey
 >
   ? [GroupedKey] extends [string]
-    ? {
-        field: SourceField
-        select: { _aggregate: Record<string, Aggregate> }
-      }
-    : [keyof Aggregate] extends [never]
-      ? { field: SourceField; select: K }
-      : { field: SourceField; select: { _aggregate: Aggregate } }
+  ? {
+    field: SourceField
+    select: { _aggregate: Record<string, Aggregate> }
+  }
+  : [keyof Aggregate] extends [never]
+  ? { field: SourceField; select: K }
+  : { field: SourceField; select: { _aggregate: Aggregate } }
   : T extends string
-    ? ResolveDotPath<T>
-    : T
+  ? ResolveDotPath<T>
+  : T
 
 // ResolveAggregate extracts the aggregate structure from a callback function
 type ResolveAggregate<T> =
@@ -842,8 +850,8 @@ type ResolveAggregate<T> =
     field: infer F extends string | number | symbol
     select: { _aggregate: infer A }
   }
-    ? { [K in F]: A }
-    : never
+  ? { [K in F]: A }
+  : never
 
 // Helper type to simplify include signature
 type AnyQuery<S extends { types: any; locales?: any }> = Query<
@@ -863,11 +871,11 @@ type NextBranch<
   S extends { types: any; locales?: any },
   T extends keyof S['types'],
   K extends
-    | keyof ResolvedProps<S['types'], T>
-    | '*'
-    | '**'
-    | { field: any; select: any }
-    | string,
+  | keyof ResolvedProps<S['types'], T>
+  | '*'
+  | '**'
+  | { field: any; select: any }
+  | string,
   IsSingle extends boolean,
   SourceField extends string | number | symbol | undefined,
   IsRoot extends boolean,
@@ -877,16 +885,16 @@ type NextBranch<
 > = IsRoot extends true
   ? BasedQuery2<S, T, K, IsSingle, Aggregate, GroupedKey>
   : Query<
-      S,
-      T,
-      K,
-      IsSingle,
-      SourceField,
-      IsRoot,
-      EdgeProps,
-      Aggregate,
-      GroupedKey
-    >
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate,
+    GroupedKey
+  >
 
 function traverse(target: any, prop: string) {
   const path = prop.split('.')

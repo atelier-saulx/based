@@ -55,7 +55,7 @@ export type ReaderPropDef = {
 
 export type ReaderAggregateSchema = {
   aggregates: ReaderAggregates[]
-  groupBy?: ReaderGroupBy
+  groupBy?: ReaderGroupBy[]
   totalResultsSize: number
 }
 export type ReaderAggregates = {

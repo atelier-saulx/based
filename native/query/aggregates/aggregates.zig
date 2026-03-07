@@ -23,6 +23,7 @@ pub const AggCtx = struct {
     resultsSize: usize = 0,
     hadAccumulated: bool = false,
     totalResultsSize: usize = 0,
+    groupByCount: u4 = 1,
 };
 
 pub fn iterator(

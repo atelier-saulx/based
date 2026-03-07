@@ -49,7 +49,7 @@ export const pushAggregatesQuery = (
     accumulator: 0,
   }
 
-  const { hasGroupBy, isEdge: groupByHasEdges } = pushGroupBy(
+  const { groupByCount, isEdge: groupByHasEdges } = pushGroupBy(
     ast,
     ctx,
     typeDef,
@@ -67,7 +67,7 @@ export const pushAggregatesQuery = (
     ast,
     typeDef,
     filterSize,
-    hasGroupBy,
+    groupByCount,
     hasEdges,
     sizes,
     asReference,
@@ -96,7 +96,7 @@ const buildAggregateHeader = (
   ast: QueryAst,
   typeDef: TypeDef,
   filterSize: number,
-  hasGroupBy: boolean,
+  groupByCount: number,
   hasEdges: boolean,
   sizes: Sizes,
   asReference?: PropDef,
@@ -107,7 +107,7 @@ const buildAggregateHeader = (
   const commonHeader = {
     offset: rangeStart,
     filterSize,
-    hasGroupBy,
+    groupByCount,
     resultsSize: sizes.result,
     accumulatorSize: sizes.accumulator,
     isSamplingSet: checkSamplingMode(ast),
@@ -116,7 +116,7 @@ const buildAggregateHeader = (
   if (asReference) {
     let iteratorType = QueryIteratorType.aggregate
     if (hasEdges) iteratorType += 4
-    if (hasGroupBy) iteratorType += 2
+    if (groupByCount > 0) iteratorType += 2
     if (filterSize > 0) iteratorType += 1
 
     return createAggRefsHeader({
@@ -135,7 +135,7 @@ const buildAggregateHeader = (
 
   let iteratorType = QueryIteratorType.aggregate
   if (hasEdges) iteratorType += 4
-  if (hasGroupBy) iteratorType += 2
+  if (groupByCount > 0) iteratorType += 2
   if (filterSize > 0) iteratorType += 1
 
   headerBuffer = createAggHeader({
@@ -223,52 +223,58 @@ const pushGroupBy = (
   typeDef: TypeDef,
   sizes: Sizes,
   asReference?: PropDef,
-): { hasGroupBy: boolean; isEdge: boolean } => {
-  if (!ast.groupBy) return { hasGroupBy: false, isEdge: false }
+): { groupByCount: number; isEdge: boolean } => {
+  if (!ast.groupBy || ast.groupBy.length === 0) return { groupByCount: 0, isEdge: false }
 
-  const { prop: propName, step, timeZone, display } = ast.groupBy
-  const { propDef, isEdge } = resolveProp(typeDef, propName, asReference)
+  let hasEdge = false
 
-  if (!propDef) {
-    throw new Error(`Group By property '${propName}' not found in AST.`)
-  }
+  ctx.readSchema.aggregate!.groupBy = []
 
-  const { stepType, stepRange } = step
-    ? parseStep(step)
-    : { stepType: 0, stepRange: 0 }
+  for (const gb of ast.groupBy) {
+    const { prop: propName, step, timeZone, display } = gb
+    const { propDef, isEdge } = resolveProp(typeDef, propName, asReference)
 
-  const timeZoneOffset = timeZone ? getTimeZoneOffsetInMinutes(timeZone) : 0
+    if (!propDef) {
+      throw new Error(`Group By property '${propName}' not found in AST.`)
+    }
 
-  const buffer = createGroupByKeyProp({
-    propId: propDef.id,
-    propType: propDef.type || 0,
-    propDefStart: propDef.start || 0,
-    stepType,
-    stepRange,
-    timezone: timeZoneOffset,
-    isEdge,
-  })
+    if (isEdge) hasEdge = true
 
-  let enumProxy
-  if (propDef.type === PropType.enum) {
-    // @ts-ignore
-    enumProxy = Object.values(propDef.enum)
-  }
+    const { stepType, stepRange } = step
+      ? parseStep(step)
+      : { stepType: 0, stepRange: 0 }
 
-  ctx.query.data.set(buffer, ctx.query.length)
-  ctx.query.length += GroupByKeyPropByteSize
+    const timeZoneOffset = timeZone ? getTimeZoneOffsetInMinutes(timeZone) : 0
 
-  if (ctx.readSchema.aggregate) {
-    ctx.readSchema.aggregate.groupBy = {
+    const buffer = createGroupByKeyProp({
+      propId: propDef.id,
+      propType: propDef.type || 0,
+      propDefStart: propDef.start || 0,
+      stepType,
+      stepRange,
+      timezone: timeZoneOffset,
+      isEdge,
+    })
+
+    let enumProxy
+    if (propDef.type === PropType.enum) {
+      // @ts-ignore
+      enumProxy = Object.values(propDef.enum)
+    }
+
+    ctx.query.data.set(buffer, ctx.query.length)
+    ctx.query.length += GroupByKeyPropByteSize
+
+    ctx.readSchema.aggregate!.groupBy.push({
       typeIndex: propDef.type,
       stepRange,
       ...(stepType !== 0 && { stepType: IntervalInverse[stepType] }),
       ...(display !== undefined && { display }),
       ...(enumProxy !== undefined && { enum: enumProxy }),
-    }
+    })
   }
 
-  return { hasGroupBy: true, isEdge }
+  return { groupByCount: ast.groupBy.length, isEdge: hasEdge }
 }
 
 type Step = { stepType: number; stepRange: number }

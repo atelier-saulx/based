@@ -51,6 +51,7 @@ pub inline fn aggregateRefsProps(
             .isSamplingSet = header.isSamplingSet,
             .accumulatorSize = header.accumulatorSize,
             .resultsSize = header.resultsSize,
+            .groupByCount = header.groupByCount,
         };
 
         try executeAggRefs(ctx, q, i, header, hasFilter, filter, &aggCtx, &it, accumulatorProp);
@@ -64,11 +65,12 @@ pub inline fn aggregateRefsProps(
             .queryCtx = ctx,
             .typeEntry = it.dstType,
             .edgeTypeEntry = null,
-            .limit = std.math.maxInt(u32), // unlimited in branched queries
+            .limit = std.math.maxInt(u32),
             .hllAccumulator = hllAccumulator,
             .isSamplingSet = header.isSamplingSet,
             .accumulatorSize = header.accumulatorSize,
             .resultsSize = header.resultsSize,
+            .groupByCount = header.groupByCount,
         };
 
         try executeAggRefs(ctx, q, i, header, hasFilter, filter, &aggCtx, &it, accumulatorProp);
@@ -86,7 +88,7 @@ inline fn executeAggRefs(
     it: anytype,
     accumulatorProp: []u8,
 ) !void {
-    if (header.hasGroupBy) {
+    if (header.groupByCount > 0) {
         var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
         defer groupByHashMap.deinit();
 

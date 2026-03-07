@@ -262,15 +262,22 @@ export class QueryBranch<T> {
   //   return this
   // }
 
-  groupBy(field: string, step?: StepInput): T {
+  groupBy(...args: (string | StepInput)[]): T {
     if (this.queryCommands) {
       // query def
       this.queryCommands.push({
         method: 'groupBy',
-        args: [field, step],
+        args,
       })
     } else {
-      groupBy(this, field, step)
+      const lastArg = args[args.length - 1]
+      const lastArgIsStep = typeof lastArg === 'object' || typeof lastArg === 'number'
+      const fields = (lastArgIsStep ? args.slice(0, -1) : args) as string[]
+      const step = lastArgIsStep ? (lastArg as StepInput) : undefined
+
+      for (const field of fields) {
+        groupBy(this, field, step)
+      }
     }
     // only works with aggregates for now
     // @ts-ignore
@@ -519,7 +526,7 @@ export class QueryBranch<T> {
   }
 }
 
-export class BasedDbReferenceQuery extends QueryBranch<BasedDbReferenceQuery> {}
+export class BasedDbReferenceQuery extends QueryBranch<BasedDbReferenceQuery> { }
 
 const resToJSON = (
   res: BasedQueryResponse,
@@ -702,7 +709,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
           fallBacks === undefined
             ? []
             : // @ts-ignore
-              fallBacks.map((code: LangCodeEnum) => LangCode[code]),
+            fallBacks.map((code: LangCodeEnum) => LangCode[code]),
       }
     }
     return this
@@ -723,9 +730,9 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
         }
       },
       onError ??
-        ((err) => {
-          console.error(err)
-        }),
+      ((err) => {
+        console.error(err)
+      }),
     )
   }
 }

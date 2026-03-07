@@ -14,6 +14,9 @@ const Aggregates = @import("aggregates.zig");
 const GroupByHashMap = @import("hashMap.zig").GroupByHashMap;
 const filter = @import("../filter/filter.zig").filter;
 
+const MAX_GROUP_BY_KEYS = 15;
+const MAX_COMPOSITE_KEY_SIZE = 256;
+
 pub fn iterator(
     aggCtx: *Aggregates.AggCtx,
     groupByHashMap: *GroupByHashMap,
@@ -80,7 +83,56 @@ inline fn getGrouByKeyValue(
     return key;
 }
 
-inline fn aggregatePropsWithGroupBy(
+inline fn buildCompositeKey(
+    keyDefs: []const t.GroupByKeyProp,
+    node: Node.Node,
+    edgeNode: ?Node.Node,
+    aggCtx: *Aggregates.AggCtx,
+    compositeKeyBuf: *[MAX_COMPOSITE_KEY_SIZE]u8,
+) ?[]u8 {
+    var offset: usize = 0;
+
+    for (keyDefs) |keyDef| {
+        var keyNode = node;
+        var keyTypeEntry = aggCtx.typeEntry;
+        if (keyDef.isEdge) {
+            if (edgeNode) |en| {
+                keyNode = en;
+                if (aggCtx.edgeTypeEntry) |ete| {
+                    keyTypeEntry = ete;
+                }
+            } else {
+                return null;
+            }
+        }
+
+        const propSchema = Schema.getFieldSchema(keyTypeEntry, keyDef.propId) catch {
+            return null;
+        };
+
+        const keyValue = Fields.get(
+            keyTypeEntry,
+            keyNode,
+            propSchema,
+            keyDef.propType,
+        );
+
+        const key = getGrouByKeyValue(keyValue, keyDef);
+
+        // write key length (u16) + key bytes into composite buffer
+        const keyLen: u16 = @intCast(key.len);
+        if (offset + 2 + key.len > MAX_COMPOSITE_KEY_SIZE) return null;
+        compositeKeyBuf[offset] = @truncate(keyLen);
+        compositeKeyBuf[offset + 1] = @truncate(keyLen >> 8);
+        offset += 2;
+        @memcpy(compositeKeyBuf[offset .. offset + key.len], key);
+        offset += key.len;
+    }
+
+    return compositeKeyBuf[0..offset];
+}
+
+fn aggregatePropsWithGroupBy(
     groupByHashMap: *GroupByHashMap,
     node: Node.Node,
     edgeNode: ?Node.Node,
@@ -90,47 +142,78 @@ inline fn aggregatePropsWithGroupBy(
     if (aggDefs.len == 0) return;
 
     var i: usize = 0;
-    const currentKeyPropDef = utils.readNext(t.GroupByKeyProp, aggDefs, &i);
 
-    var keyValue: []u8 = undefined;
+    // read groupByCount from the header (already parsed, passed via aggDefs layout)
+    // the first N GroupByKeyProp entries are at the start of aggDefs
+    const groupByCount = aggCtx.groupByCount;
 
-    var keyNode = node;
-    var keyTypeEntry = aggCtx.typeEntry;
-    if (currentKeyPropDef.isEdge) {
-        if (edgeNode) |en| {
-            keyNode = en;
-            if (aggCtx.edgeTypeEntry) |ete| {
-                keyTypeEntry = ete;
+    if (groupByCount <= 1) {
+        // single key fast path (original behavior)
+        const currentKeyPropDef = utils.readNext(t.GroupByKeyProp, aggDefs, &i);
+
+        var keyNode = node;
+        var keyTypeEntry = aggCtx.typeEntry;
+        if (currentKeyPropDef.isEdge) {
+            if (edgeNode) |en| {
+                keyNode = en;
+                if (aggCtx.edgeTypeEntry) |ete| {
+                    keyTypeEntry = ete;
+                }
+            } else {
+                return;
             }
-        } else {
-            return;
         }
+        const propSchema = Schema.getFieldSchema(keyTypeEntry, currentKeyPropDef.propId) catch {
+            return;
+        };
+
+        const keyValue = Fields.get(
+            keyTypeEntry,
+            keyNode,
+            propSchema,
+            currentKeyPropDef.propType,
+        );
+
+        const key = getGrouByKeyValue(keyValue, currentKeyPropDef);
+        const hash_map_entry = if (currentKeyPropDef.propType == t.PropType.timestamp and currentKeyPropDef.stepRange != 0)
+            try groupByHashMap.getOrInsertWithRange(key, aggCtx.accumulatorSize, currentKeyPropDef.stepRange)
+        else
+            try groupByHashMap.getOrInsert(key, aggCtx.accumulatorSize);
+
+        const accumulatorProp = hash_map_entry.value;
+        aggCtx.hadAccumulated = !hash_map_entry.is_new;
+        if (hash_map_entry.is_new) {
+            aggCtx.totalResultsSize += 2 + key.len + aggCtx.resultsSize;
+        }
+
+        Aggregates.aggregateProps(node, edgeNode, aggDefs[i..], accumulatorProp, aggCtx);
+    } else {
+        // multi-key path: read N key defs, build composite key
+        var keyDefs: [MAX_GROUP_BY_KEYS]t.GroupByKeyProp = undefined;
+        for (0..groupByCount) |k| {
+            keyDefs[k] = utils.readNext(t.GroupByKeyProp, aggDefs, &i);
+        }
+
+        var compositeKeyBuf: [MAX_COMPOSITE_KEY_SIZE]u8 = undefined;
+        const compositeKey = buildCompositeKey(
+            keyDefs[0..groupByCount],
+            node,
+            edgeNode,
+            aggCtx,
+            &compositeKeyBuf,
+        ) orelse return;
+
+        const hash_map_entry = try groupByHashMap.getOrInsert(compositeKey, aggCtx.accumulatorSize);
+
+        const accumulatorProp = hash_map_entry.value;
+        aggCtx.hadAccumulated = !hash_map_entry.is_new;
+        if (hash_map_entry.is_new) {
+            // totalResultsSize: each sub-key emits [len:u16][bytes], plus the agg results
+            aggCtx.totalResultsSize += compositeKey.len + aggCtx.resultsSize;
+        }
+
+        Aggregates.aggregateProps(node, edgeNode, aggDefs[i..], accumulatorProp, aggCtx);
     }
-    const propSchema = Schema.getFieldSchema(keyTypeEntry, currentKeyPropDef.propId) catch {
-        i += utils.sizeOf(t.GroupByKeyProp);
-        return;
-    };
-
-    keyValue = Fields.get(
-        keyTypeEntry,
-        keyNode,
-        propSchema,
-        currentKeyPropDef.propType,
-    );
-
-    const key = getGrouByKeyValue(keyValue, currentKeyPropDef);
-    const hash_map_entry = if (currentKeyPropDef.propType == t.PropType.timestamp and currentKeyPropDef.stepRange != 0)
-        try groupByHashMap.getOrInsertWithRange(key, aggCtx.accumulatorSize, currentKeyPropDef.stepRange)
-    else
-        try groupByHashMap.getOrInsert(key, aggCtx.accumulatorSize);
-
-    const accumulatorProp = hash_map_entry.value;
-    aggCtx.hadAccumulated = !hash_map_entry.is_new;
-    if (hash_map_entry.is_new) {
-        aggCtx.totalResultsSize += 2 + key.len + aggCtx.resultsSize;
-    }
-
-    Aggregates.aggregateProps(node, edgeNode, aggDefs[i..], accumulatorProp, aggCtx);
 }
 
 pub inline fn finalizeGroupResults(
@@ -139,18 +222,28 @@ pub inline fn finalizeGroupResults(
     aggDefs: []u8,
 ) !void {
     var it = groupByHashMap.iterator();
+    const groupByKeyPropSize = @bitSizeOf(t.GroupByKeyProp) / 8;
+    const skipBytes = groupByKeyPropSize * aggCtx.groupByCount;
 
     while (it.next()) |entry| {
         const key = entry.key_ptr.*;
-        const keyLen: u16 = @intCast(key.len);
+
         if (key.len > 0) {
-            try aggCtx.queryCtx.thread.query.append(keyLen);
-            try aggCtx.queryCtx.thread.query.append(key);
+            if (aggCtx.groupByCount <= 1) {
+                // single key: emit [keyLen:u16][keyBytes]
+                const keyLen: u16 = @intCast(key.len);
+                try aggCtx.queryCtx.thread.query.append(keyLen);
+                try aggCtx.queryCtx.thread.query.append(key);
+            } else {
+                // multi-key: the composite key already has [len:u16][bytes] segments
+                // emit the composite key as-is (each segment is already length-prefixed)
+                try aggCtx.queryCtx.thread.query.append(key);
+            }
         }
 
         const accumulatorProp = entry.value_ptr.*;
 
-        try Aggregates.finalizeResults(aggCtx, aggDefs, accumulatorProp, @bitSizeOf(t.GroupByKeyProp) / 8);
+        try Aggregates.finalizeResults(aggCtx, aggDefs, accumulatorProp, skipBytes);
     }
 }
 
@@ -160,18 +253,24 @@ pub inline fn finalizeRefsGroupResults(
     aggDefs: []u8,
 ) !void {
     var it = groupByHashMap.iterator();
+    const groupByKeyPropSize = @bitSizeOf(t.GroupByKeyProp) / 8;
+    const skipBytes = groupByKeyPropSize * aggCtx.groupByCount;
 
     while (it.next()) |entry| {
         const key = entry.key_ptr.*;
-        const keyLen: u16 = @intCast(key.len);
 
         if (key.len > 0) {
-            try aggCtx.queryCtx.thread.query.append(keyLen);
-            try aggCtx.queryCtx.thread.query.append(key);
+            if (aggCtx.groupByCount <= 1) {
+                const keyLen: u16 = @intCast(key.len);
+                try aggCtx.queryCtx.thread.query.append(keyLen);
+                try aggCtx.queryCtx.thread.query.append(key);
+            } else {
+                try aggCtx.queryCtx.thread.query.append(key);
+            }
         }
 
         const accumulatorProp = entry.value_ptr.*;
 
-        try Aggregates.finalizeResults(aggCtx, aggDefs, accumulatorProp, @bitSizeOf(t.GroupByKeyProp) / 8);
+        try Aggregates.finalizeResults(aggCtx, aggDefs, accumulatorProp, skipBytes);
     }
 }

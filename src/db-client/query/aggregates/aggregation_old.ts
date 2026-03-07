@@ -1,5 +1,5 @@
 import { writeUint16, writeInt16, writeUint32 } from '../../../utils/index.js'
-import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
+import { QueryDef, QueryDefAggregation, QueryDefType, aggPropDef } from '../types.js'
 import { GroupBy, StepInput, aggFnOptions, setMode } from './types.js'
 import {
   aggregationFieldDoesNotExist,
@@ -59,14 +59,17 @@ export const groupBy = (
     ensureAggregate(def)
   }
   const aggregate = def.aggregate!
-  if (!aggregate.groupBy) {
-    aggregate.size += 13 // field, srcPropType, start, len, stepType, stepRange, timezone
+  if (!aggregate.groupBys) {
+    aggregate.groupBys = []
   }
-  aggregate.groupBy = fieldDef
-  aggregate.groupBy.stepRange = undefined
-  aggregate.groupBy.stepType = undefined
-  aggregate.groupBy.tz = undefined
-  aggregate.groupBy.display = undefined
+
+  const groupByEntry: aggPropDef = {
+    ...fieldDef,
+    stepRange: undefined,
+    stepType: undefined,
+    tz: undefined,
+    display: undefined,
+  }
 
   if (
     typeof StepInput === 'object' &&
@@ -74,25 +77,35 @@ export const groupBy = (
     'step' in StepInput
   ) {
     if (typeof StepInput.timeZone == 'string') {
-      aggregate.groupBy.tz = getTimeZoneOffsetInMinutes(StepInput.timeZone)
+      groupByEntry.tz = getTimeZoneOffsetInMinutes(StepInput.timeZone)
     }
     if (typeof StepInput?.step == 'string') {
       const intervalEnumKey = StepInput.step as IntervalString
-      aggregate.groupBy.stepType = Interval[intervalEnumKey]
+      groupByEntry.stepType = Interval[intervalEnumKey]
     } else {
       validateStepRange(def, StepInput?.step!)
-      aggregate.groupBy.stepRange = StepInput.step
+      groupByEntry.stepRange = StepInput.step
     }
   } else if (typeof StepInput == 'number') {
     validateStepRange(def, StepInput)
-    aggregate.groupBy.stepRange = StepInput
+    groupByEntry.stepRange = StepInput
   } else {
     const intervalEnumKey = StepInput as IntervalString
-    aggregate.groupBy.stepType = Interval[intervalEnumKey]
+    groupByEntry.stepType = Interval[intervalEnumKey]
   }
   if (typeof StepInput === 'object' && StepInput?.display) {
-    aggregate.groupBy.display = StepInput?.display
+    groupByEntry.display = StepInput?.display
   }
+
+  // Only add size for the first groupBy entry
+  if (aggregate.groupBys.length === 0) {
+    aggregate.size += 13 // field, srcPropType, start, len, stepType, stepRange, timezone
+  } else {
+    aggregate.size += 13
+  }
+  aggregate.groupBys.push(groupByEntry)
+  // Keep backward compat: set groupBy to the first entry
+  aggregate.groupBy = aggregate.groupBys[0]
 }
 
 const updateAggregateDefs = (

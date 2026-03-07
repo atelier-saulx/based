@@ -5,10 +5,10 @@ import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 export type FilterOpts = {
   lowerCase?: boolean
   fn?:
-    | 'dotProduct'
-    | 'manhattanDistance'
-    | 'cosineSimilarity'
-    | 'euclideanDistance'
+  | 'dotProduct'
+  | 'manhattanDistance'
+  | 'cosineSimilarity'
+  | 'euclideanDistance'
   score?: number
 }
 
@@ -91,13 +91,13 @@ export type QueryAst = {
   min?: { props: string[] }
   stddev?: { props: string[]; samplingMode?: 'sample' | 'population' }
   variance?: { props: string[]; samplingMode?: 'sample' | 'population' }
-  groupBy?: {
+  groupBy?: Array<{
     prop: string
     step?: number | IntervalString
     timeZone?: string
     display?: Intl.DateTimeFormat
     enum?: string[]
-  }
+  }>
 }
 
 export type Ctx = {

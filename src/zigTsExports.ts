@@ -3466,7 +3466,7 @@ export type AggHeader = {
   iteratorType: QueryIteratorTypeEnum
   resultsSize: number
   accumulatorSize: number
-  hasGroupBy: boolean
+  groupByCount: number
   isSamplingSet: boolean
 }
 
@@ -3496,9 +3496,9 @@ export const writeAggHeader = (
   writeUint16(buf, Number(header.accumulatorSize), offset)
   offset += 2
   buf[offset] = 0
-  buf[offset] |= (((header.hasGroupBy ? 1 : 0) >>> 0) & 1) << 0
-  buf[offset] |= (((header.isSamplingSet ? 1 : 0) >>> 0) & 1) << 1
-  buf[offset] |= ((0 >>> 0) & 63) << 2
+  buf[offset] |= ((header.groupByCount >>> 0) & 15) << 0
+  buf[offset] |= (((header.isSamplingSet ? 1 : 0) >>> 0) & 1) << 4
+  buf[offset] |= ((0 >>> 0) & 7) << 5
   offset += 1
   return offset
 }
@@ -3528,11 +3528,11 @@ export const writeAggHeaderProps = {
   accumulatorSize: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, Number(value), offset + 16)
   },
-  hasGroupBy: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 18] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+  groupByCount: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 18] |= ((value >>> 0) & 15) << 0
   },
   isSamplingSet: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 18] |= (((value ? 1 : 0) >>> 0) & 1) << 1
+    buf[offset + 18] |= (((value ? 1 : 0) >>> 0) & 1) << 4
   },
 }
 
@@ -3549,8 +3549,8 @@ export const readAggHeader = (
     iteratorType: (buf[offset + 13]) as QueryIteratorTypeEnum,
     resultsSize: readUint16(buf, offset + 14),
     accumulatorSize: readUint16(buf, offset + 16),
-    hasGroupBy: (((buf[offset + 18] >>> 0) & 1)) === 1,
-    isSamplingSet: (((buf[offset + 18] >>> 1) & 1)) === 1,
+    groupByCount: ((buf[offset + 18] >>> 0) & 15),
+    isSamplingSet: (((buf[offset + 18] >>> 4) & 1)) === 1,
   }
   return value
 }
@@ -3564,8 +3564,8 @@ export const readAggHeaderProps = {
     iteratorType: (buf: Uint8Array, offset: number) => (buf[offset + 13]) as QueryIteratorTypeEnum,
     resultsSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 14),
     accumulatorSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 16),
-    hasGroupBy: (buf: Uint8Array, offset: number) => (((buf[offset + 18] >>> 0) & 1)) === 1,
-    isSamplingSet: (buf: Uint8Array, offset: number) => (((buf[offset + 18] >>> 1) & 1)) === 1,
+    groupByCount: (buf: Uint8Array, offset: number) => ((buf[offset + 18] >>> 0) & 15),
+    isSamplingSet: (buf: Uint8Array, offset: number) => (((buf[offset + 18] >>> 4) & 1)) === 1,
 }
 
 export const createAggHeader = (header: AggHeader): Uint8Array => {
@@ -3588,9 +3588,9 @@ export const pushAggHeader = (
   buf.pushUint16(Number(header.resultsSize))
   buf.pushUint16(Number(header.accumulatorSize))
   buf.pushUint8(0)
-  buf.view[buf.length - 1] |= (((header.hasGroupBy ? 1 : 0) >>> 0) & 1) << 0
-  buf.view[buf.length - 1] |= (((header.isSamplingSet ? 1 : 0) >>> 0) & 1) << 1
-  buf.view[buf.length - 1] |= ((0 >>> 0) & 63) << 2
+  buf.view[buf.length - 1] |= ((header.groupByCount >>> 0) & 15) << 0
+  buf.view[buf.length - 1] |= (((header.isSamplingSet ? 1 : 0) >>> 0) & 1) << 4
+  buf.view[buf.length - 1] |= ((0 >>> 0) & 7) << 5
   return index
 }
 
@@ -3603,7 +3603,7 @@ export type AggRefsHeader = {
   accumulatorSize: number
   aggDefsSize: number
   iteratorType: QueryIteratorTypeEnum
-  hasGroupBy: boolean
+  groupByCount: number
   isSamplingSet: boolean
 }
 
@@ -3633,9 +3633,9 @@ export const writeAggRefsHeader = (
   buf[offset] = Number(header.iteratorType)
   offset += 1
   buf[offset] = 0
-  buf[offset] |= (((header.hasGroupBy ? 1 : 0) >>> 0) & 1) << 0
-  buf[offset] |= (((header.isSamplingSet ? 1 : 0) >>> 0) & 1) << 1
-  buf[offset] |= ((0 >>> 0) & 63) << 2
+  buf[offset] |= ((header.groupByCount >>> 0) & 15) << 0
+  buf[offset] |= (((header.isSamplingSet ? 1 : 0) >>> 0) & 1) << 4
+  buf[offset] |= ((0 >>> 0) & 7) << 5
   offset += 1
   return offset
 }
@@ -3665,11 +3665,11 @@ export const writeAggRefsHeaderProps = {
   iteratorType: (buf: Uint8Array, value: QueryIteratorTypeEnum, offset: number) => {
     buf[offset + 14] = Number(value)
   },
-  hasGroupBy: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 15] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+  groupByCount: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 15] |= ((value >>> 0) & 15) << 0
   },
   isSamplingSet: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 15] |= (((value ? 1 : 0) >>> 0) & 1) << 1
+    buf[offset + 15] |= (((value ? 1 : 0) >>> 0) & 1) << 4
   },
 }
 
@@ -3686,8 +3686,8 @@ export const readAggRefsHeader = (
     accumulatorSize: readUint16(buf, offset + 10),
     aggDefsSize: readUint16(buf, offset + 12),
     iteratorType: (buf[offset + 14]) as QueryIteratorTypeEnum,
-    hasGroupBy: (((buf[offset + 15] >>> 0) & 1)) === 1,
-    isSamplingSet: (((buf[offset + 15] >>> 1) & 1)) === 1,
+    groupByCount: ((buf[offset + 15] >>> 0) & 15),
+    isSamplingSet: (((buf[offset + 15] >>> 4) & 1)) === 1,
   }
   return value
 }
@@ -3701,8 +3701,8 @@ export const readAggRefsHeaderProps = {
     accumulatorSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 10),
     aggDefsSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 12),
     iteratorType: (buf: Uint8Array, offset: number) => (buf[offset + 14]) as QueryIteratorTypeEnum,
-    hasGroupBy: (buf: Uint8Array, offset: number) => (((buf[offset + 15] >>> 0) & 1)) === 1,
-    isSamplingSet: (buf: Uint8Array, offset: number) => (((buf[offset + 15] >>> 1) & 1)) === 1,
+    groupByCount: (buf: Uint8Array, offset: number) => ((buf[offset + 15] >>> 0) & 15),
+    isSamplingSet: (buf: Uint8Array, offset: number) => (((buf[offset + 15] >>> 4) & 1)) === 1,
 }
 
 export const createAggRefsHeader = (header: AggRefsHeader): Uint8Array => {
@@ -3725,9 +3725,9 @@ export const pushAggRefsHeader = (
   buf.pushUint16(Number(header.aggDefsSize))
   buf.pushUint8(Number(header.iteratorType))
   buf.pushUint8(0)
-  buf.view[buf.length - 1] |= (((header.hasGroupBy ? 1 : 0) >>> 0) & 1) << 0
-  buf.view[buf.length - 1] |= (((header.isSamplingSet ? 1 : 0) >>> 0) & 1) << 1
-  buf.view[buf.length - 1] |= ((0 >>> 0) & 63) << 2
+  buf.view[buf.length - 1] |= ((header.groupByCount >>> 0) & 15) << 0
+  buf.view[buf.length - 1] |= (((header.isSamplingSet ? 1 : 0) >>> 0) & 1) << 4
+  buf.view[buf.length - 1] |= ((0 >>> 0) & 7) << 5
   return index
 }
 

@@ -28,7 +28,7 @@ export const getIteratorType = (
     // @ts-ignore
     def.target.propDef.edgeNodeTypeId > 0
   const isAggregates = def.aggregate !== null
-  const hasGroupBy = def?.aggregate?.groupBy ? true : false
+  const hasGroupBy = (def?.aggregate?.groupBys?.length || 0) > 0
 
   let base = QUERY_ITERATOR_DEFAULT
 

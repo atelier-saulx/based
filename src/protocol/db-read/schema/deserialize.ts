@@ -6,6 +6,7 @@ import {
   DEF_BIT_MAP,
   GROUP_BY_BIT_MAP,
   type ReaderAggregateSchema,
+  type ReaderGroupBy,
 } from '../types.js'
 import {
   DECODER,
@@ -67,61 +68,63 @@ const deserializeAggregates = (
     count++
   }
 
-  const hasGroup = p[index]
+  const groupByCount = p[index]
   index++
-  if (hasGroup) {
-    const opts = p[index]
-    const groupBy: ReaderAggregateSchema['groupBy'] = {
-      typeIndex: p[index + 1] as PropTypeEnum,
-    }
-    index += 2
-
-    if (opts & GROUP_BY_BIT_MAP.stepRange) {
-      // prop.meta = p[index]
-      groupBy.stepRange = readDoubleLE(p, index)
-      index += 8
-    }
-
-    if (opts & GROUP_BY_BIT_MAP.stepType) {
-      groupBy.stepType = true
-    }
-
-    if (opts & GROUP_BY_BIT_MAP.display) {
-      groupBy.stepType = true
-      const size = readUint16(p, index)
+  if (groupByCount > 0) {
+    result.groupBy = []
+    for (let g = 0; g < groupByCount; g++) {
+      const opts = p[index]
+      const groupBy: ReaderGroupBy = {
+        typeIndex: p[index + 1] as PropTypeEnum,
+      }
       index += 2
-      const tmp = JSON.parse(DECODER.decode(p.subarray(index, index + size)))
-      groupBy.display = new Intl.DateTimeFormat(tmp.locale, tmp)
-      index += size
-    }
 
-    if (opts & GROUP_BY_BIT_MAP.enum) {
-      const useJSON = p[index] === 1
-      index += 1
-      if (useJSON) {
+      if (opts & GROUP_BY_BIT_MAP.stepRange) {
+        groupBy.stepRange = readDoubleLE(p, index)
+        index += 8
+      }
+
+      if (opts & GROUP_BY_BIT_MAP.stepType) {
+        groupBy.stepType = true
+      }
+
+      if (opts & GROUP_BY_BIT_MAP.display) {
+        groupBy.stepType = true
         const size = readUint16(p, index)
         index += 2
-        groupBy.enum = JSON.parse(
-          DECODER.decode(p.subarray(index, index + size)),
-        )
+        const tmp = JSON.parse(DECODER.decode(p.subarray(index, index + size)))
+        groupBy.display = new Intl.DateTimeFormat(tmp.locale, tmp)
         index += size
-      } else {
-        const len = p[index]
-        index++
-        let cnt = 0
-        groupBy.enum = new Array(len)
-        while (cnt !== len) {
-          const len = p[index]
-          groupBy.enum[cnt] = DECODER.decode(
-            p.subarray(index + 1, len + index + 1),
+      }
+
+      if (opts & GROUP_BY_BIT_MAP.enum) {
+        const useJSON = p[index] === 1
+        index += 1
+        if (useJSON) {
+          const size = readUint16(p, index)
+          index += 2
+          groupBy.enum = JSON.parse(
+            DECODER.decode(p.subarray(index, index + size)),
           )
-          index += len + 1
-          cnt++
+          index += size
+        } else {
+          const len = p[index]
+          index++
+          let cnt = 0
+          groupBy.enum = new Array(len)
+          while (cnt !== len) {
+            const len = p[index]
+            groupBy.enum[cnt] = DECODER.decode(
+              p.subarray(index + 1, len + index + 1),
+            )
+            index += len + 1
+            cnt++
+          }
         }
       }
-    }
 
-    result.groupBy = groupBy
+      result.groupBy.push(groupBy)
+    }
   }
 
   return { agg: result, size: index - off }

@@ -38,6 +38,7 @@ pub fn aggregates(
         .accumulatorSize = header.accumulatorSize,
         .resultsSize = header.resultsSize,
         .totalResultsSize = 0,
+        .groupByCount = header.groupByCount,
     };
 
     var it = Node.iterator(false, typeEntry);

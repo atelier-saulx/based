@@ -27,17 +27,18 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
   const filter = filterToBuffer(def.filter)
   const filterSize = byteSize(filter) || 0
   const hasFilter = filterSize > 0
-  const hasGroupBy = def.aggregate.groupBy ? true : false
+  const groupBys = def.aggregate.groupBys || []
+  const groupByCount = groupBys.length
   const numPropsOrFuncs = [...def.aggregate.aggregates.values()].reduce(
     (sum, arr) => sum + arr.length,
     0,
   )
-  const groupByKeyPropByteSize = hasGroupBy ? GroupByKeyPropByteSize : 0
+  const groupByKeyPropByteSize = groupByCount * GroupByKeyPropByteSize
 
   const commonHeader = {
     offset: def.range.offset,
     filterSize,
-    hasGroupBy,
+    groupByCount,
     resultsSize: def.aggregate.totalResultsSize,
     accumulatorSize: def.aggregate.totalAccumulatorSize,
     isSamplingSet: (def.aggregate?.option?.mode || 'sample') === 'sample',
@@ -88,8 +89,7 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
 
   let aggPropMap = def.aggregate.aggregates
 
-  if (def.aggregate.groupBy) {
-    const gp = def.aggregate.groupBy
+  for (const gp of groupBys) {
     const groupByKeyPropDef = createGroupByKeyProp({
       propId: gp.prop,
       propType: gp.typeIndex,

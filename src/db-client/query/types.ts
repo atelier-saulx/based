@@ -110,6 +110,7 @@ export type Aggregation = {
 export type QueryDefAggregation = {
   size: number
   groupBy?: aggPropDef
+  groupBys?: aggPropDef[]
   // only field 0 to start
   aggregates: Map<number, Aggregation[]>
   option?: aggFnOptions

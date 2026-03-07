@@ -130,22 +130,26 @@ export const convertToReaderSchema = (
         })
       }
     }
-    if (q.aggregate.groupBy) {
-      a.groupBy = {
-        typeIndex: q.aggregate.groupBy.typeIndex,
-      }
-      if (q.aggregate.groupBy.stepRange) {
-        a.groupBy.stepRange = q.aggregate.groupBy.stepRange
-      }
-      if (q.aggregate.groupBy.display) {
-        a.groupBy.display = q.aggregate.groupBy.display
-      }
-      // MV: Tto review
-      if (q.aggregate.groupBy.enum) {
-        a.groupBy.enum = q.aggregate.groupBy.enum
-      }
-      if (q.aggregate.groupBy.stepType) {
-        a.groupBy.stepType = true
+    const groupBys = q.aggregate.groupBys || (q.aggregate.groupBy ? [q.aggregate.groupBy] : [])
+    if (groupBys.length > 0) {
+      a.groupBy = []
+      for (const gb of groupBys) {
+        const entry: any = {
+          typeIndex: gb.typeIndex,
+        }
+        if (gb.stepRange) {
+          entry.stepRange = gb.stepRange
+        }
+        if (gb.display) {
+          entry.display = gb.display
+        }
+        if (gb.enum) {
+          entry.enum = gb.enum
+        }
+        if (gb.stepType) {
+          entry.stepType = true
+        }
+        a.groupBy.push(entry)
       }
     }
   } else {

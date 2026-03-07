@@ -61,13 +61,31 @@ export const readAggregate = (
   const { groupBy, aggregates, totalResultsSize } = q.aggregate!
   const results = {}
 
-  if (groupBy) {
+  if (groupBy && groupBy.length > 0) {
     let cursor = offset
     while (cursor < len) {
-      const { key, bytesRead } = readGroupKey(result, cursor, groupBy)
-      cursor += bytesRead
-      results[key] = results[key] || {}
-      readAggValues(result, cursor, aggregates, results[key])
+      const keys: (string | number)[] = []
+      for (const gb of groupBy) {
+        const { key, bytesRead } = readGroupKey(result, cursor, gb)
+        cursor += bytesRead
+        keys.push(key)
+      }
+
+      if (keys.length === 1) {
+        // single key: flat result (backward compat)
+        results[keys[0]] = results[keys[0]] || {}
+        readAggValues(result, cursor, aggregates, results[keys[0]])
+      } else {
+        // multi-key: nested result
+        let target: any = results
+        for (let i = 0; i < keys.length - 1; i++) {
+          target[keys[i]] = target[keys[i]] || {}
+          target = target[keys[i]]
+        }
+        const lastKey = keys[keys.length - 1]
+        target[lastKey] = target[lastKey] || {}
+        readAggValues(result, cursor, aggregates, target[lastKey])
+      }
       cursor += totalResultsSize
     }
   } else {
