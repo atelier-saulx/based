@@ -1,3 +1,4 @@
+import { LangCode } from '../../../../dist/zigTsExports.js'
 import {
   isPropDef,
   PropDef,
@@ -29,19 +30,45 @@ const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
     const astProp = ast.props[field]
     const ops = astProp.ops
     if (isPropDef(prop)) {
+      if (prop.type === PropType.jsonLocalized || PropType.stringLocalized) {
+        if (astProp.props) {
+          for (const lang in astProp.props) {
+            const code = LangCode[lang]
+            if (!code || !ctx.locales[code]) {
+              throw new Error(`Filter language not supported ${lang}`)
+            }
+            const ops = astProp.props[lang].ops
+            if (ops) {
+              for (const op of ops) {
+                const condition = comparison(
+                  prop,
+                  op.op,
+                  op.val,
+                  ctx.locale,
+                  op.opts,
+                )
+                ctx.query.set(condition, ctx.query.length)
+              }
+            }
+          }
+        }
+      }
+
       if (prop.type === PropType.references) {
         // references(astProp, ctx, prop)
+        // DERP
       } else if (prop.type === PropType.reference) {
         // this can be added here
         // need this again...
         // reference(astProp, ctx, prop)
+        // DERP
       } else if (ops) {
         if (prop.id === 0) {
           main.push({ prop, ops })
         } else {
           walkCtx.prop = prop.id
           for (const op of ops) {
-            // can prob just push this directly
+            // Can prob just push this directly
             const condition = comparison(
               prop,
               op.op,
@@ -61,7 +88,6 @@ const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
           prop: walkCtx.prop,
         })
       } else {
-        // if EN, if NL
         throw new Error(`Prop does not exist ${field}`)
       }
     }

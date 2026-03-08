@@ -153,22 +153,26 @@ await test('include', async (t) => {
     filter: {
       props: {
         localized: {
-          ops: [
-            // { op: '=', val: [10, 16, 20, 12] },
-            // { op: 'like', val: 'abha' },
-            { op: '=', val: 'derpi yuz NL' },
-            // { op: '=', val: ['giraffe', 'mr jim', 'yuzi'] },
-            // bigArray
-            // { op: '=', val: ['ok', 'bad', 'great'] },
-            // { op: 'includes', val: 'xbl@apx', opts: { lowerCase: true } },
-            // { op: 'like', val: 'xblapx' },
-            // { op: 'includes', val: ' xaderp', opts: { lowerCase: true } },
-            // {
-            //   op: 'includes',
-            //   val: 'a{"name":true}',
-            //   opts: { lowerCase: true },
-            // },
-          ],
+          props: {
+            nl: {
+              ops: [
+                // { op: '=', val: [10, 16, 20, 12] },
+                // { op: 'like', val: 'abha' },
+                { op: '=', val: 'derpi yuz NL' },
+                // { op: '=', val: ['giraffe', 'mr jim', 'yuzi'] },
+                // bigArray
+                // { op: '=', val: ['ok', 'bad', 'great'] },
+                // { op: 'includes', val: 'xbl@apx', opts: { lowerCase: true } },
+                // { op: 'like', val: 'xblapx' },
+                // { op: 'includes', val: ' xaderp', opts: { lowerCase: true } },
+                // {
+                //   op: 'includes',
+                //   val: 'a{"name":true}',
+                //   opts: { lowerCase: true },
+                // },
+              ],
+            },
+          },
         },
       },
     },
