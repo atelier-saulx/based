@@ -3,32 +3,26 @@ import {
   PropTree,
   TypeDef,
   isPropDef,
-} from '../../schema/defs/index.js'
+} from '../../../schema/defs/index.js'
 import {
   IncludeOp,
+  LangCode,
+  LangCodeEnum,
   MAIN_PROP,
   PropType,
   pushIncludeHeader,
   pushIncludePartialHeader,
   pushIncludePartialProp,
-} from '../../zigTsExports.js'
-import { Ctx, Include, QueryAst } from './ast.js'
-import { references } from './multiple.js'
-import { readPropDef } from './readSchema.js'
-import { reference } from './single.js'
+} from '../../../zigTsExports.js'
+import { Ctx, Include, QueryAst } from '../ast.js'
+import { references } from '../multiple.js'
+import { readPropDef } from '../readSchema.js'
+import { reference } from '../single.js'
+import { includeProp } from './prop.js'
 
 type WalkCtx = {
   tree: PropTree
   main: { prop: PropDef; include: Include }[]
-}
-
-const includeProp = (ctx: Ctx, prop: PropDef, include: Include) => {
-  pushIncludeHeader(ctx.query, {
-    op: IncludeOp.default,
-    prop: prop.id,
-    propType: prop.type,
-  })
-  ctx.readSchema.props[prop.id] = readPropDef(prop, ctx.locales, include)
 }
 
 const includeMainProps = (
@@ -39,7 +33,6 @@ const includeMainProps = (
   props.sort((a, b) =>
     a.prop.start < b.prop.start ? -1 : a.prop.start === b.prop.start ? 0 : 1,
   )
-
   let i = 0
   for (const { include, prop } of props) {
     if (prop.size === 0) continue
@@ -79,12 +72,30 @@ const walkProp = (
   const { main, tree } = walkCtx
   const prop = tree.props.get(field)
   const include = astProp.include
-
   if (isPropDef(prop)) {
     if (prop.type === PropType.references) {
       references(astProp, ctx, prop)
     } else if (prop.type === PropType.reference) {
       reference(astProp, ctx, prop)
+    } else if (
+      prop.type === PropType.jsonLocalized ||
+      prop.type === PropType.stringLocalized
+    ) {
+      const include: Include = astProp.include ?? {}
+      include.codes = new Set()
+      for (const lang in astProp.props) {
+        const langInclude = astProp.props[lang].include
+        if (langInclude) {
+          const code = LangCode[lang]
+          if (!code || !ctx.locales[code]) {
+            throw new Error(`Filter language not supported ${lang}`)
+          }
+          include.codes.add(code)
+          // We have to flatten the include scince thats how it works in the reader
+          Object.assign(include, langInclude)
+        }
+      }
+      includeProp(ctx, prop, include)
     } else if (include) {
       if (prop.id === 0) {
         main.push({ prop, include })
@@ -98,7 +109,6 @@ const walkProp = (
       tree: prop,
     })
   } else {
-    // if EN, if NL
     throw new Error(`Prop does not exist ${field}`)
   }
 }

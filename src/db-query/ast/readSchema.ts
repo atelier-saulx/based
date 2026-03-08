@@ -28,9 +28,10 @@ export const getReaderLocales = (schema: SchemaOut): ReaderLocales => {
   return locales
 }
 
+// add CTX
 export const readPropDef = (
   p: PropDef,
-  locales: ReaderLocales, //add in ctx
+  locales: ReaderLocales, // add in ctx
   include?: Include,
 ): ReaderPropDef => {
   const readerPropDef: ReaderPropDef = {
@@ -40,6 +41,7 @@ export const readPropDef = (
   }
   // if (opts?.meta) {
   //   if (opts?.codes?.size === 1 && opts.codes.has(opts.localeFromDef!)) {
+  //  > this means get .en without the object
   //     readerPropDef.meta =
   //       opts?.meta === 'only'
   //         ? ReaderMeta.onlyFallback
@@ -49,6 +51,7 @@ export const readPropDef = (
   //       opts?.meta === 'only' ? ReaderMeta.only : ReaderMeta.combined
   //   }
   // }
+
   if ('vals' in p) {
     // @ts-ignore TODO make this nice
     readerPropDef.enum = Array.from(p.vals.keys())
@@ -94,7 +97,7 @@ export const readPropDef = (
   //           }
   //         }
   //       }
-  //       // dont add locales - interpets it as a normal prop
+  //       // dont add locales - interprets it as a normal prop
   //     } else {
   //       readerPropDef.locales = {}
   //       for (const code of opts.codes) {

@@ -11,7 +11,7 @@ import {
 } from '../../zigTsExports.js'
 import { Ctx, EdgeStrategy, QueryAst } from './ast.js'
 import { filter } from './filter/filter.js'
-import { include } from './include.js'
+import { include } from './include/include.js'
 import { getIteratorType } from './iteratorType.js'
 import { readPropDef, readSchema } from './readSchema.js'
 import { isAggregateAst, pushAggregatesQuery } from './aggregates.js'

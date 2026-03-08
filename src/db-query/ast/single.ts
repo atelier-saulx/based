@@ -10,7 +10,7 @@ import {
   Modify,
 } from '../../zigTsExports.js'
 import { Ctx, QueryAst } from './ast.js'
-import { include } from './include.js'
+import { include } from './include/include.js'
 import { readPropDef, readSchema } from './readSchema.js'
 
 export const defaultSingle = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
