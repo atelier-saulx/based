@@ -35,15 +35,13 @@ pub fn eqCrc32(
     i: usize,
     c: *t.FilterCondition,
 ) bool {
-    if (v.len == 0) {
-        return false;
-    }
-
     if (T == .localized) {
         return localized(q, v, i, c, eqCrc32);
     }
 
-    if (v[1] == 1) {
+    if (v.len == 0) {
+        return false;
+    } else if (v[1] == 1) {
         if (utils.readPtr(u32, q, i + 4 + @alignOf(u32) - c.offset).* != utils.read(u32, v, 2)) {
             return false;
         }
@@ -71,16 +69,15 @@ pub fn eqCrc32Batch(
     i: usize,
     c: *t.FilterCondition,
 ) bool {
-    if (v.len == 0) {
-        return false;
-    }
-
     if (T == .localized) {
         return localized(q, v, i, c, eqCrc32Batch);
     }
 
     var value: u64 = undefined;
-    if (v[1] == 1) {
+
+    if (v.len == 0) {
+        return false;
+    } else if (v[1] == 1) {
         value = pack(utils.read(u32, v, v.len - 4), utils.read(u32, v, 2));
     } else {
         value = pack(utils.read(u32, v, v.len - 4), @truncate(v.len - 6));
