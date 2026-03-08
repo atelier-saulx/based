@@ -1,4 +1,3 @@
-import { LangCode } from '../../../zigTsExports.js'
 import {
   isPropDef,
   PropDef,
@@ -11,6 +10,7 @@ import {
   FilterOpCompare,
   PropType,
   writeFilterConditionProps,
+  LangCode,
 } from '../../../zigTsExports.js'
 import { Ctx, FilterAst, FilterOp } from '../ast.js'
 import { comparison } from './comparison.js'
