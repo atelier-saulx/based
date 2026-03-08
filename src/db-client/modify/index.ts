@@ -94,7 +94,6 @@ export const flush = (ctx: ModifyCtx) => {
   batch.flushed = true
   ctx.hooks.flushModify(ctx.buf.view).then((result) => {
     batch.result = result
-    const promises = batch.promises
     const dependents = batch.dependents
     if (dependents) {
       batch.dependents = undefined
@@ -105,6 +104,7 @@ export const flush = (ctx: ModifyCtx) => {
         }
       }
     }
+    const promises = batch.promises
     if (promises) {
       batch.promises = undefined
       for (const item of promises) {
@@ -125,17 +125,15 @@ export const flush = (ctx: ModifyCtx) => {
 
 const schedule = (ctx: ModifyCtx) => {
   if (ctx.flushTimer) return
+  const listener = () => {
+    ctx.flushTimer = undefined
+    flush(ctx)
+  }
   if (ctx.flushTime === 0) {
     ctx.flushTimer = true
-    process.nextTick(() => {
-      ctx.flushTimer = undefined
-      flush(ctx)
-    })
+    process.nextTick(listener)
   } else {
-    ctx.flushTimer = setTimeout(() => {
-      ctx.flushTimer = undefined
-      flush(ctx)
-    }, ctx.flushTime)
+    ctx.flushTimer = setTimeout(listener, ctx.flushTime)
   }
 }
 
@@ -151,6 +149,7 @@ export class BasedModify<S extends (...args: any[]) => any = ModifySerializer>
       this._id = readUint32(this._batch.result, this._index! * 5)
       const errCode = this._batch.result[this._index! * 5 + 4]
       if (errCode) this._error = new Error('ModifyError: ' + errCode)
+      this._batch = undefined
     }
   }
   get id(): number | undefined {
@@ -183,7 +182,7 @@ export class BasedModify<S extends (...args: any[]) => any = ModifySerializer>
 
   private _id?: number
   private _error?: Error
-  private _blocker?: BasedModify
+  private _dependency?: BasedModify
   private _index?: number
   private _batch?: ModifyBatch
   private _promise?: Promise<number>
@@ -207,22 +206,22 @@ export class BasedModify<S extends (...args: any[]) => any = ModifySerializer>
         count: 0,
       })
     }
-    const initialLength = ctx.buf.length
+    const start = ctx.buf.length
     try {
       ;(serialize as any)(...args)
     } catch (e) {
-      ctx.buf.length = initialLength
+      ctx.buf.length = start
       if (e === AutoSizedUint8Array.ERR_OVERFLOW) {
         if (isEmpty) throw new Error('Range error')
         flush(ctx)
         this._exec.apply(this, arguments)
         return
       } else if (e instanceof BasedModify) {
-        let blocker: BasedModify = e
-        while (blocker._blocker) blocker = blocker._blocker
-        blocker._batch!.dependents ??= []
-        blocker._batch!.dependents.push(this)
-        this._blocker = blocker
+        let dependency: BasedModify = e
+        while (dependency._dependency) dependency = dependency._dependency
+        dependency._batch!.dependents ??= []
+        dependency._batch!.dependents.push(this)
+        this._dependency = dependency
         this._arguments = arguments
         return
       } else if (this._arguments) {
