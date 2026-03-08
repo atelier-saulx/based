@@ -1,4 +1,4 @@
-import { LangCode } from '../../../../dist/zigTsExports.js'
+import { LangCode } from '../../../zigTsExports.js'
 import {
   isPropDef,
   PropDef,

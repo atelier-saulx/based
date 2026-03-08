@@ -68,6 +68,7 @@ export type Include = {
   maxChars?: number
   maxBytes?: number
   raw?: boolean
+  codes?: Set<LangCodeEnum>
 }
 
 export type QueryAst = {
