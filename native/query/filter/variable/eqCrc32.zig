@@ -1,10 +1,35 @@
 const t = @import("../../../types.zig");
 const utils = @import("../../../utils.zig");
 const std = @import("std");
-const Localized = @import("./types.zig").Localized;
+const Fields = @import("../../../selva/fields.zig");
+
+const Type = enum(u8) {
+    default = 0,
+    localized = 2,
+};
+
+fn localized(
+    q: []const u8,
+    v: []const u8,
+    i: usize,
+    c: *t.FilterCondition,
+    compare: anytype,
+) bool {
+    if (c.lang == t.LangCode.none) {
+        var iter = Fields.textIterator(@constCast(v));
+        while (iter.next()) |value| {
+            if (compare(.default, q, value, i, c)) {
+                return true;
+            }
+        }
+        return false;
+    } else {
+        return compare(.default, q, Fields.textFromValue(@constCast(v), c.lang), i, c);
+    }
+}
 
 pub fn eqCrc32(
-    // T: type,
+    comptime T: Type,
     q: []const u8,
     v: []const u8,
     i: usize,
@@ -13,6 +38,11 @@ pub fn eqCrc32(
     if (v.len == 0) {
         return false;
     }
+
+    if (T == .localized) {
+        return localized(q, v, i, c, eqCrc32);
+    }
+
     if (v[1] == 1) {
         if (utils.readPtr(u32, q, i + 4 + @alignOf(u32) - c.offset).* != utils.read(u32, v, 2)) {
             return false;
@@ -22,9 +52,11 @@ pub fn eqCrc32(
             return false;
         }
     }
+
     if (utils.read(u32, v, v.len - 4) != utils.readPtr(u32, q, i + @alignOf(u32) - c.offset).*) {
         return false;
     }
+
     return true;
 }
 
@@ -33,8 +65,8 @@ inline fn pack(high: u32, low: u32) u64 {
 }
 
 pub fn eqCrc32Batch(
-    // T: type,
-    q: []u8,
+    T: Type,
+    q: []const u8,
     v: []const u8,
     i: usize,
     c: *t.FilterCondition,
@@ -42,9 +74,10 @@ pub fn eqCrc32Batch(
     if (v.len == 0) {
         return false;
     }
-    // if (T == Localized) {
-    //     std.debug.print("DERP#!@ \n", .{});
-    // } else {}
+
+    if (T == .localized) {
+        return localized(q, v, i, c, eqCrc32Batch);
+    }
 
     var value: u64 = undefined;
     if (v[1] == 1) {
@@ -55,7 +88,7 @@ pub fn eqCrc32Batch(
 
     const size = utils.sizeOf(u64);
     const vectorLen = 16 / size;
-    const values = utils.toSlice(u64, q[i + size - c.offset .. i + c.size + @alignOf(u64) - c.offset]);
+    const values = utils.toSlice(u64, @constCast(q[i + size - c.offset .. i + c.size + @alignOf(u64) - c.offset]));
     const len = values.len;
 
     var j: usize = 0;

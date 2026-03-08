@@ -17,7 +17,11 @@ const Instruction = @import("../instruction.zig");
 // pub const Fixed = @import("./types.zig").Fixed;
 // pub const Localized = @import("./types.zig").Localized;
 
-const Type = @import("./types.zig").Type;
+const Type = enum(u8) {
+    default = 0,
+    fixed = 1,
+    localized = 2,
+};
 
 inline fn valueType(
     thread: *Thread.Thread,
@@ -151,8 +155,8 @@ pub inline fn compare(
     const meta = comptime Instruction.parseOp(op, true);
     const res = switch (meta.func) {
         // --------------------
-        .eqCrc32 => eqCrc32(q, v, index, c),
-        .eqCrc32Batch => eqCrc32Batch(q, v, index, c),
+        .eqCrc32 => eqCrc32(if (T == .localized) .localized else .default, q, v, index, c),
+        .eqCrc32Batch => eqCrc32Batch(if (T == .localized) .localized else .default, q, v, index, c),
         // --------------------
         // *Can be wrapped like crc32
         .eqVar => parse(T, thread, q, v, index, c, eq),

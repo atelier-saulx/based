@@ -72,10 +72,10 @@ await test('include', async (t) => {
 
   const a = client.create('user', {
     // name: 'mr jim',
-    // localized: {
-    //   en: 'mr jim EN',
-    //   nl: 'derpi yuz NL',
-    // },
+    localized: {
+      en: 'mr jim EN',
+      nl: 'derpi yuz NL',
+    },
     // enum: 'ok',
     // derp: 'aa',
     // big: 'mr jim',
@@ -104,13 +104,13 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 1; i++) {
     client.create('user', {
       big: syntheticData,
       // name: `mr snurf ${i}`,
-      // localized: {
-      //   nl: 'giraffe NL',
-      // },
+      localized: {
+        nl: 'giraffe NL',
+      },
       // derp: 'cc',
       // y: i,
       // x: !!(i % 2),
@@ -152,14 +152,13 @@ await test('include', async (t) => {
     range: { start: 0, end: 1e6 },
     filter: {
       props: {
-        big: {
+        localized: {
           ops: [
             // { op: '=', val: [10, 16, 20, 12] },
-            { op: 'like', val: 'abha' },
-
+            // { op: 'like', val: 'abha' },
+            { op: '=', val: 'derpi yuz NL' },
             // { op: '=', val: ['giraffe', 'mr jim', 'yuzi'] },
             // bigArray
-
             // { op: '=', val: ['ok', 'bad', 'great'] },
             // { op: 'includes', val: 'xbl@apx', opts: { lowerCase: true } },
             // { op: 'like', val: 'xblapx' },
@@ -176,6 +175,7 @@ await test('include', async (t) => {
     props: {
       // big: { include: {} },
       y: { include: {} },
+      localized: { include: {} },
       // name: { include: {} },
       // derp: { include: {} },
       // x: { include: {} },
@@ -209,7 +209,7 @@ await test('include', async (t) => {
 
   console.log('START PERF', Date.now() - d, 'ms')
 
-  await perf(
+  await perf.skip(
     async () => {
       const q: any = []
       for (let i = 0; i < 10; i++) {
@@ -232,7 +232,7 @@ await test('include', async (t) => {
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
-  // console.dir(obj, { depth: 10 })
+  console.dir(obj, { depth: 10 })
 
   await wait(1000)
 
