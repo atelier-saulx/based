@@ -104,7 +104,7 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 1e6; i++) {
     client.create('user', {
       big: syntheticData,
       // name: `mr snurf ${i}`,
@@ -213,7 +213,7 @@ await test('include', async (t) => {
 
   console.log('START PERF', Date.now() - d, 'ms')
 
-  await perf.skip(
+  await perf(
     async () => {
       const q: any = []
       for (let i = 0; i < 10; i++) {

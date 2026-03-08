@@ -8,7 +8,7 @@ const Type = enum(u8) {
     localized = 2,
 };
 
-fn localized(
+inline fn localized(
     q: []const u8,
     v: []const u8,
     i: usize,
