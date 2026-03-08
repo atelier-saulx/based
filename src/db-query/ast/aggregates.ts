@@ -282,13 +282,16 @@ const pushGroupBy = (
   sizes: Sizes,
   asReference?: PropDef,
 ): { hasGroupBy: boolean; isEdge: boolean } => {
-  if (!ast.groupBy || ast.groupBy.length === 0) return { hasGroupBy: false, isEdge: false }
+  if (!ast.groupBy) return { hasGroupBy: false, isEdge: false }
+
+  const groupByArray: any[] = Array.isArray(ast.groupBy) ? ast.groupBy : [ast.groupBy]
+  if (groupByArray.length === 0) return { hasGroupBy: false, isEdge: false }
 
   let anyEdge = false
   const groupByInfos: any[] = []
 
-  for (let i = 0; i < ast.groupBy.length; i++) {
-    const { prop: propName, step, timeZone, display } = ast.groupBy[i]
+  for (let i = 0; i < groupByArray.length; i++) {
+    const { prop: propName, step, timeZone, display } = groupByArray[i]
     const { propDef, isEdge } = resolveProp(typeDef, propName, asReference)
 
     if (!propDef) {

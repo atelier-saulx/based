@@ -68,6 +68,15 @@ export const readAggregate = (
         // handle empty key edgecase if length 0 is ever written as 00
       }
 
+      if (groupBy.length === 1) {
+        const { key, bytesRead } = readGroupKey(result, cursor, groupBy[0])
+        cursor += bytesRead
+        results[key] = results[key] || {}
+        readAggValues(result, cursor, aggregates, results[key])
+        cursor += totalResultsSize
+        continue
+      }
+
       const totalKeyLen = readUint16(result, cursor)
       let innerCursor = cursor + 2
       let currentResultObj = results
