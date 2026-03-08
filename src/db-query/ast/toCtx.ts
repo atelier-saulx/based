@@ -1,11 +1,15 @@
 import { crc32 } from '../../db-client/crc32.js'
 import { ReaderSchema, ReaderSchemaEnum } from '../../protocol/index.js'
 import { SchemaOut } from '../../schema/index.js'
-import { getTypeDefs } from '../../schema/defs/getTypeDefs.js'
+import {
+  getLocaleFallbacks,
+  getLocaleReaderSchema,
+  getTypeDefs,
+} from '../../schema/defs/getTypeDefs.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 import { Ctx, QueryAst } from './ast.js'
 import { defaultMultiple } from './multiple.js'
-import { getReaderLocales, readSchema } from './readSchema.js'
+import { readSchema } from './readSchema.js'
 import { defaultSingle } from './single.js'
 import { LangCode, LangCodeEnum } from '../../zigTsExports.js'
 
@@ -35,7 +39,7 @@ export const astToQueryCtx = (
   const queryIdPos = query.reserveUint32()
 
   let locale: LangCodeEnum = LangCode.none
-  const locales = getReaderLocales(schema)
+  const locales = getLocaleReaderSchema(schema)
 
   if (ast.locale) {
     const code = LangCode[ast.locale]
@@ -45,11 +49,14 @@ export const astToQueryCtx = (
     locale = code
   }
 
+  // optmize this
   const ctx: Ctx = {
     query,
-    readSchema: readSchema(),
+    readSchema: readSchema(), // make weakmap as well
     locales,
     locale: locale,
+    localeFallbacks: getLocaleFallbacks(schema),
+    // LocaleFallBackOverwrite ADD THIS
   }
 
   if (ast.target && !Array.isArray(ast.target)) {

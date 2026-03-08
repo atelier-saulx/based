@@ -1,10 +1,11 @@
+import { ReaderLocales } from '../../protocol/index.js'
 import {
   type SchemaOut,
   type SchemaProp,
   type SchemaProps,
   type SchemaType,
 } from '../../schema/index.js'
-import { PropType } from '../../zigTsExports.js'
+import { LangCode, LangCodeEnum, PropType } from '../../zigTsExports.js'
 import { defs, TypeDef, type PropDef, type PropTree } from './index.js'
 
 const mainSorter = (a, b) => {
@@ -117,6 +118,47 @@ const getTypeDef = (
   walk(props, [], typeDef.tree)
 
   return typeDef
+}
+
+const localesFallbackCache = new WeakMap()
+export const getLocaleFallbacks = (
+  schema: SchemaOut,
+): { [code: string]: LangCodeEnum[] } => {
+  if (!schema.locales) {
+    return {}
+  }
+  const cached = localesFallbackCache.get(schema.locales)
+  if (cached) return cached
+  const locales = {}
+  for (const lang in schema.locales) {
+    const { fallback } = schema.locales[lang as keyof typeof schema.locales]!
+    locales[LangCode[lang]] = fallback.map((lang) => LangCode[lang])
+  }
+  localesFallbackCache.set(schema.locales, cached)
+  return locales
+}
+
+export const getReaderLocales = (schema: SchemaOut): ReaderLocales => {
+  const locales: ReaderLocales = {}
+  for (const lang in schema.locales) {
+    locales[LangCode[lang]] = lang
+  }
+  return locales
+}
+
+const localesReadSchemaCache = new WeakMap()
+export const getLocaleReaderSchema = (schema: SchemaOut): ReaderLocales => {
+  if (!schema.locales) {
+    return {}
+  }
+  const cached = localesReadSchemaCache.get(schema.locales)
+  if (cached) return cached
+  const locales = {}
+  for (const lang in schema.locales) {
+    locales[LangCode[lang]] = lang
+  }
+  localesReadSchemaCache.set(schema.locales, cached)
+  return locales
 }
 
 const cache = new WeakMap()

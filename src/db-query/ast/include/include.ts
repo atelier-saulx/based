@@ -7,7 +7,6 @@ import {
 import {
   IncludeOp,
   LangCode,
-  LangCodeEnum,
   MAIN_PROP,
   PropType,
   pushIncludeHeader,
@@ -36,7 +35,9 @@ const includeMainProps = (
   let i = 0
   for (const { include, prop } of props) {
     if (prop.size === 0) continue
-    ctx.readSchema.main.props[i] = readPropDef(prop, ctx.locales, include)
+    ctx.readSchema.main.props[i] = readPropDef(prop, ctx.locale, ctx.locales, [
+      include,
+    ])
     ctx.readSchema.main.len += prop.size
     i += prop.size
   }
@@ -81,21 +82,21 @@ const walkProp = (
       prop.type === PropType.jsonLocalized ||
       prop.type === PropType.stringLocalized
     ) {
-      const include: Include = astProp.include ?? {}
-      include.codes = new Set()
+      const includes: Include[] = []
+      if (include) {
+        includes.push(include)
+      }
       for (const lang in astProp.props) {
         const langInclude = astProp.props[lang].include
         if (langInclude) {
-          const code = LangCode[lang]
-          if (!code || !ctx.locales[code]) {
+          const langCode = LangCode[lang]
+          if (!langCode || !ctx.locales[langCode]) {
             throw new Error(`Filter language not supported ${lang}`)
           }
-          include.codes.add(code)
-          // We have to flatten the include scince thats how it works in the reader
-          Object.assign(include, langInclude)
+          includes.push({ ...includes, langCode })
         }
       }
-      includeProp(ctx, prop, include)
+      includeProp(ctx, prop, includes)
     } else if (include) {
       if (prop.id === 0) {
         main.push({ prop, include })

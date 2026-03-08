@@ -16,7 +16,12 @@ await test('include', async (t) => {
   await db.start({ clean: true })
   t.after(() => db.destroy())
   const client = await db.setSchema({
-    locales: ['nl', 'en', 'fr', 'aa', 'ab', 'el', 'fi', 'pt'],
+    locales: {
+      en: true,
+      nl: { fallback: ['en'] },
+      fi: { fallback: ['en', 'nl'] },
+    },
+    // locales: ['nl', 'en', 'fr', 'aa', 'ab', 'el', 'fi', 'pt'],
     types: {
       friend: {
         y: 'uint32',
@@ -148,56 +153,37 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
-    // locale: 'en',
+    locale: 'fi',
     range: { start: 0, end: 1e6 },
     filter: {
       props: {
         localized: {
+          // ops: [{ op: '=', val: 'derpi yuz NL' }],
           props: {
             nl: {
-              ops: [
-                // { op: '=', val: [10, 16, 20, 12] },
-                // { op: 'like', val: 'abha' },
-                { op: '=', val: 'derpi yuz NL' },
-                // { op: '=', val: ['giraffe', 'mr jim', 'yuzi'] },
-                // bigArray
-                // { op: '=', val: ['ok', 'bad', 'great'] },
-                // { op: 'includes', val: 'xbl@apx', opts: { lowerCase: true } },
-                // { op: 'like', val: 'xblapx' },
-                // { op: 'includes', val: ' xaderp', opts: { lowerCase: true } },
-                // {
-                //   op: 'includes',
-                //   val: 'a{"name":true}',
-                //   opts: { lowerCase: true },
-                // },
-              ],
+              ops: [{ op: '=', val: 'derpi yuz NL' }],
             },
           },
         },
       },
     },
     props: {
-      // big: { include: {} },
       y: { include: {} },
-      // localized: { include: {} },
-
       localized: {
-        props: {
-          nl: { include: {} },
-        },
+        include: {},
+        // props: {
+        //   nl: {
+        //     include: {
+        //       // meta
+        //     },
+        //   },
+        //   en: {
+        //     include: {
+        //       // meta
+        //     },
+        //   },
+        // },
       },
-
-      // name: { include: {} },
-      // derp: { include: {} },
-      // x: { include: {} },
-      // enum: { include: {} },
-      // friends: {
-      //   props: {
-      //     name: { include: {} },
-      //     y: { include: {} },
-      //     x: { include: {} },
-      //   },
-      // },
     },
   }
 
@@ -205,11 +191,11 @@ await test('include', async (t) => {
 
   const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
 
-  debugBuffer(ctx.query)
+  // debugBuffer(ctx.query)
 
   console.log(deflateSync(ctx.query).byteLength)
 
-  debugBuffer(deflateSync(ctx.query).toString('hex'))
+  // debugBuffer(deflateSync(ctx.query).toString('hex'))
 
   const queries: any = []
   for (let i = 0; i < 10; i++) {
