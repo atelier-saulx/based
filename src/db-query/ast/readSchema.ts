@@ -6,7 +6,13 @@ import {
 } from '../../protocol/index.js'
 import { SchemaOut } from '../../schema/index.js'
 import { PropDef } from '../../schema/defs/index.js'
-import { LangCode, PropType, VectorBaseType } from '../../zigTsExports.js'
+import {
+  LangCode,
+  LangCodeEnum,
+  LangCodeInverse,
+  PropType,
+  VectorBaseType,
+} from '../../zigTsExports.js'
 import { Include } from './ast.js'
 
 export const readSchema = (type?: ReaderSchemaEnum): ReaderSchema => {
@@ -20,25 +26,25 @@ export const readSchema = (type?: ReaderSchemaEnum): ReaderSchema => {
   }
 }
 
-export const getReaderLocales = (schema: SchemaOut): ReaderLocales => {
-  const locales: ReaderLocales = {}
-  for (const lang in schema.locales) {
-    locales[LangCode[lang]] = lang
-  }
-  return locales
+const isRaw = (include?: Include[]): boolean => {
+  return (
+    include !== undefined && include.length === 1 && include[0].raw === true
+  )
 }
 
 // add CTX
 export const readPropDef = (
   p: PropDef,
+  defaultLocale: LangCodeEnum,
   locales: ReaderLocales, // add in ctx
-  include?: Include,
+  include: Include[],
 ): ReaderPropDef => {
   const readerPropDef: ReaderPropDef = {
     path: p.isEdge ? p.path.slice(1) : p.path,
-    typeIndex: include?.raw ? PropType.binary : p.type,
+    typeIndex: isRaw(include) ? PropType.binary : p.type,
     readBy: 0,
   }
+
   // if (opts?.meta) {
   //   if (opts?.codes?.size === 1 && opts.codes.has(opts.localeFromDef!)) {
   //  > this means get .en without the object
@@ -57,19 +63,6 @@ export const readPropDef = (
     readerPropDef.enum = Array.from(p.vals.keys())
   }
 
-  if (
-    p.type === PropType.stringLocalized ||
-    p.type === PropType.jsonLocalized
-  ) {
-    // @ts-ignore TODO make this nice
-    readerPropDef.locales = Object.keys(p.typeDef.schemaRoot.locales).reduce(
-      (map, lang: string) => {
-        map[LangCode[lang]] = lang
-        return map
-      },
-      {},
-    )
-  }
   if (p.type === PropType.vector || p.type === PropType.colVec) {
     // TODO Do something so that this works without ignore
     // @ts-ignore
@@ -81,30 +74,50 @@ export const readPropDef = (
   //   readerPropDef.cardinalityMode = p.cardinalityMode
   //   readerPropDef.cardinalityPrecision = p.cardinalityPrecision
   // }
-  // if (p.type === PropType.stringLocalized && opts?.codes) {
-  //   if (opts.codes.has(0)) {
-  //     readerPropDef.locales = locales
-  //   } else {
-  //     if (opts.codes.size === 1 && opts.codes.has(opts.localeFromDef!)) {
-  //       if (readerPropDef.meta) {
-  //         readerPropDef.locales = {}
-  //         for (const code of opts.codes) {
-  //           readerPropDef.locales[code] = LangCodeInverse[code]
-  //         }
-  //         if (opts.fallBacks) {
-  //           for (const code of opts.fallBacks) {
-  //             readerPropDef.locales[code] = LangCodeInverse[code]
-  //           }
-  //         }
-  //       }
-  //       // dont add locales - interprets it as a normal prop
-  //     } else {
-  //       readerPropDef.locales = {}
-  //       for (const code of opts.codes) {
-  //         readerPropDef.locales[code] = LangCodeInverse[code]
-  //       }
-  //     }
-  //   }
-  // }
+
+  if (
+    p.type === PropType.stringLocalized ||
+    p.type === PropType.jsonLocalized
+  ) {
+    for (const inc of include) {
+      if (inc.langCode) {
+        if (!readerPropDef.locales) {
+          readerPropDef.locales = {}
+        }
+        readerPropDef.locales[inc.langCode] = LangCodeInverse[inc.langCode]
+      }
+    }
+
+    if (!defaultLocale && !readerPropDef.locales) {
+      readerPropDef.locales = locales
+    }
+
+    // if (p.type === PropType.stringLocalized && opts?.codes) {
+    //   readerPropDef.locales = locales
+    //   if (opts.codes.has(0)) {
+    //     readerPropDef.locales = locales
+    //   } else {
+    //     if (opts.codes.size === 1 && opts.codes.has(opts.localeFromDef!)) {
+    //       if (readerPropDef.meta) {
+    //         readerPropDef.locales = {}
+    //         for (const code of opts.codes) {
+    //           readerPropDef.locales[code] = LangCodeInverse[code]
+    //         }
+    //         if (opts.fallBacks) {
+    //           for (const code of opts.fallBacks) {
+    //             readerPropDef.locales[code] = LangCodeInverse[code]
+    //           }
+    //         }
+    //       }
+    //       // dont add locales - interprets it as a normal prop
+    //     } else {
+    //       readerPropDef.locales = {}
+    //       for (const code of opts.codes) {
+    //         readerPropDef.locales[code] = LangCodeInverse[code]
+    //       }
+    //     }
+    //   }
+    // }
+  }
   return readerPropDef
 }

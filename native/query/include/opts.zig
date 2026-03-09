@@ -192,16 +192,16 @@ pub inline fn text(
                 while (iter.next()) |textValue| {
                     try appendCb(thread, prop, textValue, optsHeader);
                 }
-            } else if (optsHeader.hasOpts) {
+            } else if (optsHeader.hasNextOpt) {
                 var optsHeaderSelf = optsHeader.*;
-                while (optsHeaderSelf.hasOpts) {
+                while (true) : (optsHeaderSelf = utils.readNext(t.IncludeOpts, q, i)) {
                     try appendCb(
                         thread,
                         prop,
-                        Fields.textFromValue(value, optsHeader.lang),
+                        Fields.textFromValue(value, optsHeaderSelf.lang),
                         &optsHeaderSelf,
                     );
-                    optsHeaderSelf = utils.readNext(t.IncludeOpts, q, i);
+                    if (!optsHeaderSelf.hasNextOpt) break;
                 }
             } else {
                 try appendCb(

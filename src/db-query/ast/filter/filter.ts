@@ -40,13 +40,7 @@ const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
             const ops = astProp.props[lang].ops
             if (ops) {
               for (const op of ops) {
-                const condition = comparison(
-                  prop,
-                  op.op,
-                  op.val,
-                  ctx.locale,
-                  op.opts,
-                )
+                const condition = comparison(prop, op.op, op.val, code, op.opts)
                 ctx.query.set(condition, ctx.query.length)
               }
             }

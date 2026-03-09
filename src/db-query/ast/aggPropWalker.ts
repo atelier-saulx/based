@@ -200,7 +200,12 @@ export const walkProps = (
       )
       if (isEdge) hasEdges = true
 
-      ctx.readSchema.main.props[i] = readPropDef(propDef, ctx.locales)
+      ctx.readSchema.main.props[i] = readPropDef(
+        propDef,
+        ctx.locale,
+        ctx.locales,
+        [],
+      )
       ctx.readSchema.main.len += propDef.size
       i += propDef.size
     }

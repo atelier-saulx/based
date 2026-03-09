@@ -1,6 +1,7 @@
 import { ReaderLocales, ReaderSchema } from '../../protocol/index.js'
+import { LangName } from '../../schema/schema/locales.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
-import { LangCodeEnum } from '../../zigTsExports.js'
+import { LangCode, LangCodeEnum } from '../../zigTsExports.js'
 import type { IntervalString } from './aggregates.js'
 
 export type FilterOpts = {
@@ -63,18 +64,19 @@ export type FilterAst = {
 }
 
 export type Include = {
-  // glob?: '*' | '**' // youri thinks we can just do these as props
   meta?: true | 'only' | false
   maxChars?: number
   maxBytes?: number
   raw?: boolean
-  codes?: Set<LangCodeEnum>
+  langCode?: LangCodeEnum
+  // codes?: Set<LangCodeEnum>
 }
 
 export type QueryAst = {
   include?: Include
   select?: { start: number; end: number }
   locale?: string
+  localeFallBacks?: LangName[] | false
   range?: { start: number; end: number }
   type?: string
   target?: number | number[] | Record<string, any>
@@ -107,4 +109,10 @@ export type Ctx = {
   readSchema: ReaderSchema
   locales: ReaderLocales
   locale: LangCodeEnum
+  // localOverwrite for top level LOCALE (optional)
+  LocaleFallBackOverwrite?: LangCodeEnum[]
+  // Rest of fallbacks
+  localeFallbacks: {
+    [code: string]: LangCodeEnum[]
+  }
 }

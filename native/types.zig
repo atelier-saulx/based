@@ -30,7 +30,7 @@ pub const OpType = enum(u8) {
 
     blockHash = 42,
     blockStatuses = 43,
-    saveBlock = 67,
+    saveBlock = 67, // Don't call from js
     saveAll = 68,
     getSchemaIds = 70,
 
@@ -698,7 +698,7 @@ pub const IncludePartialProp = packed struct {
 pub const IncludeOpts = packed struct {
     end: u32,
     isChars: bool,
-    hasOpts: bool,
+    hasNextOpt: bool,
     _padding: u6,
     langFallbackSize: u8,
     lang: LangCode,
