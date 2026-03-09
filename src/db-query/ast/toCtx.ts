@@ -76,18 +76,20 @@ export const astToQueryCtx = (
 
   if (isSubscription) {
     const start = query.reserveUint32()
+    const seperateKeys = Object.keys(ctx.readSchema.props)
+    const mainKeys = Object.keys(ctx.readSchema.main.props)
     pushSubscriptionHeader(query, {
       op: OpType.subscribe,
-      fieldsLen: typeDef.separate.length,
-      partialLen: typeDef.main.length,
+      fieldsLen: seperateKeys.length,
+      partialLen: mainKeys.length,
       typeId: typeDef.id,
     })
     if (isSingleQuery) {
-      for (const separateProp of typeDef.separate) {
-        query.pushUint8(separateProp.id)
+      for (const key of seperateKeys) {
+        query.pushUint8(Number(key))
       }
-      for (const mainProp of typeDef.main) {
-        query.pushUint16(mainProp.start)
+      for (const key of mainKeys) {
+        query.pushUint16(Number(key))
       }
     } else {
       throw new Error('multi sub not implemented yet')
