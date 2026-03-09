@@ -518,26 +518,55 @@ export class Query<
   }
 
   groupBy<Prop extends string>(
-    prop: Prop,
-    step?: StepInput,
+    ...args: [Prop, ...Prop[]] | [...Prop[], StepInput]
   ): NextBranch<Schema, Type, MergeOpts<Opts, { $Group: Prop }>> {
-    const parts = prop.split('.')
-    let target = this.ast
-    let field: string = prop
-    if (parts.length > 1) {
-      field = parts.pop()!
-      target = traverse(this.ast, parts.join('.'))
+    if (args.length === 0) {
+      throw new Error('Query: groupBy expects at least one argument')
     }
-    target.groupBy = { prop: field as any }
-    if (step) {
-      if (typeof step === 'object') {
-        const s = step as any
-        if (s.step) target.groupBy.step = s.step
-        if (s.timeZone) target.groupBy.timeZone = s.timeZone
-        if (s.display) target.groupBy.display = s.display
-      } else {
-        target.groupBy.step = step
+
+    let step: StepInput | undefined
+    let props: string[]
+
+    const lastArg = args[args.length - 1]
+    if (
+      typeof lastArg === 'object' &&
+      lastArg !== null &&
+      !Array.isArray(lastArg) &&
+      !lastArg.hasOwnProperty('display') &&
+      (lastArg.hasOwnProperty('step') ||
+        lastArg.hasOwnProperty('timeZone') ||
+        'step' in lastArg)
+    ) {
+      step = lastArg as StepInput
+      props = args.slice(0, -1) as string[]
+    } else if (typeof lastArg === 'number' && !isNaN(lastArg)) {
+      step = lastArg as StepInput
+      props = args.slice(0, -1) as string[]
+    } else {
+      props = args as string[]
+    }
+
+    for (const prop of props) {
+      const parts = prop.split('.')
+      let target = this.ast
+      let field: string = prop
+      if (parts.length > 1) {
+        field = parts.pop()!
+        target = traverse(this.ast, parts.join('.'))
       }
+      target.groupBy = target.groupBy || []
+      const groupNode: any = { prop: field as any }
+      if (step) {
+        if (typeof step === 'object') {
+          const s = step as any
+          if (s.step) groupNode.step = s.step
+          if (s.timeZone) groupNode.timeZone = s.timeZone
+          if (s.display) groupNode.display = s.display
+        } else {
+          groupNode.step = step
+        }
+      }
+      target.groupBy.push(groupNode)
     }
     return this as any
   }
