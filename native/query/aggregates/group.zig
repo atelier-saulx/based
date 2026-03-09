@@ -97,7 +97,8 @@ inline fn aggregatePropsWithGroupBy(
     var i: usize = 0;
     tmpKeyLen.* = 0;
     var firstKeyType = t.PropType.null;
-    var firstStepRange: u16 = 0;
+    var firstStepRange: u32 = 0;
+    var isSingleKey = true;
 
     while (true) { // MV: manymany
         const currentKeyPropDef = utils.readNext(t.GroupByKeyProp, aggDefs, &i);
@@ -127,27 +128,30 @@ inline fn aggregatePropsWithGroupBy(
 
         const keyPart = getGrouByKeyValue(keyValue, currentKeyPropDef);
 
-        var lenBuf: [2]u8 = undefined;
-        utils.write(&lenBuf, @as(u16, @intCast(keyPart.len)), 0);
+        if (firstKeyType == t.PropType.null) {
+            isSingleKey = !currentKeyPropDef.hasNext;
+            firstKeyType = currentKeyPropDef.propType;
+            firstStepRange = currentKeyPropDef.stepRange;
+        }
 
-        @memcpy(tmpKeyBuf[tmpKeyLen.* .. tmpKeyLen.* + lenBuf.len], &lenBuf);
-        tmpKeyLen.* += lenBuf.len;
+        if (!isSingleKey) {
+            var lenBuf: [2]u8 = undefined;
+            utils.write(&lenBuf, @as(u16, @intCast(keyPart.len)), 0);
+
+            @memcpy(tmpKeyBuf[tmpKeyLen.* .. tmpKeyLen.* + lenBuf.len], &lenBuf);
+            tmpKeyLen.* += lenBuf.len;
+        }
 
         if (keyPart.len > 0) {
             @memcpy(tmpKeyBuf[tmpKeyLen.* .. tmpKeyLen.* + keyPart.len], keyPart);
             tmpKeyLen.* += keyPart.len;
         }
 
-        if (firstKeyType == t.PropType.null) {
-            firstKeyType = currentKeyPropDef.propType;
-            firstStepRange = @intCast(currentKeyPropDef.stepRange);
-        }
-
         if (!currentKeyPropDef.hasNext) break;
     }
 
     const key = tmpKeyBuf[0..tmpKeyLen.*];
-    const hash_map_entry = if (firstKeyType == t.PropType.timestamp and firstStepRange != 0)
+    const hash_map_entry = if (firstKeyType == t.PropType.timestamp and firstStepRange != 0 and isSingleKey)
         try groupByHashMap.getOrInsertWithRange(key, aggCtx.accumulatorSize, firstStepRange)
     else
         try groupByHashMap.getOrInsert(key, aggCtx.accumulatorSize);
@@ -177,8 +181,8 @@ pub inline fn finalizeGroupResults(
     while (it.next()) |entry| {
         const key = entry.key_ptr.*;
         const keyLen: u16 = @intCast(key.len);
+        try aggCtx.queryCtx.thread.query.append(keyLen);
         if (key.len > 0) {
-            try aggCtx.queryCtx.thread.query.append(keyLen);
             try aggCtx.queryCtx.thread.query.append(key);
         }
 

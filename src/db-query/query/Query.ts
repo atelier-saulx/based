@@ -27,6 +27,7 @@ import type {
 } from './types.js'
 import type { ResolvedProps } from '../../schema/index.js'
 import type { StepInput } from '../ast/aggregates.js'
+import { Interval } from '../../zigTsExports.js'
 
 function traverse(target: any, prop: string) {
   const path = prop.split('.')
@@ -527,19 +528,23 @@ export class Query<
     let step: StepInput | undefined
     let props: string[]
 
+    const intervalStrings = Object.keys(Interval)
     const lastArg = args[args.length - 1]
     if (
       typeof lastArg === 'object' &&
       lastArg !== null &&
-      !Array.isArray(lastArg) &&
-      !lastArg.hasOwnProperty('display') &&
-      (lastArg.hasOwnProperty('step') ||
-        lastArg.hasOwnProperty('timeZone') ||
-        'step' in lastArg)
+      !Array.isArray(lastArg)
     ) {
       step = lastArg as StepInput
       props = args.slice(0, -1) as string[]
     } else if (typeof lastArg === 'number' && !isNaN(lastArg)) {
+      step = lastArg as StepInput
+      props = args.slice(0, -1) as string[]
+    } else if (
+      typeof lastArg === 'string' &&
+      args.length > 1 &&
+      intervalStrings.includes(lastArg)
+    ) {
       step = lastArg as StepInput
       props = args.slice(0, -1) as string[]
     } else {
