@@ -97,3 +97,8 @@ export const isBasedQueryResponse = (
   [$buffer]: Uint8Array
   [$schema]: ReaderSchema
 } => typeof obj === 'object' && obj !== null && $buffer in obj
+
+export const checksum = (res: any): number => {
+  const buf = res?.[$buffer]
+  return buf ? readUint32(buf, buf.byteLength - 4) : 0
+}

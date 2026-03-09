@@ -3,6 +3,8 @@ import type {
   // SchemaMigrateFns,
   SchemaOut,
 } from '../schema/index.js'
+import { readUint32 } from '../utils/uint8.js'
+import type { OpTypeEnum } from '../zigTsExports.js'
 
 export type DbClientHooks = {
   setSchema(
@@ -11,24 +13,19 @@ export type DbClientHooks = {
   ): Promise<SchemaOut['hash']>
   flushModify(buf: Uint8Array): Promise<Uint8Array>
   getQueryBuf(buf: Uint8Array): ReturnType<DbServer['getQueryBuf']>
-  // subscribe(
-  //   q: BasedDbQuery,
-  //   onData: (buf: Uint8Array) => ReturnType<OnData>,
-  //   onError: OnError,
-  // ): OnClose
+  subscribe(buf: Uint8Array, onData: (buf: Uint8Array) => void): () => void
   subscribeSchema(cb: (schema: SchemaOut) => void): void
 }
 
 export const getDefaultHooks = (server: DbServer): DbClientHooks => {
   return {
-    // subscribe(
-    //   q: BasedDbQuery,
-    //   onData: (res: Uint8Array) => void,
-    //   onError: OnError,
-    // ) {
-    //   server.subscribe(q.subscriptionBuffer!, onData)
-    //   return () => {}
-    // },
+    subscribe(buf, onData) {
+      const size = readUint32(buf, 0)
+      const id = readUint32(buf, size)
+      const op = buf[size + 4] as OpTypeEnum
+      server.subscribe(buf, onData)
+      return () => server.unsubscribe(op, id, onData)
+    },
     setSchema(
       schema: SchemaOut,
       // transformFns
@@ -46,7 +43,7 @@ export const getDefaultHooks = (server: DbServer): DbClientHooks => {
         setSchema(schema)
       })
     },
-    flushModify(buf: Uint8Array) {
+    flushModify(buf: Uint8Array): Promise<Uint8Array> {
       const x = buf.slice(0)
       const res = server.modify(x)
       if (res instanceof Promise) {
@@ -58,8 +55,8 @@ export const getDefaultHooks = (server: DbServer): DbClientHooks => {
 
       return Promise.resolve(new Uint8Array(res))
     },
-    getQueryBuf(buf: Uint8Array) {
+    getQueryBuf(buf: Uint8Array): Promise<Uint8Array> {
       return server.getQueryBuf(buf)
     },
-  }
+  } satisfies DbClientHooks
 }

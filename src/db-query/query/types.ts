@@ -1,11 +1,11 @@
+import type { Query, DbQuery } from './index.js'
 import type { ResolvedProps } from '../../schema/index.js'
 import type { TypedArray } from '../../schema/index.js'
 
-export type GetLocales<Schema extends { locales?: any }> = Schema['locales'] extends
-  | string
-  | Record<string, any>
-  ? Schema['locales']
-  : {}
+export type GetLocales<Schema extends { locales?: any }> =
+  Schema['locales'] extends string | Record<string, any>
+    ? Schema['locales']
+    : {}
 
 export type InferSchemaOutput<
   Schema extends { types: any; locales?: any },
@@ -128,7 +128,9 @@ type InferType<Props, Schema extends { types: any; locales?: any }> = {
 }
 
 // Helpers for include
-type IsRefProp<Prop> = [Prop] extends [{ type: 'reference' } | { type: 'references' }]
+type IsRefProp<Prop> = [Prop] extends [
+  { type: 'reference' } | { type: 'references' },
+]
   ? true
   : [Prop] extends [{ ref: any }]
     ? true
@@ -285,13 +287,19 @@ export type InferPathType<
   Type extends keyof Schema['types'],
   Prop,
   EdgeProps extends Record<string, any> = {},
-> = InferPropsPathType<Schema, ResolvedProps<Schema['types'], Type> & EdgeProps, Prop>
+> = InferPropsPathType<
+  Schema,
+  ResolvedProps<Schema['types'], Type> & EdgeProps,
+  Prop
+>
 
 export type NumberPaths<
   Schema extends { types: any; locales?: any },
   Type extends keyof Schema['types'],
 > = {
-  [Key in Path<Schema, Type>]: InferPathType<Schema, Type, Key> extends number ? Key : never
+  [Key in Path<Schema, Type>]: InferPathType<Schema, Type, Key> extends number
+    ? Key
+    : never
 }[Path<Schema, Type>]
 
 export type SortablePaths<
@@ -299,12 +307,12 @@ export type SortablePaths<
   Type extends keyof Schema['types'],
   EdgeProps extends Record<string, any> = {},
 > = {
-  [Key in Path<Schema, Type>]: InferPathType<Schema, Type, Key, EdgeProps> extends
-    | string
-    | number
-    | Uint8Array
-    | boolean
-    | null
+  [Key in Path<Schema, Type>]: InferPathType<
+    Schema,
+    Type,
+    Key,
+    EdgeProps
+  > extends string | number | Uint8Array | boolean | null
     ? Key
     : never
 }[Path<Schema, Type>]
@@ -321,3 +329,212 @@ export type UnionToIntersection<UnionType> = (
 ) extends (k: infer IntersectionType) => void
   ? IntersectionType
   : never
+
+export type SetModeString = 'sample' | 'population'
+
+export type AggFnOptions = {
+  mode?: SetModeString
+}
+
+// NEW OPTION TYPES
+export type QueryOpts = {
+  $K?: any
+  $Single?: boolean
+  $Field?: string | number | symbol
+  $Root?: boolean
+  $Edges?: any
+  $Agg?: any
+  $Group?: string
+}
+
+export type OptK<BaseOpts extends QueryOpts> = BaseOpts extends {
+  $K: infer Value
+}
+  ? Value
+  : '*'
+export type OptSingle<BaseOpts extends QueryOpts> = BaseOpts extends {
+  $Single: infer Value
+}
+  ? Value
+  : false
+export type OptField<BaseOpts extends QueryOpts> = BaseOpts extends {
+  $Field: infer Value
+}
+  ? Value
+  : undefined
+export type OptRoot<BaseOpts extends QueryOpts> = BaseOpts extends {
+  $Root: infer Value
+}
+  ? Value
+  : false
+export type OptEdges<BaseOpts extends QueryOpts> = BaseOpts extends {
+  $Edges: infer Value
+}
+  ? Value
+  : {}
+export type OptAgg<BaseOpts extends QueryOpts> = BaseOpts extends {
+  $Agg: infer Value
+}
+  ? Value
+  : {}
+export type OptGroup<BaseOpts extends QueryOpts> = BaseOpts extends {
+  $Group: infer Value
+}
+  ? Value
+  : undefined
+
+export type MergeOpts<BaseOpts extends QueryOpts, Updates extends QueryOpts> = {
+  $K: '$K' extends keyof Updates ? Updates['$K'] : OptK<BaseOpts>
+  $Single: '$Single' extends keyof Updates
+    ? Updates['$Single']
+    : OptSingle<BaseOpts>
+  $Field: '$Field' extends keyof Updates
+    ? Updates['$Field']
+    : OptField<BaseOpts>
+  $Root: '$Root' extends keyof Updates ? Updates['$Root'] : OptRoot<BaseOpts>
+  $Edges: '$Edges' extends keyof Updates
+    ? Updates['$Edges']
+    : OptEdges<BaseOpts>
+  $Agg: '$Agg' extends keyof Updates ? Updates['$Agg'] : OptAgg<BaseOpts>
+  $Group: '$Group' extends keyof Updates
+    ? Updates['$Group']
+    : OptGroup<BaseOpts>
+}
+
+export type FilterBranch<Target extends { filter: any }> = Target
+
+export type QueryRes<
+  Schema extends { types: any; locales?: any },
+  Type extends keyof Schema['types'],
+  Opts extends QueryOpts,
+> = [OptGroup<Opts>] extends [string]
+  ? Record<string, OptAgg<Opts>>
+  : [keyof OptAgg<Opts>] extends [never]
+    ? OptSingle<Opts> extends true
+      ? PickOutput<
+          Schema,
+          Type,
+          ResolveInclude<ResolvedProps<Schema['types'], Type>, OptK<Opts>>
+        > | null
+      : PickOutput<
+          Schema,
+          Type,
+          ResolveInclude<ResolvedProps<Schema['types'], Type>, OptK<Opts>>
+        >[]
+    : OptAgg<Opts>
+
+export type FilterFn<
+  Schema extends { types: any; locales?: any },
+  Type extends keyof Schema['types'],
+  Opts extends QueryOpts,
+> = FilterSignature<Schema, Type, Opts, FilterBranch<Query<Schema, Type, Opts>>>
+
+export type FilterProp<
+  Schema extends { types: any; locales?: any },
+  Type extends keyof Schema['types'],
+  Opts extends QueryOpts,
+> =
+  | keyof (ResolvedProps<Schema['types'], Type> & OptEdges<Opts>)
+  | Path<Schema, Type>
+  | 'id'
+
+export type FilterValue<
+  Op extends Operator,
+  Schema extends { types: any; locales?: any },
+  Type extends keyof Schema['types'],
+  Prop,
+  Opts extends QueryOpts = {},
+> = Op extends '=' | '!='
+  ?
+      | InferPathType<Schema, Type, Prop, OptEdges<Opts>>
+      | InferPathType<Schema, Type, Prop, OptEdges<Opts>>[]
+  : InferPathType<Schema, Type, Prop, OptEdges<Opts>>
+
+export type FilterSignature<
+  Schema extends { types: any; locales?: any },
+  Type extends keyof Schema['types'],
+  Opts extends QueryOpts,
+  Result,
+> = {
+  (
+    fn: (
+      filter: FilterFn<Schema, Type, Opts>,
+    ) => FilterBranch<Query<Schema, Type, Opts>>,
+  ): Result
+  <Prop extends FilterProp<Schema, Type, Opts>, Op extends Operator = Operator>(
+    prop: Prop,
+    op: Op,
+    val: FilterValue<Op, Schema, Type, Prop, Opts>,
+    opts?: FilterOpts,
+  ): Result
+}
+
+export type SelectFn<
+  Schema extends { types: any; locales?: any },
+  Type extends keyof Schema['types'],
+> = <Prop extends keyof ResolvedProps<Schema['types'], Type>>(
+  field: Prop,
+) => Query<
+  Schema,
+  ResolvedProps<Schema['types'], Type>[Prop] extends {
+    ref: infer Ref extends string
+  }
+    ? Ref
+    : ResolvedProps<Schema['types'], Type>[Prop] extends {
+          items: { ref: infer Ref extends string }
+        }
+      ? Ref
+      : never,
+  {
+    $K: '*'
+    $Single: false
+    $Field: Prop
+    $Root: false
+    $Edges: FilterEdges<ResolvedProps<Schema['types'], Type>[Prop]> &
+      (ResolvedProps<Schema['types'], Type>[Prop] extends { items: infer Items }
+        ? FilterEdges<Items>
+        : {})
+  }
+>
+
+// ResolveIncludeArgs needs to stay here because it refers to Query
+export type ResolveIncludeArgs<Target> = Target extends (
+  q: any,
+) => Query<any, any, infer Opts extends QueryOpts>
+  ? [OptGroup<Opts>] extends [string]
+    ? {
+        field: OptField<Opts>
+        select: { _aggregate: Record<string, OptAgg<Opts>> }
+      }
+    : [keyof OptAgg<Opts>] extends [never]
+      ? { field: OptField<Opts>; select: OptK<Opts> }
+      : { field: OptField<Opts>; select: { _aggregate: OptAgg<Opts> } }
+  : Target extends string
+    ? ResolveDotPath<Target>
+    : Target
+
+// ResolveAggregate extracts the aggregate structure from a callback function
+export type ResolveAggregate<Target> =
+  ResolveIncludeArgs<Target> extends {
+    field: infer QueryArg extends string | number | symbol
+    select: { _aggregate: infer Agg }
+  }
+    ? { [Key in QueryArg]: Agg }
+    : never
+
+// Helper type to simplify include signature
+export type AnyQuery<Schema extends { types: any; locales?: any }> = Query<
+  Schema,
+  any,
+  any
+>
+
+// Helper type to simplify method return types
+export type NextBranch<
+  Schema extends { types: any; locales?: any },
+  Type extends keyof Schema['types'],
+  Opts extends QueryOpts,
+> =
+  OptRoot<Opts> extends true
+    ? DbQuery<Schema, Type, Opts>
+    : Query<Schema, Type, Opts>

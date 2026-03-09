@@ -149,15 +149,7 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                         try Modify.subscription(thread, m);
                     },
                     .subscribe => {
-                        var index: usize = 0;
-                        const subSize = utils.readNext(u32, m, &index);
-                        const subHeader = utils.readNext(t.SubscriptionHeader, m, &index);
-                        const len = threads.threads.len;
-                        if (subHeader.typeId % len == thread.id) {
-                            // This can be a bit more efficient
-                            // std.debug.print("subscribe on type {d} on thread {d}\n", .{ subHeader.typeId, thread.id });
-                            try Subscription.subscribe(thread, m[index..m.len], &subHeader, subSize);
-                        }
+                        try Subscription.subscribe(thread, m, threads.threads.len);
                     },
                     else => {},
                 }

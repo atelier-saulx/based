@@ -18,7 +18,7 @@ import { serializeCreate } from './modify/create.js'
 import { serializeUpdate } from './modify/update.js'
 import { serializeDelete } from './modify/delete.js'
 import { serializeUpsert } from './modify/upsert.js'
-import { BasedQuery2 } from '../db-query/query/index.js'
+import { DbQuery } from '../db-query/query/index.js'
 import type { InferSchemaOutput } from '../db-query/query/types.js'
 import type { ResolveSchema, StrictSchema } from '../schema/schema/schema.js'
 
@@ -71,11 +71,11 @@ export class DbClientClass<
   hooks: DbClientHooks
   modifyCtx: ModifyCtx
 
-  async schemaIsSet() {
-    if (!this.schema) {
-      await this.once('schema')
-    }
-  }
+  // async schemaIsSet() {
+  //   if (!this.schema) {
+  //     await this.once('schema')
+  //   }
+  // }
 
   async setSchema<const T extends SchemaIn>(
     schema: StrictSchema<T>,
@@ -100,14 +100,14 @@ export class DbClientClass<
   query<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
     id?: number[],
-  ): BasedQuery2<S, T, { $K: '*'; $Single: false }>
+  ): DbQuery<S, T, { $K: '*'; $Single: false }>
 
   query<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
     id:
       | number
       | (Partial<InferSchemaOutput<S, T>> & { [Symbol.toStringTag]?: never }),
-  ): BasedQuery2<S, T, { $K: '*'; $Single: true }>
+  ): DbQuery<S, T, { $K: '*'; $Single: true }>
   query<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
     id?:
@@ -115,7 +115,7 @@ export class DbClientClass<
       | number[]
       | (Partial<InferSchemaOutput<S, T>> & { [Symbol.toStringTag]?: never }),
   ): any {
-    return new BasedQuery2(this, type, id as any)
+    return new DbQuery(this, type, id as any)
   }
 
   create<T extends keyof S['types'] & string = keyof S['types'] & string>(

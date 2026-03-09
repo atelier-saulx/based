@@ -1,5 +1,7 @@
-import { checksum } from '../../../db-query/query/index.js'
-import { isBasedQueryResponse } from '../../../db-query/query/result.js'
+import {
+  checksum,
+  isBasedQueryResponse,
+} from '../../../db-query/query/result.js'
 import {
   hash,
   hashObjectIgnoreKeyOrder,

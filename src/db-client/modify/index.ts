@@ -28,9 +28,7 @@ export const execHooks = (
 
 export const getTypeDef = (schema: SchemaOut, type: string): TypeDef => {
   const typeDef = getTypeDefs(schema).get(type)
-  if (!typeDef) {
-    throw new Error(`Type ${type} not found`)
-  }
+  if (!typeDef) throw new Error(`Type ${type} not found`)
   return typeDef
 }
 
@@ -93,6 +91,9 @@ export const flush = (ctx: ModifyCtx) => {
   writeModifyHeaderProps.count(ctx.buf.data, batch.count, 0)
   batch.flushed = true
   ctx.hooks.flushModify(ctx.buf.view).then((result) => {
+    // TODO handle schema change here!
+    // retry it
+
     batch.result = result
     const dependents = batch.dependents
     if (dependents) {
@@ -224,7 +225,7 @@ export class BasedModify<S extends (...args: any[]) => any = ModifySerializer>
         this._dependency = dependency
         this._arguments = arguments
         return
-      } else if (this._arguments) {
+      } else if (this._dependency) {
         // its in async mode
         this._error = e
         this._reject?.(e)

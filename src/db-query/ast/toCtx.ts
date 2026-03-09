@@ -7,14 +7,18 @@ import { Ctx, QueryAst } from './ast.js'
 import { defaultMultiple } from './multiple.js'
 import { getReaderLocales, readSchema } from './readSchema.js'
 import { defaultSingle } from './single.js'
-import { LangCode, LangCodeEnum } from '../../zigTsExports.js'
+import {
+  LangCode,
+  LangCodeEnum,
+  OpType,
+  pushSubscriptionHeader,
+} from '../../zigTsExports.js'
 
 export const astToQueryCtx = (
   schema: SchemaOut,
   ast: QueryAst,
   query: AutoSizedUint8Array,
-  // sub: AutoSizedUint8Array, maybe we can just check the query for subs
-  // PREPARE
+  isSubscription = false,
 ): {
   query: Uint8Array
   readSchema: ReaderSchema
@@ -32,6 +36,7 @@ export const astToQueryCtx = (
     throw new Error('Type does not exist')
   }
 
+  const isSingleQuery = ast.target && !Array.isArray(ast.target)
   const queryIdPos = query.reserveUint32()
 
   let locale: LangCodeEnum = LangCode.none
@@ -52,7 +57,7 @@ export const astToQueryCtx = (
     locale: locale,
   }
 
-  if (ast.target && !Array.isArray(ast.target)) {
+  if (isSingleQuery) {
     defaultSingle(ast, ctx, typeDef)
     ctx.readSchema.type = ReaderSchemaEnum.single
   } else {
@@ -61,6 +66,35 @@ export const astToQueryCtx = (
 
   query.pushUint64(schema.hash)
   query.writeUint32(crc32(query.view), queryIdPos)
+
+  if (isSubscription) {
+    const start = query.reserveUint32()
+    pushSubscriptionHeader(query, {
+      op: OpType.subscribe,
+      fieldsLen: typeDef.separate.length,
+      partialLen: typeDef.main.length,
+      typeId: typeDef.id,
+    })
+    if (isSingleQuery) {
+      for (const separateProp of typeDef.separate) {
+        query.pushUint8(separateProp.id)
+      }
+      for (const mainProp of typeDef.main) {
+        query.pushUint16(mainProp.start)
+      }
+    } else {
+      throw new Error('multi sub not implemented yet')
+    }
+    const subsSize = query.length - start
+    query.writeUint32(subsSize, start)
+    const size = query.length
+    // shift whole thing forward
+    query.set(query.view, subsSize)
+    // put the subs buf at the start
+    query.set(query.subarray(start + subsSize), 0)
+    // shorten to original size
+    query.length = size
+  }
 
   // can use same buf for sub
   return {

@@ -7,7 +7,6 @@ import {
 import {
   IncludeOp,
   LangCode,
-  LangCodeEnum,
   MAIN_PROP,
   PropType,
   pushIncludeHeader,
@@ -118,6 +117,8 @@ const walk = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
     ast.props ??= {}
     ast.props['*'] ??= {}
     ast.props['*'].include ??= ast.include
+  } else if (!ast.props) {
+    ast.props = { '*': { include: {} } }
   }
   // if ast.include.glob === '*' include all from schema
   // youri thinks we can just set this as a field, simpler (also for nested things like bla.**.id)
