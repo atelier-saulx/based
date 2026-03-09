@@ -31,23 +31,20 @@ pub fn fireIdSubscription(threads: *Thread.Threads, thread: *Thread.Thread) !voi
     }
 }
 
-pub fn subscribe(
-    thread: *Thread.Thread,
-    buffer: []u8,
-    subHeader: *const t.SubscriptionHeader,
-    subSize: u32,
-) !void {
-    var index: usize = 0;
-    const fields = utils.sliceNext(subHeader.fieldsLen, buffer, &index);
-    const partialFields = utils.sliceNext(subHeader.partialLen * 2, buffer, &index);
-    const query = utils.sliceNext(buffer.len - subSize, buffer, &index);
+pub fn subscribe(thread: *Thread.Thread, buf: []u8, threadsLen: usize) !void {
+    var index: usize = 4;
+    const subHeader = utils.readNext(t.SubscriptionHeader, buf, &index);
+    if (subHeader.typeId % threadsLen != thread.id) return;
+    const fields = utils.sliceNext(subHeader.fieldsLen, buf, &index);
+    const partialFields = utils.sliceNext(subHeader.partialLen * 2, buf, &index);
+    const query = buf[index..];
     index = 0;
     const subId = utils.readNext(u32, query, &index);
     const queryType: t.OpType = @enumFromInt(query[index]);
     switch (queryType) {
         .id, .idFilter => {
             const header = utils.readNext(t.QueryHeaderSingle, query, &index);
-            try Id.addIdSubscription(thread, query, partialFields, fields, subId, &header, subHeader);
+            try Id.addIdSubscription(thread, query, partialFields, fields, subId, &header, &subHeader);
         },
         else => {
             // multi - has to be scheduled for the specific thread handle this when flushing

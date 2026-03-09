@@ -13,7 +13,7 @@ const subs = @import("subscription.zig");
 const Sort = @import("../sort/sort.zig");
 const sort = @import("./sort.zig");
 
-pub const subscription = subs.suscription;
+pub const subscription = subs.subscription;
 const resItemSize = utils.sizeOf(t.ModifyResultItem);
 inline fn applyInc(comptime T: type, current: []u8, value: []u8, start: u16, incrementPositive: bool) void {
     const curr = utils.read(T, current, start);

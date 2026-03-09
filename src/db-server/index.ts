@@ -153,13 +153,20 @@ export class DbServer extends DbShared {
     })
   }
 
-  unsubscribe(id: number) {}
+  unsubscribe(
+    op: OpTypeEnum,
+    id: number,
+    onData: (d: Uint8Array) => void,
+  ): void {
+    this.removeOpListener(op, id, onData)
+  }
 
-  subscribe(buf: Uint8Array, onData: (d: Uint8Array) => void): number {
+  subscribe(buf: Uint8Array, onData: (d: Uint8Array) => void): void {
     const subSize = readUint32(buf, 0)
-    const query = buf.subarray(subSize, buf.byteLength)
+    console.log({ subSize })
+    const query = buf.subarray(subSize)
     const id = readUint32(query, 0)
-    const op: OpTypeEnum = query[4] as OpTypeEnum
+    const op = query[4] as OpTypeEnum
     const queryListeners = this.opListeners.get(op)!
     const qIdListeners = queryListeners.get(id)
     if (!qIdListeners?.persistent.size) {
@@ -171,8 +178,6 @@ export class DbServer extends DbShared {
     } else {
       native.query(query, this.dbCtxExternal)
     }
-
-    return id
   }
 
   // allow 10 ids for special listeners on mod thread
@@ -196,36 +201,29 @@ export class DbServer extends DbShared {
   }
 
   async setSchema(
-    schema: SchemaOut,
-    transformFns?: SchemaMigrateFns,
+    schema: SchemaOut, //,
+    // transformFns?: SchemaMigrateFns,
   ): Promise<SchemaOut['hash']> {
-    if (this.stopped) {
-      throw new Error('Db is stopped')
-    }
-
-    if (schema.hash === this.schema?.hash) {
-      return schema.hash
-    }
-
+    if (this.stopped) throw new Error('Db is stopped')
+    if (schema.hash === this.schema?.hash) return schema.hash
     if (this.schema) {
       console.log('MIGRATE NOT HERE YET')
       if (schema.hash === this.migrating) {
         await this.once('schema')
         return this.schema.hash
       }
-      await migrate(this, this.schema, schema, transformFns)
+      // start blocking modifies
+      // save dump
+      // load dump in new DbServer
+      // migrate in place
+
+      // await migrate(this, this.schema, schema, transformFns)
       return this.schema.hash
     }
-    if (this.dbCtxExternal) {
-      throw new Error('Db is already running')
-    }
+    if (this.dbCtxExternal) throw new Error('Db is already running')
     realStart(this, schema)
     await writeSchemaFile(this, schema)
-
-    process.nextTick(() => {
-      this.emit('schema', this.schema!)
-    })
-
+    process.nextTick(() => this.emit('schema', this.schema!))
     return schema.hash
   }
 

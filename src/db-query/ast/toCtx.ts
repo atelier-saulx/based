@@ -11,14 +11,18 @@ import { Ctx, QueryAst } from './ast.js'
 import { defaultMultiple } from './multiple.js'
 import { readSchema } from './readSchema.js'
 import { defaultSingle } from './single.js'
-import { LangCode, LangCodeEnum } from '../../zigTsExports.js'
+import {
+  LangCode,
+  LangCodeEnum,
+  OpType,
+  pushSubscriptionHeader,
+} from '../../zigTsExports.js'
 
 export const astToQueryCtx = (
   schema: SchemaOut,
   ast: QueryAst,
   query: AutoSizedUint8Array,
-  // sub: AutoSizedUint8Array, maybe we can just check the query for subs
-  // PREPARE
+  isSubscription = false,
 ): {
   query: Uint8Array
   readSchema: ReaderSchema
@@ -36,6 +40,7 @@ export const astToQueryCtx = (
     throw new Error('Type does not exist')
   }
 
+  const isSingleQuery = ast.target && !Array.isArray(ast.target)
   const queryIdPos = query.reserveUint32()
 
   let locale: LangCodeEnum = LangCode.none
@@ -59,7 +64,7 @@ export const astToQueryCtx = (
     // LocaleFallBackOverwrite ADD THIS
   }
 
-  if (ast.target && !Array.isArray(ast.target)) {
+  if (isSingleQuery) {
     defaultSingle(ast, ctx, typeDef)
     ctx.readSchema.type = ReaderSchemaEnum.single
   } else {
@@ -68,6 +73,37 @@ export const astToQueryCtx = (
 
   query.pushUint64(schema.hash)
   query.writeUint32(crc32(query.view), queryIdPos)
+
+  if (isSubscription) {
+    const start = query.reserveUint32()
+    const seperateKeys = Object.keys(ctx.readSchema.props)
+    const mainKeys = Object.keys(ctx.readSchema.main.props)
+    pushSubscriptionHeader(query, {
+      op: OpType.subscribe,
+      fieldsLen: seperateKeys.length,
+      partialLen: mainKeys.length,
+      typeId: typeDef.id,
+    })
+    if (isSingleQuery) {
+      for (const key of seperateKeys) {
+        query.pushUint8(Number(key))
+      }
+      for (const key of mainKeys) {
+        query.pushUint16(Number(key))
+      }
+    } else {
+      throw new Error('multi sub not implemented yet')
+    }
+    const subsSize = query.length - start
+    query.writeUint32(subsSize, start)
+    const size = query.length
+    // shift whole thing forward
+    query.set(query.view, subsSize)
+    // put the subs buf at the start
+    query.set(query.subarray(start + subsSize), 0)
+    // shorten to original size
+    query.length = size
+  }
 
   // can use same buf for sub
   return {
