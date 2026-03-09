@@ -31,8 +31,9 @@ export const includeProp = (ctx: Ctx, prop: PropDef, include: Include[]) => {
           IncludeOp.defaultWithOpts,
           offset,
         )
-        // Todo opts.fall can add custom fallbacks as option
-        const fallBacks = opts.langCode ? [] : ctx.localeFallbacks[ctx.locale]
+        const fallBacks = opts.langCode
+          ? []
+          : (ctx.LocaleFallBackOverwrite ?? ctx.localeFallbacks[ctx.locale])
         pushIncludeOpts(ctx.query, {
           hasNextOpt: !!include[i + 1],
           end: opts.maxChars ? opts.maxChars : (opts.maxBytes ?? 0),
@@ -49,7 +50,9 @@ export const includeProp = (ctx: Ctx, prop: PropDef, include: Include[]) => {
           IncludeOp.defaultWithOpts,
           offset,
         )
-        const fallBacks = ctx.localeFallbacks[ctx.locale]
+        const fallBacks = opts.langCode
+          ? []
+          : (ctx.LocaleFallBackOverwrite ?? ctx.localeFallbacks[ctx.locale])
         pushIncludeOpts(ctx.query, {
           hasNextOpt: false,
           end: 0,

@@ -194,21 +194,14 @@ pub inline fn text(
                 }
             } else if (optsHeader.hasNextOpt) {
                 var optsHeaderSelf = optsHeader.*;
-                while (optsHeaderSelf.hasNextOpt) {
+                while (true) : (optsHeaderSelf = utils.readNext(t.IncludeOpts, q, i)) {
                     try appendCb(
                         thread,
                         prop,
                         Fields.textFromValue(value, optsHeaderSelf.lang),
                         &optsHeaderSelf,
                     );
-                    optsHeaderSelf = utils.readNext(t.IncludeOpts, q, i);
-                    // can this be a bit nicer
-                    try appendCb(
-                        thread,
-                        prop,
-                        Fields.textFromValue(value, optsHeaderSelf.lang),
-                        &optsHeaderSelf,
-                    );
+                    if (!optsHeaderSelf.hasNextOpt) break;
                 }
             } else {
                 try appendCb(

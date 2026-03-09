@@ -51,7 +51,6 @@ pub fn include(
         const op: t.IncludeOp = @enumFromInt(q[i]);
         // std.debug.print("includeop: {any} - {any}\n", .{ op, q });
         switch (op) {
-            // add .referenceEdge?
             .reference => {
                 recursionErrorBoundary(Single.reference, node, ctx, q, typeEntry, &i);
             },
@@ -84,7 +83,7 @@ pub fn include(
                         }
                     },
                     else => {
-                        // No usefull metainfo for non-selvaString props yet
+                        // No useful metainfo for non-selvaString props yet
                     },
                 }
             },
@@ -93,7 +92,6 @@ pub fn include(
                 const value = try get(typeEntry, node, &header);
                 switch (header.propType) {
                     .stringLocalized, .jsonLocalized => {
-                        // can be optmized... read next is quite slow because pointer
                         var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
                         try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.meta);
                     },
@@ -104,8 +102,6 @@ pub fn include(
                 const header = utils.readNext(t.IncludeHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
                 var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
-
-                std.debug.print("DERP {any} \n", .{optsHeader});
                 switch (header.propType) {
                     .binary, .string, .json => {
                         try opts.string(ctx.thread, header.prop, value, &optsHeader);
@@ -121,7 +117,6 @@ pub fn include(
             .default => {
                 const header = utils.readNext(t.IncludeHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
-                // std.debug.print("??? value {any} - {any}\n", .{ value, header });
                 switch (header.propType) {
                     .stringLocalized, .jsonLocalized => {
                         var iter = Fields.textIterator(value);
@@ -130,7 +125,6 @@ pub fn include(
                         }
                     },
                     .binary, .string, .json => {
-                        // utils.printString("derp", value);
                         try append.stripCrc32(ctx.thread, header.prop, value);
                     },
                     .microBuffer, .vector, .colVec => {
