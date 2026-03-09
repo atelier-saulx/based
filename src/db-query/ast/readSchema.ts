@@ -37,7 +37,7 @@ export const readPropDef = (
   p: PropDef,
   defaultLocale: LangCodeEnum,
   locales: ReaderLocales, // add in ctx
-  include?: Include[],
+  include: Include[],
 ): ReaderPropDef => {
   const readerPropDef: ReaderPropDef = {
     path: p.isEdge ? p.path.slice(1) : p.path,
@@ -79,29 +79,21 @@ export const readPropDef = (
     p.type === PropType.stringLocalized ||
     p.type === PropType.jsonLocalized
   ) {
-    if (include) {
-      // if (include.length === 1) {
-      //   // now we can check for meta only
-      //   if (include[0].langCode) {
-      //     readerPropDef.locales = {}
-      //     readerPropDef.locales[include[0].langCode] =
-      //       LangCodeInverse[include[0].langCode]
-      //   }
-      // }
-      readerPropDef.locales = {}
-      for (const inc of include) {
-        if (inc.langCode) {
-          readerPropDef.locales[inc.langCode] = LangCodeInverse[inc.langCode]
+    for (const inc of include) {
+      if (inc.langCode) {
+        if (!readerPropDef.locales) {
+          readerPropDef.locales = {}
         }
+        readerPropDef.locales[inc.langCode] = LangCodeInverse[inc.langCode]
       }
-      // do stuff
-    } else if (!defaultLocale) {
+    }
+
+    if (!defaultLocale && !readerPropDef.locales) {
       readerPropDef.locales = locales
     }
 
     // if (p.type === PropType.stringLocalized && opts?.codes) {
     //   readerPropDef.locales = locales
-
     //   if (opts.codes.has(0)) {
     //     readerPropDef.locales = locales
     //   } else {

@@ -129,7 +129,9 @@ export const getLocaleFallbacks = (
   }
   const cached = localesFallbackCache.get(schema.locales)
   if (cached) return cached
-  const locales = {}
+  const locales = {
+    [LangCode.none]: [],
+  }
   for (const lang in schema.locales) {
     const { fallback } = schema.locales[lang as keyof typeof schema.locales]!
     locales[LangCode[lang]] = fallback.map((lang) => LangCode[lang])

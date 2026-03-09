@@ -204,6 +204,7 @@ export const walkProps = (
         propDef,
         ctx.locale,
         ctx.locales,
+        [],
       )
       ctx.readSchema.main.len += propDef.size
       i += propDef.size

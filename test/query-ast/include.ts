@@ -170,19 +170,24 @@ await test('include', async (t) => {
     props: {
       y: { include: {} },
       localized: {
-        include: {},
-        // props: {
-        //   nl: {
-        //     include: {
-        //       // meta
-        //     },
-        //   },
-        //   en: {
-        //     include: {
-        //       // meta
-        //     },
-        //   },
+        // include: {
+        //   maxChars: 4,
+        //   // maxBytes
         // },
+        props: {
+          nl: {
+            include: {
+              maxChars: 8,
+              // meta
+            },
+          },
+          en: {
+            include: {
+              maxChars: 4,
+              // meta
+            },
+          },
+        },
       },
     },
   }
@@ -191,11 +196,9 @@ await test('include', async (t) => {
 
   const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
 
-  // debugBuffer(ctx.query)
-
   console.log(deflateSync(ctx.query).byteLength)
 
-  // debugBuffer(deflateSync(ctx.query).toString('hex'))
+  debugBuffer(deflateSync(ctx.query).toString('base64'))
 
   const queries: any = []
   for (let i = 0; i < 10; i++) {
@@ -206,7 +209,7 @@ await test('include', async (t) => {
 
   console.log('START PERF', Date.now() - d, 'ms')
 
-  await perf(
+  await perf.skip(
     async () => {
       const q: any = []
       for (let i = 0; i < 10; i++) {

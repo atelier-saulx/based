@@ -698,7 +698,7 @@ pub const IncludePartialProp = packed struct {
 pub const IncludeOpts = packed struct {
     end: u32,
     isChars: bool,
-    hasOpts: bool,
+    hasNextOpt: bool,
     _padding: u6,
     langFallbackSize: u8,
     lang: LangCode,

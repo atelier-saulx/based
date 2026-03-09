@@ -81,7 +81,7 @@ export const reference = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
       prop,
       ctx.locale,
       ctx.locales,
-      ast.include ? [ast.include] : undefined,
+      ast.include ? [ast.include] : [],
     ),
   }
   const size = include(

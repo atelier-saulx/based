@@ -104,6 +104,8 @@ pub fn include(
                 const header = utils.readNext(t.IncludeHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
                 var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
+
+                std.debug.print("DERP {any} \n", .{optsHeader});
                 switch (header.propType) {
                     .binary, .string, .json => {
                         try opts.string(ctx.thread, header.prop, value, &optsHeader);

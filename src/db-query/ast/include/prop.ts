@@ -6,147 +6,72 @@ import {
   PropType,
   pushIncludeHeader,
   pushIncludeOpts,
+  writeIncludeHeaderProps,
 } from '../../../zigTsExports.js'
 import { Ctx, Include } from '../ast.js'
 import { readPropDef } from '../readSchema.js'
 
-export const includeProp = (
-  ctx: Ctx,
-  prop: PropDef,
-  include: Include | Include[],
-) => {
-  // check for HAS options
+export const includeProp = (ctx: Ctx, prop: PropDef, include: Include[]) => {
+  const isLocalized =
+    prop.type === PropType.jsonLocalized ||
+    prop.type === PropType.stringLocalized
 
-  // if meta only need this IncludeMetaHeader
+  const offset = pushIncludeHeader(ctx.query, {
+    op: IncludeOp.default,
+    prop: prop.id,
+    propType: prop.type,
+  })
 
-  // has to handle differently for meta...
-
-  if (!Array.isArray(include)) {
-    include = [include]
-  }
-
-  let hasOpts = include.length
-  let propAdded = false
-  let hasSpecificLang = false
-  for (const opts of include) {
+  for (let i = 0; i < include.length; i++) {
+    const opts = include[i]
     if (opts.meta !== 'only') {
-      if (isEmptyObject(opts)) {
-        hasOpts--
-        continue
-      }
-      if (opts.langCode) {
-        propAdded = true
-        hasSpecificLang = true
-        pushIncludeHeader(ctx.query, {
-          op: IncludeOp.defaultWithOpts,
-          prop: prop.id,
-          propType: prop.type,
-        })
+      if (!isEmptyObject(opts)) {
+        writeIncludeHeaderProps.op(
+          ctx.query.data,
+          IncludeOp.defaultWithOpts,
+          offset,
+        )
+        // Todo opts.fall can add custom fallbacks as option
+        const fallBacks = opts.langCode ? [] : ctx.localeFallbacks[ctx.locale]
         pushIncludeOpts(ctx.query, {
-          hasOpts: false,
+          hasNextOpt: !!include[i + 1],
+          end: opts.maxChars ? opts.maxChars : (opts.maxBytes ?? 0),
+          isChars: !!opts.maxChars,
+          lang: opts.langCode ?? (isLocalized ? ctx.locale : 0),
+          langFallbackSize: fallBacks.length,
+        })
+        for (let i = 0; i < fallBacks.length || 0; i++) {
+          ctx.query.push(fallBacks[i])
+        }
+      } else if (isLocalized && ctx.locale) {
+        writeIncludeHeaderProps.op(
+          ctx.query.data,
+          IncludeOp.defaultWithOpts,
+          offset,
+        )
+        const fallBacks = ctx.localeFallbacks[ctx.locale]
+        pushIncludeOpts(ctx.query, {
+          hasNextOpt: false,
           end: 0,
           isChars: false,
-          lang: opts.langCode,
-          langFallbackSize: 0,
+          lang: ctx.locale, // if it does not have others
+          langFallbackSize: fallBacks.length,
         })
+        for (let i = 0; i < fallBacks.length || 0; i++) {
+          ctx.query.push(fallBacks[i])
+        }
       }
     } else {
-      // meta time...
+      //
     }
   }
 
-  if (
-    (prop.type === PropType.jsonLocalized ||
-      prop.type === PropType.stringLocalized) &&
-    !hasSpecificLang &&
-    ctx.locale
-  ) {
-    pushIncludeHeader(ctx.query, {
-      op: IncludeOp.defaultWithOpts,
-      prop: prop.id,
-      propType: prop.type,
-    })
-    const fallBacks = ctx.localeFallbacks[ctx.locale]
-    pushIncludeOpts(ctx.query, {
-      hasOpts: false,
-      end: 0,
-      isChars: false,
-      lang: ctx.locale,
-      langFallbackSize: fallBacks.length,
-    })
-    for (let i = 0; i < fallBacks.length || 0; i++) {
-      ctx.query.push(fallBacks[i])
-    }
-  } else if (!propAdded) {
-    pushIncludeHeader(ctx.query, {
-      op: IncludeOp.default,
-      prop: prop.id,
-      propType: prop.type,
-    })
-  }
-
-  //   if (opts?.meta !== 'only') {
-  //         const hasEndOption = !!opts?.end
-  //         const codes = opts?.codes
-  //         if (codes && !codes.has(0)) {
-  //           const fallBacks = createLangFallbacks(opts)
-  //           result.push(
-  //             createIncludeHeader({
-  //               op: IncludeOp.defaultWithOpts,
-  //               prop,
-  //               propType: propType,
-  //             }),
-  //           )
-  //           let i = 0
-  //           for (const code of codes) {
-  //             i++
-  //             result.push(
-  //               createIncludeOpts({
-  //                 hasOpts: i !== codes.size,
-  //                 end: getEnd(propDef.opts),
-  //                 isChars: !propDef.opts?.bytes,
-  //                 lang: code,
-  //                 langFallbackSize: fallBacks.byteLength,
-  //               }),
-  //               fallBacks,
-  //             )
-  //           }
-  //         } else if (hasEndOption) {
-  //           result.push(
-  //             createIncludeHeader({
-  //               op: IncludeOp.defaultWithOpts,
-  //               prop,
-  //               propType: propType,
-  //             }),
-  //             createIncludeOpts({
-  //               hasOpts: false,
-  //               end: getEnd(propDef.opts),
-  //               isChars:
-  //                 !propDef.opts?.bytes &&
-  //                 (propType === PropType.json ||
-  //                   propType === PropType.string ||
-  //                   propType === PropType.text),
-  //               lang: LangCode.none,
-  //               langFallbackSize: 0,
-  //             }),
-  //           )
-  //         } else {
-  //           result.push(
-  //             createIncludeHeader({
-  //               op: IncludeOp.default,
-  //               prop,
-  //               propType: propType,
-  //             }),
-  //           )
-  //         }
-  //       }
-  //     }
-  //   }
+  // do meta here
 
   ctx.readSchema.props[prop.id] = readPropDef(
     prop,
     ctx.locale,
     ctx.locales,
-    hasOpts ? include : undefined,
+    include,
   )
 }

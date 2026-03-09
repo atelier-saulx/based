@@ -84,16 +84,18 @@ const walkProp = (
     ) {
       const includes: Include[] = []
       if (include) {
+        // cannot have top + individual languages
         includes.push(include)
-      }
-      for (const lang in astProp.props) {
-        const langInclude = astProp.props[lang].include
-        if (langInclude) {
-          const langCode = LangCode[lang]
-          if (!langCode || !ctx.locales[langCode]) {
-            throw new Error(`Filter language not supported ${lang}`)
+      } else {
+        for (const lang in astProp.props) {
+          const langInclude = astProp.props[lang].include
+          if (langInclude) {
+            const langCode = LangCode[lang]
+            if (!langCode || !ctx.locales[langCode]) {
+              throw new Error(`Filter language not supported ${lang}`)
+            }
+            includes.push({ ...langInclude, langCode })
           }
-          includes.push({ ...includes, langCode })
         }
       }
       includeProp(ctx, prop, includes)
@@ -101,7 +103,7 @@ const walkProp = (
       if (prop.id === 0) {
         main.push({ prop, include })
       } else {
-        includeProp(ctx, prop, include)
+        includeProp(ctx, prop, [include])
       }
     }
   } else if (prop) {

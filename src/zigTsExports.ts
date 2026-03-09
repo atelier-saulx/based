@@ -2714,7 +2714,7 @@ export const pushIncludePartialProp = (
 export type IncludeOpts = {
   end: number
   isChars: boolean
-  hasOpts: boolean
+  hasNextOpt: boolean
   langFallbackSize: number
   lang: LangCodeEnum
 }
@@ -2732,7 +2732,7 @@ export const writeIncludeOpts = (
   offset += 4
   buf[offset] = 0
   buf[offset] |= (((header.isChars ? 1 : 0) >>> 0) & 1) << 0
-  buf[offset] |= (((header.hasOpts ? 1 : 0) >>> 0) & 1) << 1
+  buf[offset] |= (((header.hasNextOpt ? 1 : 0) >>> 0) & 1) << 1
   buf[offset] |= ((0 >>> 0) & 63) << 2
   offset += 1
   buf[offset] = Number(header.langFallbackSize)
@@ -2749,7 +2749,7 @@ export const writeIncludeOptsProps = {
   isChars: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 4] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
-  hasOpts: (buf: Uint8Array, value: boolean, offset: number) => {
+  hasNextOpt: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 4] |= (((value ? 1 : 0) >>> 0) & 1) << 1
   },
   langFallbackSize: (buf: Uint8Array, value: number, offset: number) => {
@@ -2767,7 +2767,7 @@ export const readIncludeOpts = (
   const value: IncludeOpts = {
     end: readUint32(buf, offset),
     isChars: (((buf[offset + 4] >>> 0) & 1)) === 1,
-    hasOpts: (((buf[offset + 4] >>> 1) & 1)) === 1,
+    hasNextOpt: (((buf[offset + 4] >>> 1) & 1)) === 1,
     langFallbackSize: buf[offset + 5],
     lang: (buf[offset + 6]) as LangCodeEnum,
   }
@@ -2777,7 +2777,7 @@ export const readIncludeOpts = (
 export const readIncludeOptsProps = {
     end: (buf: Uint8Array, offset: number) => readUint32(buf, offset),
     isChars: (buf: Uint8Array, offset: number) => (((buf[offset + 4] >>> 0) & 1)) === 1,
-    hasOpts: (buf: Uint8Array, offset: number) => (((buf[offset + 4] >>> 1) & 1)) === 1,
+    hasNextOpt: (buf: Uint8Array, offset: number) => (((buf[offset + 4] >>> 1) & 1)) === 1,
     langFallbackSize: (buf: Uint8Array, offset: number) => buf[offset + 5],
     lang: (buf: Uint8Array, offset: number) => (buf[offset + 6]) as LangCodeEnum,
 }
@@ -2796,7 +2796,7 @@ export const pushIncludeOpts = (
   buf.pushUint32(Number(header.end))
   buf.pushUint8(0)
   buf.view[buf.length - 1] |= (((header.isChars ? 1 : 0) >>> 0) & 1) << 0
-  buf.view[buf.length - 1] |= (((header.hasOpts ? 1 : 0) >>> 0) & 1) << 1
+  buf.view[buf.length - 1] |= (((header.hasNextOpt ? 1 : 0) >>> 0) & 1) << 1
   buf.view[buf.length - 1] |= ((0 >>> 0) & 63) << 2
   buf.pushUint8(Number(header.langFallbackSize))
   buf.pushUint8(Number(header.lang))
