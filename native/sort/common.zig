@@ -3,10 +3,10 @@ const selva = @import("../selva/selva.zig").c;
 
 pub const SortIndexMeta = struct {
     prop: t.PropType,
+    field: u8,
     start: u16,
     len: u16, // len can be added somewhere else
-    index: *selva.SelvaSortCtx,
     langCode: t.LangCode,
-    field: u8,
     isCreated: bool,
+    index: *selva.SelvaSortCtx,
 };
