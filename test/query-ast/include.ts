@@ -1,21 +1,20 @@
 import { QueryAst } from '../../src/db-query/ast/ast.js'
 import { astToQueryCtx } from '../../src/db-query/ast/toCtx.js'
 import { resultToObject } from '../../src/protocol/index.js'
-import { BasedDb, debugBuffer } from '../../src/sdk.js'
+import { debugBuffer } from '../../src/sdk.js'
 import { AutoSizedUint8Array } from '../../src/utils/AutoSizedUint8Array.js'
 import { writeUint32 } from '../../src/utils/uint8.js'
 import wait from '../../src/utils/wait.js'
 import { perf } from '../shared/perf.js'
-import test from '../shared/test.js'
+import test, { T } from '../shared/test.js'
 import { deflateSync } from 'zlib'
 import { fastPrng } from '../../src/utils/fastPrng.js'
 import { italy } from '../shared/examples.js'
+import { testDbClient, testDbServer } from '../shared/index.js'
 
 await test('include', async (t) => {
-  const db = new BasedDb({ path: t.tmp })
-  await db.start({ clean: true })
-  t.after(() => db.destroy())
-  const client = await db.setSchema({
+  const server = await testDbServer(t, { noBackup: true })
+  const client = await testDbClient(server, {
     locales: {
       en: true,
       nl: { fallback: ['en'] },
@@ -136,7 +135,7 @@ await test('include', async (t) => {
 
   // for sort 1M we can prob do better with either INDEX (scince it will refire)
 
-  await db.drain()
+  await client.drain()
 
   console.log('mod create done', Date.now() - d, 'ms')
 
@@ -218,7 +217,7 @@ await test('include', async (t) => {
     async () => {
       const q: any = []
       for (let i = 0; i < 10; i++) {
-        q.push(db.server.getQueryBuf(queries[i]))
+        q.push(server.getQueryBuf(queries[i]))
       }
       const x = await Promise.all(q)
       // console.log(x)
@@ -232,7 +231,7 @@ await test('include', async (t) => {
   console.log(' PERF DONE', Date.now() - d, 'ms')
 
   // const readSchemaBuf = serializeReaderSchema(ctx.readSchema)
-  const result = await db.server.getQueryBuf(ctx.query)
+  const result = await server.getQueryBuf(ctx.query)
   console.log(result.byteLength)
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)

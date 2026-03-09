@@ -17,7 +17,7 @@ await test('query db', async (t) => {
             street: 'string',
           },
         },
-        story: 'text',
+        story: { type: 'string', localized: true },
         friend: {
           ref: 'user',
           prop: 'friend',
