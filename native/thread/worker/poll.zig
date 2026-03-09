@@ -7,43 +7,21 @@ const Node = @import("../../selva/node.zig");
 const Subscription = @import("../../subscription/subscription.zig");
 const t = @import("../../types.zig");
 
-const expireMax = 256;
-
-fn handleExpired(threads: *Thread.Threads, msg: []u8) void {
-    var count: u32 = 0;
-
-    while (count < expireMax) {
-        const res = Node.expirePop(threads.ctx);
-        if (res.id == 0) {
-            break;
-        }
-
-        utils.write(msg, t.ModifyDeleteHeader{
-            .op = t.Modify.delete,
-            .type = res.type,
-            .id = res.id,
-            .isTmp = false,
-            ._padding = 0,
-        }, utils.sizeOf(t.ModifyHeader) + count * utils.sizeOf(t.ModifyDeleteHeader));
-        count += 1;
-    }
-
-    if (count > 0) {
-        utils.write(msg, t.ModifyHeader{
-            .opId = 0,
-            .opType = t.OpType.modify,
-            .schema = 0,
-            .count = count,
-        }, 0);
-        threads.modifyLocked(msg[0..(utils.sizeOf(t.ModifyHeader) + count * utils.sizeOf(t.ModifyDeleteHeader))]) catch |e| {
-            std.log.err("Dispatching expire delete(s) failed: {any}", .{e});
-        };
-    }
+fn dispatchExpire(threads: *Thread.Threads, msg: []u8) void {
+    utils.write(msg, t.ModifyHeader{
+        .opId = 0,
+        .opType = t.OpType.expire,
+        .schema = 0,
+        .count = 0,
+    }, 0);
+    threads.modifyLocked(msg) catch |e| {
+        std.log.err("Dispatching expire delete(s) failed: {any}", .{e});
+    };
 }
 
 pub fn poll(threads: *Thread.Threads) !void {
-    const delMsg = jemalloc.alloc(u8, utils.sizeOf(t.ModifyHeader) + expireMax * utils.sizeOf(t.ModifyDeleteHeader));
-    defer jemalloc.free(delMsg);
+    const expireMsg = jemalloc.alloc(u8, utils.sizeOf(t.ModifyHeader));
+    defer jemalloc.free(expireMsg);
 
     while (true) {
         std.Thread.sleep(common.SUB_EXEC_INTERVAL);
@@ -56,7 +34,7 @@ pub fn poll(threads: *Thread.Threads) !void {
             return;
         }
 
-        handleExpired(threads, delMsg);
+        dispatchExpire(threads, expireMsg);
 
         for (threads.threads) |thread| {
             const elapsed = now - thread.lastModifyTime;
