@@ -25,6 +25,9 @@ pub fn iterator(
     var count: u32 = 0;
     aggCtx.hadAccumulated = false;
 
+    var tmpKeyBuf: [1024]u8 = undefined;
+    var tmpKeyLen: usize = 0;
+
     if (@hasDecl(@TypeOf(it.*), "nextRef")) {
         while (it.nextRef()) |ref| {
             if (hasFilter) {
@@ -32,7 +35,7 @@ pub fn iterator(
                     continue;
                 }
             }
-            aggregatePropsWithGroupBy(groupByHashMap, ref.node, ref.edge, aggDefs, aggCtx) catch {
+            aggregatePropsWithGroupBy(groupByHashMap, ref.node, ref.edge, aggDefs, aggCtx, &tmpKeyBuf, &tmpKeyLen) catch {
                 return 0;
             };
             count += 1;
@@ -45,7 +48,7 @@ pub fn iterator(
                     continue;
                 }
             }
-            aggregatePropsWithGroupBy(groupByHashMap, node, null, aggDefs, aggCtx) catch {
+            aggregatePropsWithGroupBy(groupByHashMap, node, null, aggDefs, aggCtx, &tmpKeyBuf, &tmpKeyLen) catch {
                 return 0;
             };
             count += 1;
@@ -86,41 +89,66 @@ inline fn aggregatePropsWithGroupBy(
     edgeNode: ?Node.Node,
     aggDefs: []u8,
     aggCtx: *Aggregates.AggCtx,
+    tmpKeyBuf: []u8,
+    tmpKeyLen: *usize,
 ) !void {
     if (aggDefs.len == 0) return;
 
     var i: usize = 0;
-    const currentKeyPropDef = utils.readNext(t.GroupByKeyProp, aggDefs, &i);
+    tmpKeyLen.* = 0;
+    var firstKeyType = t.PropType.null;
+    var firstStepRange: u16 = 0;
 
-    var keyValue: []u8 = undefined;
+    while (true) { // MV: manymany
+        const currentKeyPropDef = utils.readNext(t.GroupByKeyProp, aggDefs, &i);
 
-    var keyNode = node;
-    var keyTypeEntry = aggCtx.typeEntry;
-    if (currentKeyPropDef.isEdge) {
-        if (edgeNode) |en| {
-            keyNode = en;
-            if (aggCtx.edgeTypeEntry) |ete| {
-                keyTypeEntry = ete;
+        var keyNode = node;
+        var keyTypeEntry = aggCtx.typeEntry;
+        if (currentKeyPropDef.isEdge) {
+            if (edgeNode) |en| {
+                keyNode = en;
+                if (aggCtx.edgeTypeEntry) |ete| {
+                    keyTypeEntry = ete;
+                }
+            } else {
+                return;
             }
-        } else {
-            return;
         }
+        const propSchema = Schema.getFieldSchema(keyTypeEntry, currentKeyPropDef.propId) catch {
+            return;
+        };
+
+        const keyValue = Fields.get(
+            keyTypeEntry,
+            keyNode,
+            propSchema,
+            currentKeyPropDef.propType,
+        );
+
+        const keyPart = getGrouByKeyValue(keyValue, currentKeyPropDef);
+
+        var lenBuf: [2]u8 = undefined;
+        utils.write(&lenBuf, @as(u16, @intCast(keyPart.len)), 0);
+
+        @memcpy(tmpKeyBuf[tmpKeyLen.* .. tmpKeyLen.* + lenBuf.len], &lenBuf);
+        tmpKeyLen.* += lenBuf.len;
+
+        if (keyPart.len > 0) {
+            @memcpy(tmpKeyBuf[tmpKeyLen.* .. tmpKeyLen.* + keyPart.len], keyPart);
+            tmpKeyLen.* += keyPart.len;
+        }
+
+        if (firstKeyType == t.PropType.null) {
+            firstKeyType = currentKeyPropDef.propType;
+            firstStepRange = @intCast(currentKeyPropDef.stepRange);
+        }
+
+        if (!currentKeyPropDef.hasNext) break;
     }
-    const propSchema = Schema.getFieldSchema(keyTypeEntry, currentKeyPropDef.propId) catch {
-        i += utils.sizeOf(t.GroupByKeyProp);
-        return;
-    };
 
-    keyValue = Fields.get(
-        keyTypeEntry,
-        keyNode,
-        propSchema,
-        currentKeyPropDef.propType,
-    );
-
-    const key = getGrouByKeyValue(keyValue, currentKeyPropDef);
-    const hash_map_entry = if (currentKeyPropDef.propType == t.PropType.timestamp and currentKeyPropDef.stepRange != 0)
-        try groupByHashMap.getOrInsertWithRange(key, aggCtx.accumulatorSize, currentKeyPropDef.stepRange)
+    const key = tmpKeyBuf[0..tmpKeyLen.*];
+    const hash_map_entry = if (firstKeyType == t.PropType.timestamp and firstStepRange != 0)
+        try groupByHashMap.getOrInsertWithRange(key, aggCtx.accumulatorSize, firstStepRange)
     else
         try groupByHashMap.getOrInsert(key, aggCtx.accumulatorSize);
 
@@ -138,6 +166,12 @@ pub inline fn finalizeGroupResults(
     groupByHashMap: *GroupByHashMap,
     aggDefs: []u8,
 ) !void {
+    var initialAggDefOffset: usize = 0;
+    while (initialAggDefOffset < aggDefs.len) {
+        const cur = utils.readNext(t.GroupByKeyProp, aggDefs, &initialAggDefOffset);
+        if (!cur.hasNext) break;
+    }
+
     var it = groupByHashMap.iterator();
 
     while (it.next()) |entry| {
@@ -150,7 +184,7 @@ pub inline fn finalizeGroupResults(
 
         const accumulatorProp = entry.value_ptr.*;
 
-        try Aggregates.finalizeResults(aggCtx, aggDefs, accumulatorProp, @bitSizeOf(t.GroupByKeyProp) / 8);
+        try Aggregates.finalizeResults(aggCtx, aggDefs, accumulatorProp, initialAggDefOffset);
     }
 }
 
@@ -159,6 +193,12 @@ pub inline fn finalizeRefsGroupResults(
     groupByHashMap: *GroupByHashMap,
     aggDefs: []u8,
 ) !void {
+    var initialAggDefOffset: usize = 0;
+    while (initialAggDefOffset < aggDefs.len) {
+        const cur = utils.readNext(t.GroupByKeyProp, aggDefs, &initialAggDefOffset);
+        if (!cur.hasNext) break;
+    }
+
     var it = groupByHashMap.iterator();
 
     while (it.next()) |entry| {
@@ -172,6 +212,6 @@ pub inline fn finalizeRefsGroupResults(
 
         const accumulatorProp = entry.value_ptr.*;
 
-        try Aggregates.finalizeResults(aggCtx, aggDefs, accumulatorProp, @bitSizeOf(t.GroupByKeyProp) / 8);
+        try Aggregates.finalizeResults(aggCtx, aggDefs, accumulatorProp, initialAggDefOffset);
     }
 }
