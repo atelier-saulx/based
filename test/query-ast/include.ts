@@ -92,30 +92,33 @@ await test('include', async (t) => {
     // },
   })
 
-  // const b = await client.create('user', {
-  //   name: 'mr snurf b',
-  //   derp: 'bb',
-  //   y: 15,
-  //   x: true,
-  //   big: 'mr giraffe man',
-  //   flap: 9999,
-  //   cook: {
-  //     cookie: 1234,
-  //   },
-  //   mrFriend: { id: a, $level: 67 },
-  // })
+  const b = await client.create('user', {
+    name: 'mr snurf b',
+    derp: 'bb',
+    localized: {
+      en: 'MR B ENG',
+    },
+    y: 15,
+    x: true,
+    big: 'mr giraffe man',
+    flap: 9999,
+    cook: {
+      cookie: 1234,
+    },
+    mrFriend: { id: a, $level: 67 },
+  })
 
   let d = Date.now()
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 1; i++) {
     client.create('user', {
       big: syntheticData,
       // name: `mr snurf ${i}`,
-      localized: {
-        nl: 'giraffe NL',
-      },
+      // localized: {
+      //   nl: 'giraffe NL',
+      // },
       // derp: 'cc',
       // y: i,
       // x: !!(i % 2),
@@ -153,37 +156,39 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
-    locale: 'fi',
+    // locale: 'fi',
     range: { start: 0, end: 1e6 },
-    filter: {
-      props: {
-        localized: {
-          // ops: [{ op: '=', val: 'derpi yuz NL' }],
-          props: {
-            nl: {
-              ops: [{ op: '=', val: 'derpi yuz NL' }],
-            },
-          },
-        },
-      },
-    },
+    // filter: {
+    //   props: {
+    //     localized: {
+    //       // ops: [{ op: '=', val: 'derpi yuz NL' }],
+    //       props: {
+    //         nl: {
+    //           ops: [{ op: '=', val: 'derpi yuz NL' }],
+    //         },
+    //       },
+    //     },
+    //   },
+    // },
     props: {
       y: { include: {} },
       localized: {
         // include: {
-        //   maxChars: 4,
-        //   // maxBytes
+        //   meta: true, // few empty
+        //   // maxChars: 6,
         // },
         props: {
           nl: {
             include: {
-              maxChars: 8,
+              meta: 'only',
               // meta
             },
           },
           en: {
             include: {
-              maxChars: 4,
+              maxChars: 6,
+              meta: true,
+              // maxChars: 4,
               // meta
             },
           },

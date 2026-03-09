@@ -1,6 +1,9 @@
 import type { SchemaHooks } from '../../schema/index.js'
-import type { PropTypeEnum, VectorBaseTypeEnum } from '../../zigTsExports.js'
-import type { TypedArray } from '../../schema/index.js'
+import type {
+  LangCodeEnum,
+  PropTypeEnum,
+  VectorBaseTypeEnum,
+} from '../../zigTsExports.js'
 
 export type Item = {
   id: number
@@ -27,8 +30,11 @@ export enum ReaderSchemaEnum {
 export enum ReaderMeta {
   only = 1,
   combined = 2,
-  onlyFallback = 3,
-  combinedFallback = 4,
+  specificLocales = 3,
+  specificLocalesOnly = 4,
+  // ------- non lang
+  onlyFallback = 5,
+  combinedFallback = 6,
 }
 
 export type ReadInstruction = (
@@ -44,6 +50,7 @@ export type ReaderPropDef = {
   path: string[]
   typeIndex: PropTypeEnum
   meta?: ReaderMeta
+  metaSpecificLangCodes?: LangCodeEnum[]
   enum?: any[]
   vectorBaseType?: VectorBaseTypeEnum
   len?: number

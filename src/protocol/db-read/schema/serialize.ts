@@ -7,6 +7,7 @@ import {
   PROPERTY_BIT_MAP,
   DEF_BIT_MAP,
   GROUP_BY_BIT_MAP,
+  ReaderMeta,
 } from '../types.js'
 import {
   concatUint8Arr,
@@ -151,6 +152,17 @@ const serializeProp = (
     //   1 or 2
     options |= PROPERTY_BIT_MAP.meta
     blocks.push(new Uint8Array([prop.meta!]))
+    if (
+      prop.meta === ReaderMeta.specificLocales ||
+      prop.meta === ReaderMeta.specificLocalesOnly
+    ) {
+      blocks.push(
+        new Uint8Array([
+          prop.metaSpecificLangCodes!.length,
+          ...prop.metaSpecificLangCodes!,
+        ]),
+      )
+    }
   }
   if ('enum' in prop) {
     options |= PROPERTY_BIT_MAP.enum

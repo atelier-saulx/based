@@ -75,12 +75,7 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
   const schema = readSchema()
   ctx.readSchema.refs[prop.id] = {
     schema,
-    prop: readPropDef(
-      prop,
-      ctx.locale,
-      ctx.locales,
-      ast.include ? [ast.include] : [],
-    ),
+    prop: readPropDef(prop, ctx),
   }
 
   if (isAggregateAst(ast, prop.ref)) {

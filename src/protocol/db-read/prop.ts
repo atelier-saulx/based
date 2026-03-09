@@ -1,5 +1,5 @@
 import { readUint32, readUtf8 } from '../../utils/index.js'
-import { Item, ReaderPropDef, ReaderSchema } from './types.js'
+import { Item, ReaderMeta, ReaderPropDef, ReaderSchema } from './types.js'
 import { addProp, addLangProp } from './addProps.js'
 import { readString } from './string.js'
 import { readVector } from './vector.js'
@@ -19,7 +19,10 @@ const readStringProp = (
   ) {
     return readString(buf, offset, size, true)
   }
-  if (prop.typeIndex === PropType.json) {
+  if (
+    prop.typeIndex === PropType.json ||
+    prop.typeIndex === PropType.jsonLocalized
+  ) {
     return global.JSON.parse(readString(buf, offset, size, true))
   }
   if (prop.typeIndex === PropType.binary) {
@@ -52,17 +55,20 @@ export const readProp = (
     const size = readUint32(result, i)
     addProp(prop, readStringProp(prop, result, i + 4, size), item)
     i += size + 4
-  } else if (prop.typeIndex == PropType.stringLocalized) {
+  } else if (
+    prop.typeIndex == PropType.stringLocalized ||
+    prop.typeIndex === PropType.jsonLocalized
+  ) {
     const size = readUint32(result, i)
     if (size === 0) {
       // do nothing
     } else {
-      if (!prop.locales || prop.meta! > 2) {
+      if (!prop.locales || prop.meta! > ReaderMeta.specificLocalesOnly) {
         addProp(prop, readString(result, i + 4, size, true), item)
       } else {
         addLangProp(
           prop,
-          readString(result, i + 4, size, true),
+          readStringProp(prop, result, i + 4, size),
           item,
           result[i + 4],
         )

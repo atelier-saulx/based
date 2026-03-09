@@ -3,6 +3,7 @@ import {
   AggItem,
   Item,
   Meta,
+  ReaderMeta,
   ReaderSchema,
   ReaderSchemaEnum,
   ReadInstruction,
@@ -18,7 +19,6 @@ import {
   PropType,
   readIncludeResponseMeta,
   ReadOp,
-  ReadOpInverse,
 } from '../../zigTsExports.js'
 
 export * from './types.js'
@@ -60,7 +60,7 @@ const meta: ReadInstruction = (q, result, i, item) => {
   if (
     propType === PropType.stringLocalized &&
     propDef.locales &&
-    propDef.meta! < 3
+    propDef.meta! < ReaderMeta.onlyFallback
   ) {
     addLangMetaProp(propDef, meta, item, lang)
   } else {

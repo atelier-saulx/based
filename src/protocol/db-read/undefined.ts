@@ -1,8 +1,13 @@
 import { Item, ReaderMeta, ReaderPropDef, ReaderSchema } from './types.js'
-import { addLangMetaProp, addMetaProp, addProp } from './addProps.js'
+import {
+  addLangMetaProp,
+  addLangProp,
+  addMetaProp,
+  addProp,
+} from './addProps.js'
 import { readVector } from './vector.js'
 import { emptyMeta } from './meta.js'
-import { PropType } from '../../zigTsExports.js'
+import { LangCodeEnum, PropType } from '../../zigTsExports.js'
 
 const undefinedValue = (prop: ReaderPropDef) => {
   const typeIndex = prop.typeIndex
@@ -47,13 +52,29 @@ export const undefinedProps = (q: ReaderSchema, item: Item) => {
     if (p.readBy !== q.readId) {
       p.readBy = q.readId
       if (p.meta) {
-        if (p.typeIndex === PropType.stringLocalized && p.locales) {
+        if (
+          p.typeIndex === PropType.stringLocalized &&
+          p.locales &&
+          p.meta < ReaderMeta.onlyFallback
+        ) {
+          const isDifferentMetas =
+            p.meta === ReaderMeta.specificLocales ||
+            p.meta === ReaderMeta.specificLocalesOnly
+
           for (const code in p.locales) {
-            const meta = emptyMeta()
-            if (p.meta === ReaderMeta.combined) {
-              meta.value = ''
+            if (
+              !isDifferentMetas ||
+              (isDifferentMetas &&
+                p.metaSpecificLangCodes!.includes(Number(code) as LangCodeEnum))
+            ) {
+              const meta = emptyMeta()
+              if (p.meta === ReaderMeta.combined) {
+                meta.value = ''
+              }
+              addLangMetaProp(p, meta, item, Number(code))
+            } else {
+              addLangProp(p, '', item, Number(code))
             }
-            addLangMetaProp(p, meta, item, Number(code))
           }
         } else {
           const meta = emptyMeta()

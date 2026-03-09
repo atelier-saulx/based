@@ -17,7 +17,7 @@ import { Ctx, Include, QueryAst } from '../ast.js'
 import { references } from '../multiple.js'
 import { readPropDef } from '../readSchema.js'
 import { reference } from '../single.js'
-import { includeProp } from './prop.js'
+import { includeMultiLocalizedProp, includeProp } from './prop.js'
 
 type WalkCtx = {
   tree: PropTree
@@ -35,9 +35,8 @@ const includeMainProps = (
   let i = 0
   for (const { include, prop } of props) {
     if (prop.size === 0) continue
-    ctx.readSchema.main.props[i] = readPropDef(prop, ctx.locale, ctx.locales, [
-      include,
-    ])
+    // TODO HANDLE META
+    ctx.readSchema.main.props[i] = readPropDef(prop, ctx)
     ctx.readSchema.main.len += prop.size
     i += prop.size
   }
@@ -82,11 +81,11 @@ const walkProp = (
       prop.type === PropType.jsonLocalized ||
       prop.type === PropType.stringLocalized
     ) {
-      const includes: Include[] = []
       if (include) {
-        // cannot have top + individual languages
-        includes.push(include)
+        // Cannot have top include + individual languages
+        includeProp(ctx, prop, include)
       } else {
+        const includes: Include[] = []
         for (const lang in astProp.props) {
           const langInclude = astProp.props[lang].include
           if (langInclude) {
@@ -97,13 +96,13 @@ const walkProp = (
             includes.push({ ...langInclude, langCode })
           }
         }
+        includeMultiLocalizedProp(ctx, prop, includes)
       }
-      includeProp(ctx, prop, includes)
     } else if (include) {
       if (prop.id === 0) {
         main.push({ prop, include })
       } else {
-        includeProp(ctx, prop, [include])
+        includeProp(ctx, prop, include)
       }
     }
   } else if (prop) {

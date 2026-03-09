@@ -63,13 +63,14 @@ export type FilterAst = {
   // this would require and extra check for the type of node how to do?
 }
 
+// enum
+
 export type Include = {
-  meta?: true | 'only' | false
+  meta?: true | false | 'only'
   maxChars?: number
   maxBytes?: number
   raw?: boolean
   langCode?: LangCodeEnum
-  // codes?: Set<LangCodeEnum>
 }
 
 export type QueryAst = {
@@ -116,3 +117,17 @@ export type Ctx = {
     [code: string]: LangCodeEnum[]
   }
 }
+
+export type ReadOpts = {
+  raw: boolean
+  meta: true | false | 'only'
+  code: LangCodeEnum
+  langs: {
+    code: LangCodeEnum
+    raw: boolean
+    meta: true | false | 'only'
+  }[]
+}
+
+export type ReadCtx = Omit<Ctx, 'query' | 'readSchema'> &
+  Partial<Pick<Ctx, 'query' | 'readSchema'>>

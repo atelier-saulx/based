@@ -677,12 +677,6 @@ pub const IncludeHeader = packed struct {
     propType: PropType,
 };
 
-pub const IncludeMetaHeader = packed struct {
-    op: IncludeOp,
-    prop: u8,
-    propType: PropType,
-};
-
 pub const IncludePartialHeader = packed struct {
     op: IncludeOp,
     prop: u8,

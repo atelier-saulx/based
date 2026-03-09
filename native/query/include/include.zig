@@ -41,11 +41,6 @@ pub fn include(
     q: []u8,
     typeEntry: Node.Type,
 ) !void {
-    // comptime {
-    //     // This funciton has a lot of recursion so you need to increase the allowed branch eval amount
-    //     @setEvalBranchQuota(1000);
-    // }
-
     var i: usize = 0;
     while (i < q.len) {
         const op: t.IncludeOp = @enumFromInt(q[i]);
@@ -70,7 +65,8 @@ pub fn include(
                 }
             },
             .meta => {
-                const header = utils.readNext(t.IncludeMetaHeader, q, &i);
+                // just make this into include
+                const header = utils.readNext(t.IncludeHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
                 switch (header.propType) {
                     .binary, .string, .json, .alias => {
@@ -88,14 +84,16 @@ pub fn include(
                 }
             },
             .metaWithOpts => {
-                var header = utils.readNext(t.IncludeMetaHeader, q, &i);
+                var header = utils.readNext(t.IncludeHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
                 switch (header.propType) {
                     .stringLocalized, .jsonLocalized => {
                         var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
                         try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.meta);
                     },
-                    else => {},
+                    else => {
+                        // Only for fallbacks and single lang
+                    },
                 }
             },
             .defaultWithOpts => {
