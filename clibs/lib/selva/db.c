@@ -75,26 +75,27 @@ static bool node_expire_cmp(struct SelvaExpireToken *tok, selva_expire_cmp_arg_t
     return type == token->type && node_id == token->node_id;
 }
 
-static bool node_expire_exists(struct SelvaDb *db, node_type_t type, node_id_t node_id)
+static bool node_expire_exists(struct SelvaTypeEntry *te, node_id_t node_id)
 {
-    return selva_expire_exists(&db->expiring, node_expire_cmp, (uint64_t)node_id | ((uint64_t)type << 32));
+    return selva_expire_exists(&te->expiring, node_expire_cmp, (uint64_t)node_id | ((uint64_t)(te->type) << 32));
 }
 
 void selva_expire_node(struct SelvaDb *db, node_type_t type, node_id_t node_id, int64_t ts, enum selva_expire_node_strategy stg)
 {
+    struct SelvaTypeEntry *te = selva_get_type_by_index(db, type);
     struct SelvaDbExpireToken *token;
 
     switch (stg) {
     case SELVA_EXPIRE_NODE_STRATEGY_IGNORE:
         break;
     case SELVA_EXPIRE_NODE_STRATEGY_CANCEL:
-        if (node_expire_exists(db, type, node_id)) {
+        if (node_expire_exists(te, node_id)) {
             return;
         }
         break;
     case SELVA_EXPIRE_NODE_STRATEGY_CANCEL_OLD:
         /* TODO This will currently only cancel one previous hit. */
-        selva_expire_node_cancel(db, type, node_id);
+        selva_expire_node_cancel(te, node_id);
         break;
     }
 
@@ -104,12 +105,12 @@ void selva_expire_node(struct SelvaDb *db, node_type_t type, node_id_t node_id, 
     token->type = type;
     token->node_id = node_id;
 
-    selva_expire_insert(&db->expiring, &token->token);
+    selva_expire_insert(&te->expiring, &token->token);
 }
 
-void selva_expire_node_cancel(struct SelvaDb *db, node_type_t type, node_id_t node_id)
+void selva_expire_node_cancel(struct SelvaTypeEntry *te, node_id_t node_id)
 {
-    selva_expire_remove(&db->expiring, node_expire_cmp, (uint64_t)node_id | ((uint64_t)type << 32));
+    selva_expire_remove(&te->expiring, node_expire_cmp, (uint64_t)node_id | ((uint64_t)(te->type) << 32));
 }
 
 static void cancel_cb(struct SelvaExpireToken *tok)
@@ -121,19 +122,22 @@ static void cancel_cb(struct SelvaExpireToken *tok)
 
 struct SelvaExpireNodeRes selva_db_expire_pop(struct SelvaDb *db, int64_t now)
 {
-    auto tok = selva_expire_pop(&db->expiring, now);
-    struct SelvaDbExpireToken *token = containerof(tok, typeof(*token), token);
+    struct SelvaExpireNodeRes res = {};
 
-    if (!token) {
-        return (struct SelvaExpireNodeRes){};
+    for (size_t ti = 0; ti < db->nr_types; ti++) {
+        auto te = &db->types[ti];
+        auto tok = selva_expire_pop(&te->expiring, now);
+        struct SelvaDbExpireToken *token = containerof(tok, typeof(*token), token);
+
+        if (token) {
+            res = (typeof(res)){
+                .type = token->type,
+                .id = token->node_id,
+            };
+            selva_free(token);
+            break;
+        }
     }
-
-    struct SelvaExpireNodeRes res = {
-        .type = token->type,
-        .id = token->node_id,
-    };
-
-    selva_free(token);
 
     return res;
 }
@@ -190,6 +194,9 @@ static int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint
     if (err) {
         return err;
     }
+
+    te->expiring.cancel_cb = cancel_cb;
+    selva_expire_init(&te->expiring);
 
     clone_schema_buf(te, schema_buf, schema_len);
     te->blocks = alloc_blocks(nfo.block_capacity);
@@ -258,10 +265,8 @@ struct SelvaDb *selva_db_create(size_t len, uint8_t schema[len])
 
     db = selva_calloc(1, offsetof(typeof(*db), types[0]) + nr_types * te_size());
     db->nr_types = nr_types;
-    db->expiring.cancel_cb = cancel_cb;
     db->dirfd = AT_FDCWD;
     db->subs_hook_fun = noop_subs_hook;
-    selva_expire_init(&db->expiring);
 
     for (size_t i = 0; i < len;) {
         struct SelvaDbSchemaDesc desc;
@@ -372,7 +377,7 @@ static void destroy_type(struct SelvaTypeEntry *te)
     selva_destroy_aliases(te);
 
     colvec_deinit_te(te);
-
+    selva_expire_deinit(&te->expiring);
     mempool_destroy(&te->nodepool);
     selva_free(te->blocks);
     schemabuf_deinit_fields_schema(&te->ns.fields_schema);
@@ -397,7 +402,6 @@ static void del_all_types(struct SelvaDb *db)
 void selva_db_destroy(struct SelvaDb *db)
 {
     del_all_types(db);
-    selva_expire_deinit(&db->expiring);
 #if 0
     memset(db, 0, sizeof(*db));
 #endif
@@ -462,7 +466,12 @@ extern inline node_id_t selva_block_i2start(const struct SelvaTypeEntry *te, blo
 
 extern inline node_id_t selva_block_i2end(const struct SelvaTypeEntry *te, block_id_t block_i);
 
-extern inline void selva_foreach_block(struct SelvaDb *db, enum SelvaTypeBlockStatus or_mask, void (*cb)(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start), void *ctx);
+extern inline void selva_foreach_block(
+        struct SelvaDb *db,
+        struct SelvaTypeEntry *te,
+        enum SelvaTypeBlockStatus or_mask,
+        void (*cb)(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start),
+        void *ctx);
 
 extern inline enum SelvaTypeBlockStatus selva_block_status_get(const struct SelvaTypeEntry *te, block_id_t block_i);
 

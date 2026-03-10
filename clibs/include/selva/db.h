@@ -23,18 +23,16 @@ struct selva_string;
 
 struct selva_dump_common_data {
     /**
-     * Schema ids.
+     * Schema id.
      * Pointer to data returned here when loading; Data read from here when saving.
      */
-    node_id_t *ids_data __pcounted_by(ids_len);
-    size_t ids_len;
+    node_id_t max_id;
 
     /**
      * Info about all blocks related to this dump.
      * Only on load.
      */
     struct selva_dump_block {
-        node_type_t type;
         block_id_t block;
     } *blocks __pcounted_by(blocks_len);
     size_t blocks_len;
@@ -68,21 +66,11 @@ int selva_db_chdir(struct SelvaDb *db, const char *pathname_str, size_t pathname
 SELVA_EXPORT
 void selva_db_set_subs_hook(struct SelvaDb *db, selva_db_subs_hook_t hook, void *ctx);
 
-SELVA_EXPORT
-void selva_dump_free_ids(node_id_t *ids);
-
-SELVA_EXPORT
-#if defined(__GNUC__) && !defined(__clang__)
-__attribute__((access(write_only, 2)))
-__attribute__((malloc, malloc(selva_dump_free_ids, 1)))
-#endif
-node_id_t *selva_dump_alloc_ids(struct SelvaDb *db, size_t *len_out);
-
 /**
  * Save the common/shared data of the database.
  */
 SELVA_EXPORT
-int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *com) __attribute__((nonnull));
+int selva_dump_save_common(struct SelvaDb *db, struct SelvaTypeEntry *te, struct selva_dump_common_data *com) __attribute__((nonnull));
 
 /**
  * Save a nodes block starting from start.
@@ -91,8 +79,11 @@ SELVA_EXPORT
 int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i) __attribute__((nonnull));
 
 SELVA_EXPORT
-int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *com) __attribute__((nonnull));
+int selva_dump_load_common(struct SelvaDb *db, struct SelvaTypeEntry *te, struct selva_dump_common_data *com) __attribute__((nonnull));
 
+/**
+ * This must be called after every selva_dump_load_common().
+ */
 SELVA_EXPORT
 void selva_dump_deinit_common(struct selva_dump_common_data *com);
 
@@ -150,6 +141,7 @@ inline node_id_t selva_block_i2end(const struct SelvaTypeEntry *te, block_id_t b
 SELVA_EXPORT
 inline void selva_foreach_block(
         struct SelvaDb *db,
+        struct SelvaTypeEntry *te,
         enum SelvaTypeBlockStatus or_mask,
         void (*cb)(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start), void *ctx);
 
@@ -264,7 +256,7 @@ SELVA_EXPORT
 void selva_expire_node(struct SelvaDb *db, node_type_t type, node_id_t node_id, int64_t ts, enum selva_expire_node_strategy stg);
 
 SELVA_EXPORT
-void selva_expire_node_cancel(struct SelvaDb *db, node_type_t type, node_id_t node_id);
+void selva_expire_node_cancel(struct SelvaTypeEntry *te, node_id_t node_id);
 
 SELVA_EXPORT
 struct SelvaExpireNodeRes selva_db_expire_pop(struct SelvaDb *db, int64_t now);
@@ -495,23 +487,21 @@ inline node_id_t selva_block_i2end(const struct SelvaTypeEntry *te, block_id_t b
 
 inline void selva_foreach_block(
         struct SelvaDb *db,
+        struct SelvaTypeEntry *te,
         enum SelvaTypeBlockStatus or_mask,
         void (*cb)(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start), void *ctx)
 {
-    for (size_t ti = 0; ti < db->nr_types; ti++) {
-        struct SelvaTypeEntry *te = &db->types[ti];
-        struct SelvaTypeBlocks *blocks = te->blocks;
+    struct SelvaTypeBlocks *blocks = te->blocks;
 
-        for (block_id_t block_i = 0; block_i < blocks->len; block_i++) {
-            struct SelvaTypeBlock *block = &blocks->blocks[block_i];
+    for (block_id_t block_i = 0; block_i < blocks->len; block_i++) {
+        struct SelvaTypeBlock *block = &blocks->blocks[block_i];
 
-            /*
-             * Note that we call it or_mask because the cb() is called if any
-             * bit of the mask is set in the status.
-             */
-            if (atomic_load_explicit(&block->status.atomic, memory_order_consume) & or_mask) {
-                cb(ctx, db, te, block_i, selva_block_i2start(te, block_i));
-            }
+        /*
+         * Note that we call it or_mask because the cb() is called if any
+         * bit of the mask is set in the status.
+         */
+        if (atomic_load_explicit(&block->status.atomic, memory_order_consume) & or_mask) {
+            cb(ctx, db, te, block_i, selva_block_i2start(te, block_i));
         }
     }
 }

@@ -37,7 +37,6 @@ function saveAll(db: DbServer, id: number): Promise<number> {
         const errMsg = `Save failed: ${native.selvaStrerror(err)}`
         const errLog = DECODER.decode(buf.subarray(4))
 
-        console.log(errLog)
         db.emit('error', errMsg)
         reject(new Error(errMsg))
       } else {
@@ -217,7 +216,7 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
 
     db.emit('info', `Save took ${Date.now() - ts}ms`)
   } catch (err) {
-    db.emit('error', `Save failed ${err.message}`)
+    db.emit('error', `${err.message}`)
     throw err
   } finally {
     db.removeOpListener(OpType.saveBlock, id, saveBlockListener)
