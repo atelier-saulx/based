@@ -176,13 +176,14 @@ export const migrate = async (
     const [typeId, start] = destructureTreeKey(block.key)
     const def = server.schemaTypesParsedById[typeId]
     const end = start + def.blockCapacity - 1
-    rangesToMigrate.push({ typeId, start, end })
+    if (def.type[0] !== '_') {
+      rangesToMigrate.push({ typeId, start, end })
+    }
   })
 
   rangesToMigrate.sort((a, b) => {
     const typeA = server.schemaTypesParsedById[a.typeId]
     const typeB = server.schemaTypesParsedById[b.typeId]
-
     for (const k in typeA.props) {
       const prop = typeA.props[k]
       if (prop.dependent && prop.inverseTypeName === typeB.type) {

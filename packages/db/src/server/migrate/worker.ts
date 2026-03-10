@@ -11,6 +11,7 @@ import { setToSleep } from './utils.js'
 import { setLocalClientSchema } from '../../client/setLocalClientSchema.js'
 import { MigrateRange } from './index.js'
 import { DbSchema, deSerialize } from '@based/schema'
+import { wait } from '@based/utils'
 
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')
@@ -123,6 +124,7 @@ if (isMainThread) {
 
         await toDb.drain()
         native.membarSyncWrite()
+        await wait(500)
         setToSleep(workerState)
       }
     } catch (e) {
