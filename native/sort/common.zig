@@ -1,5 +1,9 @@
+const std = @import("std");
 const t = @import("../types.zig");
 const selva = @import("../selva/selva.zig").c;
+const Decay = @import("decay.zig").Decay;
+
+pub const SortUseCounter = std.atomic.Value(u64);
 
 pub const SortIndexMeta = struct {
     prop: t.PropType,
@@ -9,4 +13,5 @@ pub const SortIndexMeta = struct {
     langCode: t.LangCode,
     isCreated: bool,
     index: *selva.SelvaSortCtx,
+    decay: Decay,
 };

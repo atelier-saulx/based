@@ -1,4 +1,5 @@
 const SortIndexMeta = @import("common.zig").SortIndexMeta;
+const SortUseCounter = @import("common.zig").SortUseCounter;
 const t = @import("../types.zig");
 const selva = @import("../selva/selva.zig").c;
 const Node = @import("../selva/node.zig");
@@ -13,6 +14,7 @@ const std = @import("std");
 const jemalloc = @import("../jemalloc.zig");
 const utils = @import("../utils.zig");
 const errors = @import("../errors.zig");
+const Decay = @import("decay.zig");
 
 pub fn SortIterator(
     comptime desc: bool,
@@ -230,6 +232,7 @@ pub inline fn fromIterator(
         .langCode = header.lang,
         .field = header.prop,
         .isCreated = false,
+        .decay = Decay.init(),
     };
 
     try fillSortIndex(
