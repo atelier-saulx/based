@@ -154,7 +154,7 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                     else => {},
                 }
 
-                const now: u64 = @truncate(@as(u128, @intCast(std.time.nanoTimestamp())));
+                const now = std.time.milliTimestamp();
                 const elapsed = now - thread.lastModifyTime;
 
                 threads.mutex.lock();

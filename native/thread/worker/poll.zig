@@ -24,8 +24,8 @@ pub fn poll(threads: *Thread.Threads) !void {
     defer jemalloc.free(expireMsg);
 
     while (true) {
-        std.Thread.sleep(common.SUB_EXEC_INTERVAL);
-        const now: u64 = @truncate(@as(u128, @intCast(std.time.nanoTimestamp())));
+        std.Thread.sleep(common.SUB_EXEC_INTERVAL * 100_000);
+        const now = std.time.milliTimestamp();
 
         threads.mutex.lock();
 
