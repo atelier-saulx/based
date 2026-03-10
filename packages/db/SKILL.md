@@ -18,6 +18,7 @@ When acting as an AI assistant generating code against `@based/sdk/db`, you must
 > Do not attempt to write SQL-style JOINs or foreign-key table scans (e.g., `filter('organizationId', '=', orgId)`). Always use the graph adjacency list via `.include()`.
 
 - **NEVER** use `.filter('id', '=', id)`. **ALWAYS** use `db.query('collection', id)`.
+  - **⚠️ CRITICAL**: When querying by ID, calling `.toObject()` on the query response can return `null` if the node does not exist! ALWAYS guard against this: `const user = (await db.query('user', id).get()).toObject(); if (!user) return;`
 - **NEVER** use `.or()` statements for the same field. **ALWAYS** pass an array (e.g., `.filter('role', '=', [1, 2])`).
 - **NEVER** perform a linear table scan to find a single item if you already know its ID.
 - **NEVER** perform a linear scan by filtering a collection based on a parent reference.
@@ -155,7 +156,14 @@ export const schema = {
 >
 > ```typescript
 > // ✅ GOOD: This uses the index directly (O(log N) operation)
-> const project = await db.query('projects', projectId).get()
+> const projectResponse = await db.query('projects', projectId).get()
+>
+> // ⚠️ CRITICAL: The query response itself is never null, but calling `.toObject()`
+> // will return `null` if the node does not exist! ALWAYS guard against this.
+> const project = projectResponse.toObject()
+> if (!project) {
+>   throw new Error('Project not found')
+> }
 > ```
 
 ## 4. Query Execution & Filter Optimization
@@ -170,7 +178,6 @@ Always place your **most restrictive** filters first. You want to eliminate as m
 > **Best Practice: Restrictive Filters First**
 >
 > ```typescript
->
 > // ✅ GOOD: Narrows down to active users first, then checks their region
 > await db
 >   .query('users')
@@ -183,7 +190,6 @@ Always place your **most restrictive** filters first. You want to eliminate as m
 > **Anti-Pattern: Restrictive Filters Last**
 >
 > ```typescript
->
 > // ❌ BAD: Checks every single user's region before checking if they are active
 > await db
 >   .query('users')
@@ -202,7 +208,6 @@ Whenever you need to check if a field matches one of several values, **pass an a
 > **Best Practice: Array Filters over OR statements**
 >
 > ```typescript
->
 > // ✅ GOOD: Runs a highly optimized SIMD check against the array
 > const users = await db.query('users').filter('role', '=', [1, 2, 3]).get()
 > ```
@@ -211,7 +216,6 @@ Whenever you need to check if a field matches one of several values, **pass an a
 > **Anti-Pattern: Sequential OR statements**
 >
 > ```typescript
->
 > // ❌ BAD: Evaluates multiple discrete filters sequentially
 > const users = await db
 >   .query('users')
@@ -234,7 +238,6 @@ You should always query _through_ the known ID of a reference rather than scanni
 > Never perform a linear scan by filtering a collection based on a parent reference.
 >
 > ```typescript
->
 > // ❌ BAD: This performs a full collection scan over all users
 > // to see if their `organizationId` matches your target.
 > const orgUsers = await db
@@ -248,7 +251,6 @@ You should always query _through_ the known ID of a reference rather than scanni
 > Because `organization` naturally has a graph relationship with `user`, you should query the known `organization` ID directly and `.include()` its children. This ensures the database merely walks its bi-directional pointers rather than scanning horizontal tables.
 >
 > ```typescript
->
 > // ✅ GOOD: Instantly grabs the organization by ID (O(log N))
 > // and populates the nested users instantly via the adjacency list.
 > const org = await db
