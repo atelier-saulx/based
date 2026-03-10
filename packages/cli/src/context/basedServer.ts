@@ -56,46 +56,26 @@ const localServerConfig = (context: AppContext): BasedFunctionConfigs => ({
   'db:set-schema': {
     type: 'function',
     fn: async (based, schema) => {
-      // @ts-ignore
-      const db = based.db.v2 as BasedDb
       if (!Array.isArray(schema)) {
         schema = [schema.schema ? schema : { schema }]
       }
-      if (schema.length > 1) {
-        console.info('Multiple schemas found: merging for local dev')
-      }
-      const mergedSchema = {}
-      for (const { schema: schemaItem } of schema) {
-        deepMerge(mergedSchema, schemaItem)
-      }
 
-      try {
-        await db.setSchema(mergedSchema)
-        // const server: BasedServer = based.server
-        // for (const item of Object.values(server.functions.routes)) {
-        //   if (item.type === 'query') {
-        //     server.functions.remove(item.name)
-        //     // server.functions.add()
-        //     // console.log('--->', item.name)
-        //   }
-        //   server.functions.add(server.functions.specs)
-        // }
-        // for (const key in server.functions) {
-        //   const fn = server.functions[key]
-        //   if (fn.type === 'query') {
-        //     console.log('-->', fn)
-        //   }
-        // }
-        // console.dir(server.functions, { depth: null })
-        // server.functions.updateConfig(server.functions.config)
-        // await based.server.updateConfig({})
-      } catch (error) {
-        context.print
-          .line()
-          .error(context.i18n('methods.server.name'))
-          .log('<b>db:set-schema</b>', null)
-          .log(`<red>${error.message.trim()}</red>`, null)
-          .line()
+      for (const { schema: schemaItem, db = 'default' } of schema) {
+        try {
+          // @ts-ignore
+          const dbInstance = await based.db.getOrCreateDb(db)
+          context.print.step(
+            `Setting schema for db <blueBright>${db}</blueBright>`,
+          )
+          await dbInstance.client.setSchema(schemaItem)
+        } catch (error) {
+          context.print
+            .line()
+            .error(context.i18n('methods.server.name'))
+            .log('<b>db:set-schema</b>', null)
+            .log(`<red>${error.message.trim()}</red>`, null)
+            .line()
+        }
       }
     },
   },
@@ -325,12 +305,9 @@ export const contextBasedServer =
         const allDb = await import('@based/db')
         global.__DB__ = allDb
         const { BasedDb } = allDb
-        const basedDb = new BasedDb({
-          path: join(process.cwd(), 'tmp'),
-          saveIntervalInSeconds: 5,
-        })
 
-        await basedDb.start({})
+        const dbs = new Map<string, BasedDb>()
+
         const dbServerClient = {
           channel(...args) {
             console.warn('dbServerClient channel not implemented', ...args)
@@ -343,20 +320,44 @@ export const contextBasedServer =
           },
         }
 
-        server.client.db = basedDb.client
+        const getOrCreateDb = async (name: string) => {
+          let db = dbs.get(name)
+          if (!db) {
+            context.print.step(
+              `Creating database instance <blueBright>${name}</blueBright>`,
+            )
+            const dbPath = join(process.cwd(), 'tmp', `db-${name}`)
+            db = new BasedDb({
+              path: dbPath,
+              saveIntervalInSeconds: 5,
+            })
+            dbs.set(name, db)
+            await db.start({})
+          }
+          return db
+        }
 
-        Object.defineProperty(basedDb.client, 'v2', {
+        const defaultDb = await getOrCreateDb('default')
+
+        server.client.db = defaultDb.client
+
+        Object.defineProperty(defaultDb.client, 'v2', {
           get() {
             console.warn(
               '[warning] based.db.v2 is deprecated and will be removed soon, use based.db instead',
             )
-            return basedDb.client
+            return defaultDb.client
           },
         })
 
         // @ts-ignore
+        server.client.db.getOrCreateDb = getOrCreateDb
+
+        // @ts-ignore
         server.client.db.getDbClient = (name: string) => {
-          return { dbClient: basedDb.client, dbServerClient }
+          const db = dbs.get(name) || dbs.get('default')
+          // TODO: once there's a real dbServerClient, it probably needs to be the correct one
+          return { dbClient: db?.client || defaultDb.client, dbServerClient }
         }
 
         context.print.step(
