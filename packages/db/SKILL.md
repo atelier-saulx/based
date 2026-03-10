@@ -777,13 +777,13 @@ const schema = {
 
 ### Expiration & TTL (Time-To-Live)
 
-If you have highly volatile or temporary nodes (like cache objects, single-use tokens, or rate-limited sessions), do not build JS loops. Use `db.expire(type, id, ms)` natively.
+If you have highly volatile or temporary nodes (like cache objects, single-use tokens, or rate-limited sessions), do not build JS loops. Use `db.expire(type, id, seconds)` natively.
 
 ```typescript
 const tokenId = await db.create('sessionToken', { user: userId })
 
-// Tell the engine to wipe this entity in 10 minutes (600_000ms)
-db.expire('sessionToken', tokenId, 600000)
+// Tell the engine to wipe this entity in 10 minutes (600s)
+db.expire('sessionToken', tokenId, 600)
 ```
 
 ### Database Hooks (Native Middleware)

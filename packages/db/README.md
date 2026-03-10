@@ -214,7 +214,7 @@ await db.delete('user', userId)
 Instead of relying on application-level background workers to prune data, allow the engine to expire it natively.
 
 ```typescript
-db.expire('user', userId, 600000) // Automatically wipes the entity in 10 minutes (600,000ms)
+db.expire('user', userId, 600) // Automatically wipes the entity in 10 minutes (600s)
 ```
 
 ### 3. Querying & Adjacency List Traversal
