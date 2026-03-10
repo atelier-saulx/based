@@ -124,7 +124,6 @@ if (isMainThread) {
 
         await toDb.drain()
         native.membarSyncWrite()
-        await wait(500)
         setToSleep(workerState)
       }
     } catch (e) {
