@@ -10,7 +10,9 @@ const errors = @import("../errors.zig");
 const read = utils.read;
 const DbCtx = @import("../db/ctx.zig").DbCtx;
 const Iterator = @import("iterator.zig");
+const Decay = @import("decay.zig");
 pub const SortIndexMeta = @import("common.zig").SortIndexMeta;
+const SortUseCounter = @import("common.zig").SortUseCounter;
 
 pub const iterator = Iterator.iterator;
 pub const fromIterator = Iterator.fromIterator;
@@ -121,6 +123,7 @@ fn createSortIndexMeta(
         .langCode = header.lang,
         .field = header.prop,
         .isCreated = false,
+        .decay = Decay.init(),
     };
 
     return s;
@@ -131,7 +134,6 @@ pub fn getOrCreateFromCtx(
     typeId: t.TypeId,
     sortHeader: *const t.SortHeader,
 ) !*SortIndexMeta {
-    var sortIndex: ?*SortIndexMeta = undefined;
     var typeIndexes: ?*TypeIndex = dbCtx.sortIndexes.get(typeId);
     if (typeIndexes == null) {
         typeIndexes = jemalloc.create(TypeIndex);
@@ -143,18 +145,22 @@ pub fn getOrCreateFromCtx(
         try dbCtx.sortIndexes.put(typeId, typeIndexes.?);
     }
     const tI: *TypeIndex = typeIndexes.?;
-    sortIndex = getSortIndex(typeIndexes, sortHeader.prop, sortHeader.start, sortHeader.lang);
-    if (sortIndex == null) {
-        sortIndex = try createSortIndexMeta(sortHeader, 0, false);
+    if (getSortIndex(typeIndexes, sortHeader.prop, sortHeader.start, sortHeader.lang)) |sortIndex| {
+        // This can wrap around but we don't care for now
+        _ = sortIndex.decay.useCounter.fetchAdd(1, std.builtin.AtomicOrder.monotonic);
+        return sortIndex;
+    } else {
+        const sortIndex = try createSortIndexMeta(sortHeader, 0, false);
         if (sortHeader.prop == 0) {
-            try tI.main.put(sortHeader.start, sortIndex.?);
+            try tI.main.put(sortHeader.start, sortIndex);
         } else if (sortHeader.propType == t.PropType.stringLocalized) {
-            try tI.text.put(getTextKey(sortHeader.prop, sortHeader.lang), sortIndex.?);
+            try tI.text.put(getTextKey(sortHeader.prop, sortHeader.lang), sortIndex);
         } else {
-            try tI.field.put(sortHeader.prop, sortIndex.?);
+            try tI.field.put(sortHeader.prop, sortIndex);
         }
+
+        return sortIndex;
     }
-    return sortIndex.?;
 }
 
 pub fn destroySortIndex(

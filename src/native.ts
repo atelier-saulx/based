@@ -92,10 +92,6 @@ const native = {
     return db.crc32(buf)
   },
 
-  destroySortIndex: (buf: Uint8Array, dbCtx: any) => {
-    return db.destroySortIndex(dbCtx, buf)
-  },
-
   xxHash64: (buf: Uint8Array, target: Uint8Array, index: number) => {
     return db.xxHash64(buf, target, index)
   },
