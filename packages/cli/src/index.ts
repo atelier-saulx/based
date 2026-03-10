@@ -11,6 +11,7 @@ import {
   secrets,
   test,
   version,
+  ai,
 } from './commands/index.js'
 import { AppContext } from './context/index.js'
 import { globalOptions } from './helpers/index.js'
@@ -34,6 +35,7 @@ export const cli = async () => {
       infra(program),
       projectInit(program),
       secrets(program),
+      ai(program),
     ])
 
     const appName = context.get('appName')

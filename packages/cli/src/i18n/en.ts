@@ -741,6 +741,19 @@ export default {
         },
       },
     },
+    ai: {
+      description:
+        'Copy AI agent skills and rules to your project for better assistance with Based.',
+      example: 'npx @based/cli ai',
+      options: [],
+      methods: {
+        success:
+          'AI skills installed successfully! Your agents now understand how to use @based/db.',
+        error: 'Failed to install AI skills: ${error}',
+        fileSaved: 'Created/Updated: <reset><b>${path}</b></reset>',
+        agents: 'Select the AI agents or formats you are using:',
+      },
+    },
   },
   errors: {
     401: 'Was not possible to autenticate you. Please check your email and try again. ${error}',

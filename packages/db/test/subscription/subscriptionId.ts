@@ -190,3 +190,71 @@ await test('same id over different types', async (t) => {
   equal(cnt2, 2)
   equal(server.subscriptions.active, 0, 'remove all subs')
 })
+
+await test('subscriptionId max spread of ids', async (t) => {
+  const clientsN = 2
+  const { clients } = await start(t, clientsN, 1)
+
+  await clients[0].setSchema({
+    types: {
+      user: {
+        date: 'timestamp',
+        x: 'uint8',
+        name: 'string',
+      },
+    },
+  })
+
+  const ids: number[] = []
+  for (let i = 0; i < 2000; i++) {
+    const id = await clients[0].create(
+      'user',
+      {
+        id: 1 + i * 2_000_000,
+        name: 'mr flap ' + i,
+        date: 'now',
+      },
+      { unsafe: true },
+    )
+    ids.push(id)
+  }
+
+  var idCounter = 0
+
+  await wait(100)
+  if (global.gc) global.gc()
+  // logMemoryUsage()
+  const memBefore = process.memoryUsage().rss
+
+  const closes: (() => void)[] = []
+  for (const id of ids) {
+    const close = clients[0].query('user', id).subscribe((d) => {
+      idCounter++
+    })
+    closes.push(close)
+  }
+
+  await wait(100)
+  if (global.gc) global.gc()
+  // logMemoryUsage()
+  const memAfter = process.memoryUsage().rss
+
+  const memDiffMB = (memAfter - memBefore) / 1024 / 1024
+  equal(memDiffMB < 100, true, 'Memory increased by more than 100MB')
+
+  await wait(10)
+  clients[0].update('user', ids[0], {
+    name: 'SnurtMcGurt',
+  })
+
+  await wait(10)
+  clients[0].update('user', ids[1999], {
+    name: 'SnurtMcGurt!!!',
+  })
+
+  await wait(800)
+
+  for (const close of closes) {
+    close()
+  }
+})

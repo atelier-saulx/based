@@ -38,6 +38,7 @@
     "dist/lib",
     "!*.map",
     "README.md",
+    "SKILL.md",
     "package.json",
     "basedDbNative.cjs"
   ],

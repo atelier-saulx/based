@@ -245,6 +245,7 @@ declare global {
         | 'dev'
         | 'init'
         | 'secrets'
+        | 'ai'
 
       type SubCommandsList = Record<
         string,
