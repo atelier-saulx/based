@@ -18,6 +18,7 @@ await test('edges migration', async (t) => {
             ref: 'b',
             prop: 'aRefs',
             $nr: 'number',
+            $str: 'string',
           },
         },
         name: 'string',
@@ -28,29 +29,30 @@ await test('edges migration', async (t) => {
             ref: 'a',
             prop: 'bRefs',
             $nr: 'number',
+            $str: 'string',
           },
         },
         name: 'string',
       },
     },
   })
-
+  const n = 100_000
   {
-    let i = 1000
+    let i = n
     while (i--) {
       db.create('a')
       db.create('b')
     }
   }
   {
-    let i = 1000
+    let i = n
     while (i) {
       db.update('a', i, { bRefs: [{ id: i, $nr: i }] })
       i--
     }
   }
 
-  const a1 = await db.query('a').include('*', '**').get().toObject()
+  const a1 = await db.query('a').range(0, n).include('*', '**').get().toObject()
   await db.setSchema({
     types: {
       b: {
@@ -59,6 +61,7 @@ await test('edges migration', async (t) => {
           items: {
             ref: 'a',
             prop: 'bRefs',
+            $str: 'string',
             $nr: 'number',
           },
         },
@@ -69,6 +72,7 @@ await test('edges migration', async (t) => {
           items: {
             ref: 'b',
             prop: 'aRefs',
+            $str: 'string',
             $nr: 'number',
           },
         },
@@ -76,6 +80,6 @@ await test('edges migration', async (t) => {
     },
   })
 
-  const a2 = await db.query('a').include('*', '**').get().toObject()
+  const a2 = await db.query('a').range(0, n).include('*', '**').get().toObject()
   a1.forEach((item1, index) => deepEqual(item1, a2[index]))
 })
