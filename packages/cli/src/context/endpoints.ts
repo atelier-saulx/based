@@ -136,6 +136,12 @@ export const endpoints = {
     endpoint: 'based:set-secret',
     type: 'call',
   },
+  AI_SKILL: {
+    client: 'local',
+    endpoint:
+      'https://raw.githubusercontent.com/atelier-saulx/based-db/refs/heads/main/packages/db/SKILL.md',
+    type: 'rest',
+  },
 } as const satisfies Based.API.Gateway.Endpoints<
   Record<string, Based.API.Gateway.Endpoint>
 >

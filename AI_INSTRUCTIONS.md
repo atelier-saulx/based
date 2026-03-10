@@ -1,6 +1,6 @@
-# Gemini Contribution Guidelines
+# AI Assistant Contribution Guidelines
 
-This document provides guidelines for Gemini when contributing to this project.
+This document provides guidelines for AI Assistants (like Gemini, Claude, Copilot, etc.) when contributing to this project.
 
 ## Core Principles
 

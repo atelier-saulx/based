@@ -294,3 +294,9 @@ Set a Based Secret.
 | `--key <key>, -k <key>` | Secret key/name |
 | `--value <value>, -v <value>` | Secret value |
 
+### Ai
+
+Copy AI agent skills and rules to your project for better assistance with Based.
+
+_Example:_ `npx @based/cli ai`
+
