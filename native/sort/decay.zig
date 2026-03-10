@@ -14,7 +14,7 @@ pub const Decay = struct {
 
 pub const DECAY_INTERVAL_MS =  2 * Worker.SUB_EXEC_INTERVAL;
 const DECAY_MS: f64 = 3.6e+6;
-const FRESH_START: f64 = 2;
+const FRESH_START: f64 = 1.0;
 
 fn calcCoeff(comptime sampleInterval: f64, comptime period: f64) f64 {
     return std.math.exp(-(sampleInterval / period));
@@ -25,7 +25,7 @@ pub fn init() Decay {
     return Decay{
         .coeff = coeff,
         .useCounter = common.SortUseCounter.init(0),
-        .freshness = FRESH_START / coeff, // TODO not quite sure about this
+        .freshness = FRESH_START,
     };
 }
 
@@ -36,8 +36,8 @@ fn sortIndexDecay(dbCtx: *DbCtx, typeId: t.TypeId, comptime T: type, iter: std.A
         const sortIndex = entry.value_ptr.*;
         const sample: f64 = @floatFromInt(sortIndex.decay.useCounter.swap(0, std.builtin.AtomicOrder.acq_rel));
         sortIndex.decay.freshness = sortIndex.decay.coeff * sortIndex.decay.freshness + (1.0 - sortIndex.decay.coeff) * sample;
-        //std.log.err("{any} freshness {any}", .{entry.key_ptr.*, sortIndex.decay.freshness });
-        if (sortIndex.decay.freshness < 0.1) {
+        //std.log.err("{any} use: {any} freshness: {any}", .{ entry.key_ptr.*, sample, sortIndex.decay.freshness });
+        if (sortIndex.decay.freshness < 0.5) {
             //std.log.err("delete {any}.{any}", .{typeId, sortIndex.field});
             Sort.destroySortIndex(dbCtx, typeId, sortIndex.field, sortIndex.start, sortIndex.langCode);
         }
