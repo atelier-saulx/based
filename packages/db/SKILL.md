@@ -73,11 +73,6 @@ export const schema = {
     nl: { fallback: ['en'] }, // 'nl' falls back to 'en' if missing
     fi: { fallback: ['en'] },
   },
-  // Optional: Define properties directly on the root node
-  props: {
-    siteName: 'string',
-    featuredItems: { items: { ref: 'product' } },
-  },
   // Define data types
   types: {
     user: {
