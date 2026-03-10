@@ -5,6 +5,7 @@ const common = @import("../common.zig");
 const jemalloc = @import("../../jemalloc.zig");
 const Node = @import("../../selva/node.zig");
 const Subscription = @import("../../subscription/subscription.zig");
+const SortIndexDecay = @import("../../sort/decay.zig");
 const t = @import("../../types.zig");
 
 fn dispatchExpire(threads: *Thread.Threads, msg: []u8) void {
@@ -20,12 +21,13 @@ fn dispatchExpire(threads: *Thread.Threads, msg: []u8) void {
 }
 
 pub fn poll(threads: *Thread.Threads) !void {
+    var prevSortIndexDecay = std.time.milliTimestamp();
     const expireMsg = jemalloc.alloc(u8, utils.sizeOf(t.ModifyHeader));
     defer jemalloc.free(expireMsg);
 
     while (true) {
-        std.Thread.sleep(common.SUB_EXEC_INTERVAL);
-        const now: u64 = @truncate(@as(u128, @intCast(std.time.nanoTimestamp())));
+        std.Thread.sleep(common.SUB_EXEC_INTERVAL * 100_000);
+        const now = std.time.milliTimestamp();
 
         threads.mutex.lock();
 
@@ -35,6 +37,11 @@ pub fn poll(threads: *Thread.Threads) !void {
         }
 
         dispatchExpire(threads, expireMsg);
+
+        if (now - prevSortIndexDecay >= SortIndexDecay.DECAY_INTERVAL_MS) {
+            SortIndexDecay.decay(threads);
+            prevSortIndexDecay = now;
+        }
 
         for (threads.threads) |thread| {
             const elapsed = now - thread.lastModifyTime;

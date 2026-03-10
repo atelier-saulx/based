@@ -1,7 +1,7 @@
 import { QueryAst } from '../../src/db-query/ast/ast.js'
 import { astToQueryCtx } from '../../src/db-query/ast/toCtx.js'
 import { AutoSizedUint8Array } from '../../src/utils/AutoSizedUint8Array.js'
-import { BasedDb, debugBuffer } from '../../src/sdk.js'
+import { testDbClient, testDbServer } from '../shared/index.js'
 import {
   resultToObject,
   serializeReaderSchema,
@@ -11,11 +11,9 @@ import { deepEqual } from 'assert'
 import test from '../shared/test.js'
 
 await test('basic', async (t) => {
-  const db = new BasedDb({ path: t.tmp })
-  await db.start({ clean: true })
-  t.after(() => db.destroy())
+  const server = await testDbServer(t, { noBackup: true })
 
-  const client = await db.setSchema({
+  const client = await testDbClient(server, {
     types: {
       user: {
         age: 'uint8',
@@ -37,7 +35,7 @@ await test('basic', async (t) => {
     balance: 1500.5,
   })
 
-  await db.drain()
+  await client.drain()
   const ast: QueryAst = {
     type: 'user',
     sum: {
@@ -54,7 +52,7 @@ await test('basic', async (t) => {
     count: {},
   }
   const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
-  const result = await db.server.getQueryBuf(ctx.query)
+  const result = await server.getQueryBuf(ctx.query)
   // debugBuffer(result)
 
   const readSchemaBuf = serializeReaderSchema(ctx.readSchema)
@@ -76,15 +74,11 @@ await test('basic', async (t) => {
 })
 
 await test('group by', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
+  const server = await testDbServer(t, { noBackup: true })
 
   const tripClass = ['Cupper', 'Silver', 'Gold']
 
-  const client = await db.setSchema({
+  const client = await testDbClient(server, {
     types: {
       trip: {
         pickup: 'timestamp',
@@ -103,7 +97,7 @@ await test('group by', async (t) => {
     },
   })
 
-  db.create('trip', {
+  client.create('trip', {
     vendorIduint8: 13,
     vendorIdint8: 13,
     vendorIduint16: 813,
@@ -118,7 +112,7 @@ await test('group by', async (t) => {
     class: 'Cupper',
   })
 
-  db.create('trip', {
+  client.create('trip', {
     vendorIduint8: 13,
     vendorIdint8: 13,
     vendorIduint16: 813,
@@ -133,7 +127,7 @@ await test('group by', async (t) => {
     class: 'Gold',
   })
 
-  await db.drain()
+  await client.drain()
 
   let ast: any
   let ctx: any
@@ -142,7 +136,7 @@ await test('group by', async (t) => {
   let obj: any
 
   // ---------------  Group By string key ---------------  //
-
+  //@ts-ignore
   ast = {
     type: 'trip',
     sum: {
@@ -153,7 +147,7 @@ await test('group by', async (t) => {
     },
   } as QueryAst
   ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
-  result = await db.server.getQueryBuf(ctx.query)
+  result = await server.getQueryBuf(ctx.query)
   // debugBuffer(result)
 
   readSchemaBuf = await serializeReaderSchema(ctx.readSchema)
@@ -179,7 +173,7 @@ await test('group by', async (t) => {
     },
   }
   ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
-  result = await db.server.getQueryBuf(ctx.query)
+  result = await server.getQueryBuf(ctx.query)
 
   readSchemaBuf = await serializeReaderSchema(ctx.readSchema)
 
@@ -199,6 +193,7 @@ await test('group by', async (t) => {
     timeZone: 'America/Sao_Paulo',
   })
 
+  //@ts-ignore
   ast = {
     type: 'trip',
     sum: {
@@ -213,7 +208,7 @@ await test('group by', async (t) => {
     },
   } as QueryAst
   ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
-  result = await db.server.getQueryBuf(ctx.query)
+  result = await server.getQueryBuf(ctx.query)
 
   readSchemaBuf = await serializeReaderSchema(ctx.readSchema)
 
@@ -226,6 +221,7 @@ await test('group by', async (t) => {
   )
 
   // ---------------  Group By range interval with output format ---------------  //
+  //@ts-ignore
   ast = {
     type: 'trip',
     sum: {
@@ -240,7 +236,7 @@ await test('group by', async (t) => {
     },
   } as QueryAst
   ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
-  result = await db.server.getQueryBuf(ctx.query)
+  result = await server.getQueryBuf(ctx.query)
 
   readSchemaBuf = await serializeReaderSchema(ctx.readSchema)
 
@@ -258,7 +254,7 @@ await test('group by', async (t) => {
   )
 
   // ---------------  Group By enum keys ---------------  //
-
+  //@ts-ignore
   ast = {
     type: 'trip',
     sum: {
@@ -270,7 +266,7 @@ await test('group by', async (t) => {
     },
   } as QueryAst
   ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
-  result = await db.server.getQueryBuf(ctx.query)
+  result = await server.getQueryBuf(ctx.query)
 
   readSchemaBuf = await serializeReaderSchema(ctx.readSchema)
 

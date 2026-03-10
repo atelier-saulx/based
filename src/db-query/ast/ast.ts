@@ -102,7 +102,7 @@ export type QueryAst = {
     timeZone?: string
     display?: Intl.DateTimeFormat
     enum?: string[]
-  }
+  }[]
 }
 
 export type Ctx = {
