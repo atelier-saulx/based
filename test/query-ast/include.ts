@@ -10,6 +10,7 @@ import test, { T } from '../shared/test.js'
 import { deflateSync } from 'zlib'
 import { fastPrng } from '../../src/utils/fastPrng.js'
 import { testDbClient, testDbServer } from '../shared/index.js'
+import { alias } from '../../src/schema/defs/props/alias.js'
 
 await test('include', async (t) => {
   const server = await testDbServer(t, { noBackup: true })
@@ -25,6 +26,7 @@ await test('include', async (t) => {
         y: 'uint32',
       },
       user: {
+        aliasId: 'alias',
         name: 'string',
         big: { type: 'string', compression: 'none' },
         localized: {
@@ -80,6 +82,7 @@ await test('include', async (t) => {
       en: 'mr jim EN',
       nl: 'derpi yuz NL',
     },
+    aliasId: 'jim',
     // enum: 'ok',
     // derp: 'aa',
     // big: 'mr jim',
@@ -97,6 +100,7 @@ await test('include', async (t) => {
     localized: {
       en: 'MR B ENG',
     },
+    aliasId: 'snurf',
     y: 15,
     x: true,
     big: 'mr giraffe man',
@@ -114,6 +118,7 @@ await test('include', async (t) => {
   for (let i = 0; i < 1; i++) {
     client.create('user', {
       big: syntheticData,
+      aliasId: `flap${i}`,
       // name: `mr snurf ${i}`,
       // localized: {
       //   nl: 'giraffe NL',
@@ -157,18 +162,24 @@ await test('include', async (t) => {
     type: 'user',
     // locale: 'fi',
     range: { start: 0, end: 1e6 },
-    // filter: {
-    //   props: {
-    //     localized: {
-    //       // ops: [{ op: '=', val: 'derpi yuz NL' }],
-    //       props: {
-    //         nl: {
-    //           ops: [{ op: '=', val: 'derpi yuz NL' }],
-    //         },
-    //       },
-    //     },
-    //   },
-    // },
+    filter: {
+      props: {
+        // id: {
+        //   ops: [{ op: '=', val: [1, 2] }],
+        // },
+        aliasId: {
+          ops: [{ op: '=', val: 'jim' }],
+        },
+        // localized: {
+        //   // ops: [{ op: '=', val: 'derpi yuz NL' }],
+        //   props: {
+        //     nl: {
+        //       ops: [{ op: '=', val: 'derpi yuz NL' }],
+        //     },
+        //   },
+        // },
+      },
+    },
     props: {
       y: { include: {} },
       localized: {

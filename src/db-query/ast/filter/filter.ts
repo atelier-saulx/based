@@ -4,6 +4,7 @@ import {
   PropTree,
   TypeDef,
 } from '../../../schema/defs/index.js'
+import { uint32 } from '../../../schema/defs/props/fixed.js'
 import { writeUint64 } from '../../../utils/uint8.js'
 import {
   FilterConditionAlignOf,
@@ -22,11 +23,23 @@ type WalkCtx = {
   main: { prop: PropDef; ops: FilterOp[] }[]
 }
 
+// TODO tmp
+const makeIdProp = (typeDef: TypeDef): PropDef => {
+  const prop = new uint32({ type: 'uint32' }, ['id'], typeDef)
+  prop.type = PropType.id
+  prop.id = 255
+  return prop
+}
+
 const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
   const { tree, main } = walkCtx
 
   for (const field in ast.props) {
-    const prop = tree.props.get(field)
+    const prop =
+      field === 'id'
+        ? makeIdProp(typeDef) // TODO super ineffienct might just want to add it on schema
+        : tree.props.get(field)
+
     const astProp = ast.props[field]
     const ops = astProp.ops
     if (isPropDef(prop)) {
@@ -40,7 +53,14 @@ const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
             const ops = astProp.props[lang].ops
             if (ops) {
               for (const op of ops) {
-                const condition = comparison(prop, op.op, op.val, code, op.opts)
+                const condition = comparison(
+                  ctx,
+                  prop,
+                  op.op,
+                  op.val,
+                  code,
+                  op.opts,
+                )
                 ctx.query.set(condition, ctx.query.length)
               }
             }
@@ -64,6 +84,7 @@ const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
           for (const op of ops) {
             // Can prob just push this directly
             const condition = comparison(
+              ctx,
               prop,
               op.op,
               op.val,
@@ -142,7 +163,14 @@ export const filter = (
   for (const { prop, ops } of main) {
     walkCtx.prop = prop.id
     for (const op of ops) {
-      const condition = comparison(prop, op.op, op.val, ctx.locale, op.opts)
+      const condition = comparison(
+        ctx,
+        prop,
+        op.op,
+        op.val,
+        ctx.locale,
+        op.opts,
+      )
       ctx.query.set(condition, ctx.query.length)
     }
   }

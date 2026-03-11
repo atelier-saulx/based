@@ -27,7 +27,7 @@ pub inline fn getType(ctx: *DbCtx, v: anytype) !Type {
                 return errors.SelvaError.SELVA_ENOENT;
             }
         }
-        selvaTypeEntry = selva.c.selva_get_type_by_node(ctx.selva.?, v);
+        selvaTypeEntry = selva.c.selva_get_type_by_node(ctx.selva, v);
     } else {
         @compileLog("Invalid type: ", @TypeOf(v));
         @compileError("Invalid type");

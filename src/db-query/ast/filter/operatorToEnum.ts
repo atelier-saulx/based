@@ -54,6 +54,6 @@ export const isFixedLenString = (prop: PropDef) => {
   return (
     prop.type === PropType.stringFixed ||
     prop.type === PropType.jsonFixed ||
-    prop.type == PropType.binaryFixed
+    prop.type === PropType.binaryFixed
   )
 }
