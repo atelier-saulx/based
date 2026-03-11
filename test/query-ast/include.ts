@@ -119,6 +119,7 @@ await test('include', async (t) => {
     ids.push(i + 1)
     client.create('user', {
       big: syntheticData,
+      y: i,
       // aliasId: `flap${i}`,
       // name: `mr snurf ${i}`,
       // localized: {
@@ -161,46 +162,47 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
-    target: ids,
+    // target: ids,
     // locale: 'fi',
     range: { start: 0, end: 1e6 },
-    filter: {
-      props: {
-        y: {
-          ops: [{ op: '=', val: [1, 2, 15] }],
-        },
-      },
-    },
+    // filter: {
+    //   props: {
+    //     y: {
+    //       ops: [{ op: '=', val: [1, 2, 15] }],
+    //     },
+    //   },
+    // },
     // sort: { prop: 'y' },
     // order: 'desc',
     props: {
       y: { include: {} },
       name: { include: {} },
-      // friends: {
-      //   include: {},
-      //   filter: {
-      //     edgeStrategy: EdgeStrategy.noEdge,
-      //     props: {
-      //       y: {
-      //         ops: [{ op: '=', val: [1, 2] }],
-      //       },
-      //       id: {
-      //         ops: [{ op: '=', val: [1, 2] }],
-      //       },
-      //       aliasId: {
-      //         ops: [{ op: '=', val: 'jim' }],
-      //       },
-      //       localized: {
-      //         // ops: [{ op: '=', val: 'derpi yuz NL' }],
-      //         props: {
-      //           nl: {
-      //             ops: [{ op: '=', val: 'derpi yuz NL' }],
-      //           },
-      //         },
-      //       },
-      //     },
-      //   },
-      // },
+      friends: {
+        include: {},
+        sort: { prop: 'y' },
+        filter: {
+          edgeStrategy: EdgeStrategy.noEdge,
+          props: {
+            y: {
+              ops: [{ op: '=', val: [100, 200, 300] }],
+            },
+            // id: {
+            //   ops: [{ op: '=', val: [1, 2] }],
+            // },
+            // aliasId: {
+            //   ops: [{ op: '=', val: 'jim' }],
+            // },
+            // localized: {
+            //   // ops: [{ op: '=', val: 'derpi yuz NL' }],
+            //   props: {
+            //     nl: {
+            //       ops: [{ op: '=', val: 'derpi yuz NL' }],
+            //     },
+            //   },
+            // },
+          },
+        },
+      },
       // localized: {
       //   // include: {
       //   //   meta: 'only', // few empty
@@ -247,7 +249,7 @@ await test('include', async (t) => {
   }
 
   console.log('START PERF', Date.now() - d, 'ms')
-
+  const sizes: Set<number> = new Set()
   await perf(
     async () => {
       const q: any = []
@@ -255,6 +257,7 @@ await test('include', async (t) => {
         q.push(server.getQueryBuf(queries[i]))
       }
       const x = await Promise.all(q)
+      x.forEach((v) => sizes.add(v.byteLength))
       // console.log(x)
     },
     'filter speed',
@@ -271,7 +274,7 @@ await test('include', async (t) => {
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
-  console.dir(obj, { depth: 10 })
+  // console.dir(obj, { depth: 10 })
 
   await wait(1000)
 
@@ -281,6 +284,7 @@ await test('include', async (t) => {
     'REACHED TILL END!',
     // JSON.stringify(obj).length,
     result.byteLength,
+    sizes,
   )
 })
 

@@ -28,12 +28,12 @@ pub fn default(
 
         .sort => {
             const sortHeader = utils.readNext(t.SortHeader, q, &i);
-            var it = try Sort.iterator(false, ctx.db, ctx.thread, header.typeId, &sortHeader);
+            var it = try Sort.iterator(false, ctx, header.typeId, &sortHeader);
             nodeCnt = try Iterate.node(.default, ctx, q, &it, &header, typeEntry, &i);
         },
         .descSort => {
             const sortHeader = utils.readNext(t.SortHeader, q, &i);
-            var it = try Sort.iterator(true, ctx.db, ctx.thread, header.typeId, &sortHeader);
+            var it = try Sort.iterator(true, ctx, header.typeId, &sortHeader);
             nodeCnt = try Iterate.node(.default, ctx, q, &it, &header, typeEntry, &i);
         },
 
@@ -48,15 +48,14 @@ pub fn default(
 
         .filterSort => {
             const sortHeader = utils.readNext(t.SortHeader, q, &i);
-            var it = try Sort.iterator(false, ctx.db, ctx.thread, header.typeId, &sortHeader);
+            var it = try Sort.iterator(false, ctx, header.typeId, &sortHeader);
             nodeCnt = try Iterate.node(.filter, ctx, q, &it, &header, typeEntry, &i);
         },
         .descFilterSort => {
             const sortHeader = utils.readNext(t.SortHeader, q, &i);
-            var it = try Sort.iterator(true, ctx.db, ctx.thread, header.typeId, &sortHeader);
+            var it = try Sort.iterator(true, ctx, header.typeId, &sortHeader);
             nodeCnt = try Iterate.node(.filter, ctx, q, &it, &header, typeEntry, &i);
         },
-
         else => {
             // not handled
         },

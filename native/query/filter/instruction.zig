@@ -77,6 +77,7 @@ fn getFunc(
 }
 
 pub fn parseOp(comptime op: t.FilterOpCompare, comptime isVar: bool) OpMeta(isVar) {
+    @setEvalBranchQuota(10000);
     // const isVar = isVarOp(op);
     return .{
         .func = getFunc(isVar, op),

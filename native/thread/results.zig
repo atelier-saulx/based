@@ -112,6 +112,11 @@ pub const Result = struct {
     }
 
     pub inline fn commit(self: *Result) void {
+        // std.debug.print(
+        //     "COMMIT size: {d} index {d} h {d} \n",
+        //     .{ self.data.len, self.index, self.headerIndex },
+        // ); // can also just add % bounds ? - biut weird that we get here...
+        // investigate
         utils.writeAs(u32, self.data, self.index - self.headerIndex, self.headerIndex);
     }
 };

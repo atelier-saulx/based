@@ -15,6 +15,8 @@ const jemalloc = @import("../jemalloc.zig");
 const utils = @import("../utils.zig");
 const errors = @import("../errors.zig");
 const Decay = @import("decay.zig");
+const Filter = @import("../query/filter/filter.zig");
+const Query = @import("../query/common.zig");
 
 pub fn SortIterator(
     comptime desc: bool,
@@ -103,34 +105,47 @@ inline fn createIterator(
 
 fn fillSortIndex(
     sortIndex: *SortIndexMeta,
-    dbCtx: *DbCtx,
-    decompressor: *deflate.Decompressor,
+    // dbCtx: *DbCtx,
+    // thread: *Thread.Thread,
+    ctx: *Query.QueryCtx,
     header: *const t.SortHeader,
     typeEntry: Node.Type,
     it: anytype,
     comptime defrag: bool,
     comptime isLocked: bool,
     comptime isEdge: bool,
+    comptime hasFilter: bool, // add filter ON edge OR AND
+    filter: if (hasFilter) []u8 else void,
 ) !void {
     if (isLocked) {
-        dbCtx.threads.mutex.unlock();
+        ctx.db.threads.mutex.unlock();
     }
 
     if (isEdge) {
         if (header.edgeType != 0) {
-            const edgeType = try Node.getType(dbCtx, header.edgeType);
+            const edgeType = try Node.getType(ctx.db, header.edgeType);
             const fieldSchema = try Schema.getFieldSchema(edgeType, header.prop);
             while (it.nextRef()) |ref| {
+                if (hasFilter) {
+                    if (!try Filter.filter(ref.node, ctx, filter)) {
+                        continue;
+                    }
+                }
                 const data = switch (header.propType) {
                     .stringLocalized, .jsonLocalized => Fields.getText(typeEntry, ref.edge, fieldSchema, header.propType, header.lang),
                     else => Fields.get(typeEntry, ref.edge, fieldSchema, header.propType),
                 };
-                Sort.insert(decompressor, sortIndex, data, &ref);
+                Sort.insert(ctx.thread.decompressor, sortIndex, data, &ref);
             }
         } else if (header.propType == .id) {
             while (it.nextRef()) |ref| {
+                if (hasFilter) {
+                    if (!try Filter.filter(ref.node, ctx, filter)) {
+                        continue;
+                    }
+                }
                 Sort.insert(
-                    decompressor,
+                    ctx.thread.decompressor,
                     sortIndex,
                     @constCast(std.mem.asBytes(&Node.getNodeId(ref.node))),
                     &ref,
@@ -139,19 +154,28 @@ fn fillSortIndex(
         } else {
             const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
             while (it.nextRef()) |ref| {
+                if (hasFilter) {
+                    if (!try Filter.filter(ref.node, ctx, filter)) {
+                        continue;
+                    }
+                }
                 const data = switch (header.propType) {
                     .stringLocalized, .jsonLocalized => Fields.getText(typeEntry, ref.node, fieldSchema, header.propType, header.lang),
                     else => Fields.get(typeEntry, ref.node, fieldSchema, header.propType),
                 };
-                Sort.insert(decompressor, sortIndex, data, &ref);
+                Sort.insert(ctx.thread.decompressor, sortIndex, data, &ref);
             }
         }
     } else {
-        // lets do this first with filter
         if (header.propType == .id) {
             while (it.next()) |node| {
+                if (hasFilter) {
+                    if (!try Filter.filter(node, ctx, filter)) {
+                        continue;
+                    }
+                }
                 Sort.insert(
-                    decompressor,
+                    ctx.thread.decompressor,
                     sortIndex,
                     @constCast(std.mem.asBytes(&Node.getNodeId(node))),
                     node,
@@ -160,11 +184,16 @@ fn fillSortIndex(
         } else {
             const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
             while (it.next()) |node| {
+                if (hasFilter) {
+                    if (!try Filter.filter(node, ctx, filter)) {
+                        continue;
+                    }
+                }
                 const data = switch (header.propType) {
                     .stringLocalized, .jsonLocalized => Fields.getText(typeEntry, node, fieldSchema, header.propType, header.lang),
                     else => Fields.get(typeEntry, node, fieldSchema, header.propType),
                 };
-                Sort.insert(decompressor, sortIndex, data, node);
+                Sort.insert(ctx.thread.decompressor, sortIndex, data, node);
             }
         }
     }
@@ -174,7 +203,7 @@ fn fillSortIndex(
     }
 
     if (isLocked) {
-        dbCtx.threads.mutex.lock();
+        ctx.db.threads.mutex.lock();
     }
 
     sortIndex.isCreated = true;
@@ -214,20 +243,18 @@ fn getSortIndex(
 pub inline fn fromIterator(
     comptime desc: bool,
     comptime isEdge: bool,
-    dbCtx: *DbCtx,
-    thread: *Thread.Thread,
+    ctx: *Query.QueryCtx,
     typeEntry: Node.Type,
     header: *const t.SortHeader,
     it: anytype,
-    // ADD THIS
-    // filter: t.QueryIteratorType,
-    // _: if (filter == .edgeFilter or filter == t.QueryIteratorType.) []u8 else void,
+    comptime hasFilter: bool,
+    filter: if (hasFilter) []u8 else void,
 ) !SortIterator(desc, isEdge) {
     // maybe pass this outside
     var sortIndex: SortIndexMeta = .{
         .len = header.len,
         .start = header.start,
-        .index = try getSortIndex(isEdge, thread, header.propType),
+        .index = try getSortIndex(isEdge, ctx.thread, header.propType),
         .prop = header.propType,
         .langCode = header.lang,
         .field = header.prop,
@@ -240,14 +267,15 @@ pub inline fn fromIterator(
 
     try fillSortIndex(
         &sortIndex,
-        dbCtx,
-        thread.decompressor,
+        ctx,
         header,
         typeEntry,
         it,
         false,
         false,
         isEdge,
+        hasFilter,
+        filter,
     );
 
     return createIterator(desc, isEdge, &sortIndex);
@@ -255,41 +283,41 @@ pub inline fn fromIterator(
 
 pub fn iterator(
     comptime desc: bool,
-    dbCtx: *DbCtx,
-    thread: *Thread.Thread,
+    ctx: *Query.QueryCtx,
     typeId: t.TypeId,
     header: *const t.SortHeader,
 ) !SortIterator(desc, false) {
     var sortIndex: *SortIndexMeta = undefined;
-    dbCtx.threads.mutex.lock();
+    ctx.db.threads.mutex.lock();
     if (Sort.getSortIndex(
-        dbCtx.sortIndexes.get(typeId),
+        ctx.db.sortIndexes.get(typeId),
         header.prop,
         header.start,
         header.lang,
     )) |sortMetaIndex| {
         if (sortMetaIndex.isCreated == false) {
-            dbCtx.threads.sortDone.wait(&dbCtx.threads.mutex);
+            ctx.db.threads.sortDone.wait(&ctx.db.threads.mutex);
         }
         sortIndex = sortMetaIndex;
-        dbCtx.threads.mutex.unlock();
+        ctx.db.threads.mutex.unlock();
     } else {
-        const typeEntry = try Node.getType(dbCtx, typeId);
+        const typeEntry = try Node.getType(ctx.db, typeId);
         var it = Node.iterator(false, typeEntry);
-        sortIndex = try Sort.getOrCreateFromCtx(dbCtx, typeId, header);
+        sortIndex = try Sort.getOrCreateFromCtx(ctx.db, typeId, header);
         try fillSortIndex(
             sortIndex,
-            dbCtx,
-            thread.decompressor,
+            ctx,
             header,
             typeEntry,
             &it,
             true,
             true,
             false,
+            false,
+            undefined,
         );
-        dbCtx.threads.sortDone.broadcast();
-        dbCtx.threads.mutex.unlock();
+        ctx.db.threads.sortDone.broadcast();
+        ctx.db.threads.mutex.unlock();
     }
     return createIterator(desc, false, sortIndex);
 }
