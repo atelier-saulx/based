@@ -779,6 +779,7 @@ pub const AggHeader = packed struct {
     accumulatorSize: u16,
     hasGroupBy: bool,
     isSamplingSet: bool,
+    edgePropId: u8,
     _padding: u6,
 };
 
