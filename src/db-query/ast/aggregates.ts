@@ -107,7 +107,13 @@ export const pushAggregatesQuery = (
     accumulator: 0,
   }
 
-  const { hasGroupBy, isEdge: groupByHasEdges } = pushGroupBy(
+  const {
+    hasGroupBy,
+    isEdge: groupByHasEdges,
+    edgePropId: groupByEdgePropId,
+  } = pushGroupBy(ast, ctx, typeDef, sizes, asReference)
+
+  const { hasEdges: aggHasEdges, edgePropId: aggEdgePropId } = pushAggregates(
     ast,
     ctx,
     typeDef,
@@ -115,8 +121,8 @@ export const pushAggregatesQuery = (
     asReference,
   )
 
-  const hasEdges =
-    pushAggregates(ast, ctx, typeDef, sizes, asReference) || groupByHasEdges
+  const hasEdges = aggHasEdges || groupByHasEdges
+  const edgePropId = aggEdgePropId || groupByEdgePropId
 
   const aggDefsSize =
     ctx.query.length - (headerStartPos + headerByteSize) - filterSize
@@ -130,6 +136,7 @@ export const pushAggregatesQuery = (
     sizes,
     asReference,
     aggDefsSize,
+    edgePropId,
   )
   ctx.query.data.set(headerBuffer, headerStartPos)
 }
@@ -159,6 +166,7 @@ const buildAggregateHeader = (
   sizes: Sizes,
   asReference?: PropDef,
   aggDefsSize: number = 0,
+  edgePropId?: number,
 ) => {
   const rangeStart = ast.range?.start || 0
 
@@ -202,6 +210,7 @@ const buildAggregateHeader = (
     typeId: typeDef.id,
     limit: (ast.range?.end || 1000) + rangeStart,
     iteratorType: iteratorType as QueryIteratorTypeEnum,
+    edgePropId: edgePropId || 0,
   })
   return headerBuffer
 }
@@ -214,7 +223,7 @@ const pushAggregates = (
   typeDef: TypeDef,
   sizes: SizesType,
   asReference?: PropDef,
-): boolean => {
+): { hasEdges: boolean; edgePropId?: number } => {
   ctx.readSchema.aggregate = ctx.readSchema.aggregate || {
     aggregates: [],
     totalResultsSize: 0,
@@ -275,32 +284,78 @@ const checkSamplingMode = (ast: QueryAst): boolean => {
   else return true
 }
 
+const collectGroupBys = (
+  ast: QueryAst,
+  currentPath: string[] = [],
+): {
+  prop: string
+  step?: StepShorthand
+  timeZone?: string
+  display?: any
+}[] => {
+  let result: {
+    prop: string
+    step?: StepShorthand
+    timeZone?: string
+    display?: any
+  }[] = []
+  if (ast.groupBy) {
+    const arr = Array.isArray(ast.groupBy) ? ast.groupBy : [ast.groupBy]
+    for (const g of arr) {
+      if (currentPath.length > 0) {
+        result.push({ ...g, prop: currentPath.join('.') + '.' + g.prop })
+      } else {
+        result.push(g)
+      }
+    }
+  }
+  if (ast.props) {
+    for (const key in ast.props) {
+      result = result.concat(
+        collectGroupBys(ast.props[key], [...currentPath, key]),
+      )
+    }
+  }
+  if (ast.edges) {
+    for (const key in ast.edges) {
+      result = result.concat(
+        collectGroupBys(ast.edges[key], [...currentPath, key]),
+      )
+    }
+  }
+  return result
+}
+
 const pushGroupBy = (
   ast: QueryAst,
   ctx: Ctx,
   typeDef: TypeDef,
   sizes: Sizes,
   asReference?: PropDef,
-): { hasGroupBy: boolean; isEdge: boolean } => {
-  if (!ast.groupBy) return { hasGroupBy: false, isEdge: false }
-
-  const groupByArray: any[] = Array.isArray(ast.groupBy)
-    ? ast.groupBy
-    : [ast.groupBy]
+): { hasGroupBy: boolean; isEdge: boolean; edgePropId?: number } => {
+  const groupByArray = collectGroupBys(ast)
   if (groupByArray.length === 0) return { hasGroupBy: false, isEdge: false }
 
   let anyEdge = false
+  let defaultEdgePropId: number | undefined
   const groupByInfos: any[] = []
 
   for (let i = 0; i < groupByArray.length; i++) {
     const { prop: propName, step, timeZone, display } = groupByArray[i]
-    const { propDef, isEdge } = resolveProp(typeDef, propName, asReference)
+    const { propDef, isEdge, edgePropId } = resolveProp(
+      typeDef,
+      propName,
+      asReference,
+    )
 
     if (!propDef) {
       throw new Error(`Group By property '${propName}' not found in AST.`)
     }
 
-    if (isEdge) anyEdge = true
+    if (isEdge) {
+      anyEdge = true
+      if (edgePropId) defaultEdgePropId = edgePropId
+    }
 
     const { stepType, stepRange } = step
       ? parseStep(step)
@@ -316,7 +371,7 @@ const pushGroupBy = (
       stepRange,
       timezone: timeZoneOffset,
       isEdge,
-      hasNext: i < ast.groupBy.length - 1,
+      hasNext: i < groupByArray.length - 1,
     })
 
     let enumProxy
@@ -341,7 +396,7 @@ const pushGroupBy = (
     ctx.readSchema.aggregate.groupBy = groupByInfos
   }
 
-  return { hasGroupBy: true, isEdge: anyEdge }
+  return { hasGroupBy: true, isEdge: anyEdge, edgePropId: defaultEdgePropId }
 }
 
 type Step = { stepType: number; stepRange: number }
