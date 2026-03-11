@@ -10,7 +10,9 @@ export type GetLocales<Schema extends { locales?: any }> =
 export type InferSchemaOutput<
   Schema extends { types: any; locales?: any },
   Type extends keyof Schema['types'],
-> = InferType<ResolvedProps<Schema['types'], Type>, Schema> & { id: number }
+> = Prettify<
+  InferType<ResolvedProps<Schema['types'], Type>, Schema> & { id: number }
+>
 
 type TypeMap = {
   string: string
@@ -42,7 +44,7 @@ export type FilterEdges<Type> = {
 
 // Utility to clean up intersection types
 type Prettify<Type> = {
-  [Key in keyof Type]: Type[Key]
+  -readonly [Key in keyof Type]: Type[Key]
 } & {}
 
 type PickOutputFromProps<
@@ -123,9 +125,9 @@ type InferPropLogic<
               : number[] // IDs
             : unknown
 
-type InferType<Props, Schema extends { types: any; locales?: any }> = {
+type InferType<Props, Schema extends { types: any; locales?: any }> = Prettify<{
   [Key in keyof Props]: InferProp<Props[Key], Schema>
-}
+}>
 
 // Helpers for include
 type IsRefProp<Prop> = [Prop] extends [

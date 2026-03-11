@@ -120,3 +120,38 @@ await test('modify text on edge', async (t) => {
 
   deepEqual(res2!.toThing?.$edgeText, { en: 'edge hi' })
 })
+
+await test('modify text with locale', async (t) => {
+  const db = await testDb(t, {
+    locales: {
+      en: true,
+      de: true,
+      nl: true,
+    },
+    types: {
+      thing: {
+        content: {
+          type: 'string',
+          localized: true,
+        },
+      },
+    },
+  })
+
+  const id1 = await db.create(
+    'thing',
+    {
+      content: 'Hello',
+    },
+    { locale: 'en' },
+  )
+
+  deepEqual(await db.query('thing', id1).get(), {
+    id: id1,
+    content: {
+      en: 'Hello',
+      de: '',
+      nl: '',
+    },
+  })
+})

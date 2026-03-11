@@ -118,11 +118,10 @@ export class DbClientClass<
     return new DbQuery(this, type, id as any)
   }
 
-  create<T extends keyof S['types'] & string = keyof S['types'] & string>(
-    type: T,
-    obj?: InferPayload<S, T>,
-    opts?: ModifyOpts,
-  ): BasedCreatePromise {
+  create<
+    T extends keyof S['types'] & string = keyof S['types'] & string,
+    Opts extends ModifyOpts = ModifyOpts,
+  >(type: T, obj?: InferPayload<S, T, Opts>, opts?: Opts): BasedCreatePromise {
     return new BasedModify(
       this.modifyCtx,
       serializeCreate,
@@ -134,11 +133,14 @@ export class DbClientClass<
     )
   }
 
-  update<T extends keyof S['types'] & string = keyof S['types'] & string>(
+  update<
+    T extends keyof S['types'] & string = keyof S['types'] & string,
+    Opts extends ModifyOpts = ModifyOpts,
+  >(
     type: T,
     target: number | BasedModify,
-    obj: InferPayload<S, T>,
-    opts?: ModifyOpts,
+    obj: InferPayload<S, T, Opts>,
+    opts?: Opts,
   ): BasedUpdatePromise {
     return new BasedModify(
       this.modifyCtx,
@@ -152,11 +154,14 @@ export class DbClientClass<
     )
   }
 
-  upsert<T extends keyof S['types'] & string = keyof S['types'] & string>(
+  upsert<
+    T extends keyof S['types'] & string = keyof S['types'] & string,
+    Opts extends ModifyOpts = ModifyOpts,
+  >(
     type: T,
     target: InferTarget<S, T>,
-    obj: InferPayload<S, T>,
-    opts?: ModifyOpts,
+    obj: InferPayload<S, T, Opts>,
+    opts?: Opts,
   ): BasedUpsertPromise {
     return new BasedModify(
       this.modifyCtx,
@@ -171,11 +176,14 @@ export class DbClientClass<
     )
   }
 
-  insert<T extends keyof S['types'] & string = keyof S['types'] & string>(
+  insert<
+    T extends keyof S['types'] & string = keyof S['types'] & string,
+    Opts extends ModifyOpts = ModifyOpts,
+  >(
     type: T,
     target: InferTarget<S, T>,
-    obj: InferPayload<S, T>,
-    opts?: ModifyOpts,
+    obj: InferPayload<S, T, Opts>,
+    opts?: Opts,
   ): BasedInsertPromise {
     return new BasedModify(
       this.modifyCtx,

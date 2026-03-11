@@ -6,6 +6,7 @@ import {
   type LangCodeEnum,
   writeModifyCreateHeaderProps,
 } from '../../zigTsExports.js'
+import type { ModifyOpts } from '../index.js'
 import { getTypeDef, execHooks } from './index.js'
 import { serializeProps } from './props.js'
 import type { InferPayload, InferTarget } from './types.js'
@@ -13,11 +14,12 @@ import type { InferPayload, InferTarget } from './types.js'
 export const serializeUpsert = <
   S extends SchemaOut = SchemaOut,
   T extends keyof S['types'] & string = keyof S['types'] & string,
+  Opts extends ModifyOpts = {},
 >(
   schema: S,
   type: T,
   target: InferTarget<S, T>,
-  payload: InferPayload<S, T>,
+  payload: InferPayload<S, T, Opts>,
   buf: AutoSizedUint8Array,
   lang: LangCodeEnum,
   op: typeof Modify.insert | typeof Modify.upsert,
