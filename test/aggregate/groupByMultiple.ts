@@ -346,14 +346,14 @@ await test('group By multiple edges', async (t) => {
     'avg movie rating (Edge) group by actors role type and salary range (Edges)',
   )
 
-  const q2 = db.query('movie').sum('actors.strong').groupBy('actors.name')
-
-  console.dir((q2 as any).ast, { depth: null })
-  const r2 = await q2.get()
+  const r2 = await db
+    .query('movie')
+    .sum('actors.strong')
+    .groupBy('actors.name')
+    .get()
 
   deepEqual(
     r2,
-
     [
       {
         id: 1,
@@ -374,9 +374,11 @@ await test('group By multiple edges', async (t) => {
     'sum movie actors strong group by actors name (References)',
   )
 
-  const q3 = db.query('movie').avg('actors.$rating').groupBy('genre')
-
-  const r3 = await q3.get()
+  const r3 = await db
+    .query('movie')
+    .avg('actors.$rating')
+    .groupBy('genre')
+    .get()
 
   deepEqual(
     r3,
@@ -395,13 +397,12 @@ await test('group By multiple edges', async (t) => {
     'avg movie rating (Edge) group by genre (main Property)',
   )
 
-  const q4 = db
+  const r4 = await db
     .query('movie')
     .avg('actors.$rating')
     .groupBy('genre')
     .groupBy('actors.$roleType')
-
-  const r4 = await q4.get()
+    .get()
 
   deepEqual(
     r4,
