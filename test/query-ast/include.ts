@@ -160,16 +160,16 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
-    // target: [1, 2],
+    target: [1, 2],
     // locale: 'fi',
     range: { start: 0, end: 1e6 },
-    // filter: {
-    //   props: {
-    //     y: {
-    //       ops: [{ op: '=', val: [1, 2] }],
-    //     },
-    //   },
-    // },
+    filter: {
+      props: {
+        y: {
+          ops: [{ op: '=', val: [1, 2] }],
+        },
+      },
+    },
     props: {
       y: { include: {} },
       friends: {

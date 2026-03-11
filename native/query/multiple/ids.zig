@@ -40,12 +40,41 @@ pub fn ids(
         .default => {
             nodeCnt = try Iterate.node(.default, ctx, q, &it, &header, typeEntry, &i);
         },
-        .filter => {},
+        .filter => {
+            nodeCnt = try Iterate.node(.filter, ctx, q, &it, &header, typeEntry, &i);
+        },
         .filterSort => {
-            // derp
+            const sortHeader = utils.readNext(t.SortHeader, q, &i);
+            var itSort = try Sort.fromIterator(
+                false,
+                false,
+                ctx.db,
+                ctx.thread,
+                typeEntry,
+                &sortHeader,
+                &it,
+                // .default,
+                // undefined,
+            );
+            nodeCnt = try Iterate.node(.filter, ctx, q, &itSort, &header, typeEntry, &i);
+            itSort.deinit();
             // make filtered iterator
         },
         .descFilterSort => {
+            const sortHeader = utils.readNext(t.SortHeader, q, &i);
+            var itSort = try Sort.fromIterator(
+                true,
+                false,
+                ctx.db,
+                ctx.thread,
+                typeEntry,
+                &sortHeader,
+                &it,
+                // .default,
+                // undefined,
+            );
+            nodeCnt = try Iterate.node(.filter, ctx, q, &itSort, &header, typeEntry, &i);
+            itSort.deinit();
             // derp
             // make filtered iterator
         },
