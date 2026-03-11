@@ -137,7 +137,7 @@ const serializeProp = (
     writeUint16(header, key, 0)
   }
 
-  header[keySize] = prop.typeIndex
+  header[keySize] = prop.type
   // 2 opions
   header[keySize + 2] = prop.path.length
   blocks.push(header)
@@ -150,19 +150,19 @@ const serializeProp = (
   let options = 0
   if ('meta' in prop) {
     //   1 or 2
-    options |= PROPERTY_BIT_MAP.meta
-    blocks.push(new Uint8Array([prop.meta!]))
-    if (
-      prop.meta === ReaderMeta.specificLocales ||
-      prop.meta === ReaderMeta.specificLocalesOnly
-    ) {
-      blocks.push(
-        new Uint8Array([
-          prop.metaSpecificLangCodes!.length,
-          ...prop.metaSpecificLangCodes!,
-        ]),
-      )
-    }
+    // options |= PROPERTY_BIT_MAP.meta
+    // blocks.push(new Uint8Array([prop.meta!]))
+    // if (
+    //   prop.meta === ReaderMeta.specificLocales ||
+    //   prop.meta === ReaderMeta.specificLocalesOnly
+    // ) {
+    //   blocks.push(
+    //     new Uint8Array([
+    //       prop.metaSpecificLangCodes!.length,
+    //       ...prop.metaSpecificLangCodes!,
+    //     ]),
+    //   )
+    // }
   }
   if ('enum' in prop) {
     options |= PROPERTY_BIT_MAP.enum
@@ -191,9 +191,13 @@ const serializeProp = (
     const len = keys.length
     const locales = new Uint8Array(len * 4 + 1)
     let i = 1
+    // one for has meta one for without metas
     for (const key of keys) {
       writeUint16(locales, Number(key), i)
-      ENCODER.encodeInto(prop.locales![key], locales.subarray(i + 2, i + 4))
+      ENCODER.encodeInto(
+        prop.locales![key].name,
+        locales.subarray(i + 2, i + 4),
+      )
       i += 4
     }
     locales[0] = len

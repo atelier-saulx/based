@@ -9,7 +9,6 @@ import { perf } from '../shared/perf.js'
 import test, { T } from '../shared/test.js'
 import { deflateSync } from 'zlib'
 import { fastPrng } from '../../src/utils/fastPrng.js'
-import { italy } from '../shared/examples.js'
 import { testDbClient, testDbServer } from '../shared/index.js'
 
 await test('include', async (t) => {
@@ -172,26 +171,26 @@ await test('include', async (t) => {
     props: {
       y: { include: {} },
       localized: {
-        // include: {
-        //   meta: true, // few empty
-        //   // maxChars: 6,
-        // },
-        props: {
-          nl: {
-            include: {
-              meta: 'only',
-              // meta
-            },
-          },
-          en: {
-            include: {
-              maxChars: 6,
-              meta: true,
-              // maxChars: 4,
-              // meta
-            },
-          },
+        include: {
+          // meta: true, // few empty
+          // maxChars: 6,
         },
+        // props: {
+        //   nl: {
+        //     include: {
+        //       meta: 'only',
+        //       // meta
+        //     },
+        //   },
+        //   en: {
+        //     include: {
+        //       maxChars: 6,
+        //       meta: true,
+        //       // maxChars: 4,
+        //       // meta
+        //     },
+        //   },
+        // },
       },
     },
   }

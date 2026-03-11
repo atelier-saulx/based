@@ -107,9 +107,8 @@ export const includeMultiLocalizedProp = (
     langs: [],
   }
 
-  console.log('NOOOOOOOOOOOO!')
-
   let onlyMeta = true
+  let hasMeta = false
   for (let i = 0; i < includes.length; i++) {
     const include = includes[i]
     if (!include.langCode) {
@@ -118,11 +117,9 @@ export const includeMultiLocalizedProp = (
       )
     }
     if (include.meta) {
-      if (include.meta == 'only' && onlyMeta) {
-        readOpts.meta = 'only'
-      } else {
+      hasMeta = true
+      if (include.meta != 'only' && onlyMeta) {
         onlyMeta = false
-        readOpts.meta = true
       }
     } else {
       onlyMeta = false
@@ -134,7 +131,7 @@ export const includeMultiLocalizedProp = (
     })
   }
 
-  if (readOpts.meta) {
+  if (hasMeta) {
     pushIncludeHeader(ctx.query, {
       op: IncludeOp.metaWithOpts,
       prop: prop.id,

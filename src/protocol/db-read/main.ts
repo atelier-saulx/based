@@ -1,5 +1,5 @@
 import { ReaderMeta, ReaderPropDef, ReaderSchema } from './types.js'
-import { addMetaProp, addProp } from './addProps.js'
+import { addProp } from './addProps.js' // addMetaProp
 import {
   readInt64,
   readDoubleLE,
@@ -10,7 +10,7 @@ import {
   readUtf8,
 } from '../../utils/index.js'
 import { Item } from './types.js'
-import { readMetaMainString } from './meta.js'
+// import { readMetaMainString } from './meta.js'
 import { PropType } from '../../zigTsExports.js'
 
 const readMainValue = (
@@ -19,7 +19,7 @@ const readMainValue = (
   i: number,
   item: Item,
 ) => {
-  const typeIndex = prop.typeIndex
+  const typeIndex = prop.type
 
   if (typeIndex === PropType.timestamp) {
     addProp(prop, readInt64(result, i), item)
@@ -41,10 +41,10 @@ const readMainValue = (
     const value = len === 0 ? '' : readUtf8(result, i, len)
     if (prop.meta) {
       if (prop.meta === ReaderMeta.combined) {
-        addMetaProp(prop, readMetaMainString(result, i, len), item)
+        // addMetaProp(prop, readMetaMainString(result, i, len), item)
         addProp(prop, value, item)
       } else {
-        addMetaProp(prop, readMetaMainString(result, i, len), item)
+        // addMetaProp(prop, readMetaMainString(result, i, len), item)
       }
     } else {
       addProp(prop, value, item)

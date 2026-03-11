@@ -147,7 +147,7 @@ const deSerializeProp = (
   const map = p[off + keySize + 1]
   const path = readPath(p, off + 2 + keySize)
   const prop: ReaderPropDef = {
-    typeIndex: p[off + keySize] as PropTypeEnum,
+    type: p[off + keySize] as PropTypeEnum,
     path: path.path,
     readBy: 0,
   }
@@ -155,21 +155,21 @@ const deSerializeProp = (
   let index = keySize + 2 + off + path.size
 
   if (map & PROPERTY_BIT_MAP.meta) {
-    prop.meta = p[index]
-    index++
-    if (
-      prop.meta === ReaderMeta.specificLocales ||
-      prop.meta === ReaderMeta.specificLocalesOnly
-    ) {
-      console.log('PUT PUT')
-      // amount
-      const amount = p[index]
-      index++
-      prop.metaSpecificLangCodes = [
-        ...p.subarray(index, index + amount),
-      ] as LangCodeEnum[]
-      index += amount
-    }
+    // prop.meta = p[index]
+    // index++
+    // if (
+    //   prop.meta === ReaderMeta.specificLocales ||
+    //   prop.meta === ReaderMeta.specificLocalesOnly
+    // ) {
+    //   console.log('PUT PUT')
+    //   // amount
+    //   const amount = p[index]
+    //   index++
+    //   prop.metaSpecificLangCodes = [
+    //     ...p.subarray(index, index + amount),
+    //   ] as LangCodeEnum[]
+    //   index += amount
+    // }
   }
   if (map & PROPERTY_BIT_MAP.enum) {
     const useJSON = p[index] === 1
@@ -205,9 +205,10 @@ const deSerializeProp = (
     const end = p[index] * 4 + index + 1
     index++
     while (index < end) {
-      prop.locales[readUint16(p, index)] = DECODER.decode(
-        p.subarray(index + 2, index + 4),
-      )
+      prop.locales[readUint16(p, index)] = {
+        name: DECODER.decode(p.subarray(index + 2, index + 4)),
+        meta: false,
+      }
       index += 4
     }
   }

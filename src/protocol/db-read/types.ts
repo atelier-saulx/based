@@ -30,11 +30,6 @@ export enum ReaderSchemaEnum {
 export enum ReaderMeta {
   only = 1,
   combined = 2,
-  specificLocales = 3,
-  specificLocalesOnly = 4,
-  // ------- non lang
-  onlyFallback = 5,
-  combinedFallback = 6,
 }
 
 export type ReadInstruction = (
@@ -48,14 +43,14 @@ export type ReaderLocales = { [langCode: string]: string }
 
 export type ReaderPropDef = {
   path: string[]
-  typeIndex: PropTypeEnum
+  type: PropTypeEnum
   meta?: ReaderMeta
-  metaSpecificLangCodes?: LangCodeEnum[]
   enum?: any[]
   vectorBaseType?: VectorBaseTypeEnum
   len?: number
   readBy: number
-  locales?: { [langCode: string]: string }
+  // need to encode meta
+  locales?: { [code: string]: { name: string; meta: ReaderMeta | false } }
   cardinalityMode?: number
   cardinalityPrecision?: number
 }
@@ -105,6 +100,7 @@ export const PROPERTY_BIT_MAP = {
   vectorBaseType: 1 << 2,
   len: 1 << 3,
   locales: 1 << 4,
+  localesWithMeta: 1 << 5,
 }
 
 export const DEF_BIT_MAP = {

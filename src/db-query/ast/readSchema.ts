@@ -9,6 +9,7 @@ import {
   LangCode,
   LangCodeInverse,
   PropType,
+  PropTypeEnum,
   VectorBaseType,
 } from '../../zigTsExports.js'
 import { Ctx, Include, ReadCtx, ReadOpts } from './ast.js'
@@ -32,6 +33,26 @@ const emptyReadOpts: ReadOpts = {
   langs: [],
 }
 
+const getReaderType = (
+  p: PropDef,
+  ctx: ReadCtx,
+  opts: ReadOpts,
+): PropTypeEnum => {
+  if (opts.raw) {
+    return PropType.binary
+  }
+
+  if (
+    isLocalized(p) &&
+    opts.code !== LangCode.none &&
+    opts.langs.length === 0
+  ) {
+    return p.type === PropType.jsonLocalized ? PropType.json : PropType.string
+  }
+
+  return p.type
+}
+
 export const readPropDef = (
   p: PropDef,
   ctx: ReadCtx,
@@ -39,33 +60,18 @@ export const readPropDef = (
 ): ReaderPropDef => {
   const readerPropDef: ReaderPropDef = {
     path: p.isEdge ? p.path.slice(1) : p.path,
-    typeIndex: opts?.raw ? PropType.binary : p.type,
+    type: getReaderType(p, ctx, opts),
     readBy: 0,
   }
 
   if (opts.meta) {
-    if (
-      isLocalized(p) &&
-      opts.code !== LangCode.none &&
-      opts.langs.length === 0
-    ) {
-      readerPropDef.meta =
-        opts.meta === 'only'
-          ? ReaderMeta.onlyFallback
-          : ReaderMeta.combinedFallback
+    if (isLocalized(p)) {
+      // opts.code !== LangCode.none &&
+      // opts.langs.length === 0
+      // add fallback
     } else {
-      if (opts.langs && opts.langs.find((v) => !v.meta)) {
-        readerPropDef.meta =
-          opts.meta === 'only'
-            ? ReaderMeta.specificLocalesOnly
-            : ReaderMeta.specificLocales
-        readerPropDef.metaSpecificLangCodes = opts.langs
-          .filter((v) => v.meta)
-          .map((v) => v.code)
-      } else {
-        readerPropDef.meta =
-          opts.meta === 'only' ? ReaderMeta.only : ReaderMeta.combined
-      }
+      readerPropDef.meta =
+        opts.meta === 'only' ? ReaderMeta.only : ReaderMeta.combined
     }
   }
 
@@ -87,21 +93,25 @@ export const readPropDef = (
   //   readerPropDef.cardinalityPrecision = p.cardinalityPrecision
   // }
 
-  if (isLocalized(p)) {
-    if (opts.langs.length === 0) {
-      if (opts.code === LangCode.none) {
-        readerPropDef.locales = ctx.locales
-      } else if (opts.code === ctx.locale && readerPropDef.meta) {
-        readerPropDef.locales = {}
-        const fallbacks = getFallbacks(ctx)
-        for (const code of fallbacks) {
-          readerPropDef.locales[code] = LangCodeInverse[code]
+  if (
+    readerPropDef.type === PropType.jsonLocalized ||
+    readerPropDef.type === PropType.stringLocalized
+  ) {
+    readerPropDef.locales = {}
+    if (opts.langs.length > 0) {
+      for (const lang of opts.langs) {
+        readerPropDef.locales[lang.code] = {
+          name: LangCodeInverse[lang.code],
+          meta: false,
         }
       }
     } else {
-      readerPropDef.locales = {}
-      for (const lang of opts.langs) {
-        readerPropDef.locales[lang.code] = LangCodeInverse[lang.code]
+      // if meta put in there
+      for (const lang in ctx.locales) {
+        readerPropDef.locales[lang] = {
+          name: ctx.locales[lang],
+          meta: false,
+        }
       }
     }
   }
