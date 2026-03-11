@@ -11,6 +11,7 @@ const microbufferToF64 = utils.microbufferToF64;
 const t = @import("../../types.zig");
 const resultHeaderOffset = @import("../../thread/results.zig").resultHeaderOffset;
 const filter = @import("../filter/filter.zig").filter;
+const References = @import("../../selva/references.zig");
 
 pub const AggCtx = struct {
     queryCtx: *Query.QueryCtx,
@@ -55,6 +56,49 @@ pub fn iterator(
                 }
             }
             aggregateProps(node, null, aggDefs, accumulatorProp, aggCtx);
+            count += 1;
+            if (count >= aggCtx.limit) break;
+        }
+    }
+
+    return count;
+}
+
+pub fn iteratorEdge(
+    aggCtx: *AggCtx,
+    it: anytype,
+    comptime hasFilter: bool,
+    filterBuf: []u8,
+    aggDefs: []u8,
+    accumulatorProp: []u8,
+    edgePropId: u8,
+) !u32 {
+    var count: u32 = 0;
+    aggCtx.hadAccumulated = false;
+
+    if (@hasDecl(@TypeOf(it.*), "nextRef")) {
+        // already an edge iterator
+        while (it.nextRef()) |ref| {
+            if (hasFilter) {
+                if (!try filter(ref.node, aggCtx.queryCtx, filterBuf)) {
+                    continue;
+                }
+            }
+            aggregateProps(ref.node, ref.edge, aggDefs, accumulatorProp, aggCtx);
+            count += 1;
+            if (count >= aggCtx.limit) break;
+        }
+    } else {
+        while (it.next()) |node| {
+            if (hasFilter) {
+                if (!try filter(node, aggCtx.queryCtx, filterBuf)) {
+                    continue;
+                }
+            }
+            var refsIt = try References.iterator(false, true, aggCtx.queryCtx.db, node, edgePropId, aggCtx.typeEntry);
+            while (refsIt.nextRef()) |ref| {
+                aggregateProps(node, ref.edge, aggDefs, accumulatorProp, aggCtx);
+            }
             count += 1;
             if (count >= aggCtx.limit) break;
         }

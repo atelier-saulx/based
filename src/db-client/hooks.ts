@@ -23,7 +23,7 @@ export const getDefaultHooks = (server: DbServer): DbClientHooks => {
       const size = readUint32(buf, 0)
       const id = readUint32(buf, size)
       const op = buf[size + 4] as OpTypeEnum
-      server.subscribe(buf, onData)
+      server.subscribe(buf, (d) => onData(d.slice()))
       return () => server.unsubscribe(op, id, onData)
     },
     setSchema(
