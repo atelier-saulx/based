@@ -951,7 +951,7 @@ await test('range', async (t) => {
     },
   })
 
-  const rnd = fastPrng(new Date().getTime())
+  const rnd = fastPrng(1234)
   for (let i = 0; i < 100; i++) {
     const d = new Date('11/12/2024 00:00-3')
     //@ts-ignore
