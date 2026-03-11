@@ -1,12 +1,8 @@
-import { PropDef } from '../../schema/defs/index.js'
-import { PropType } from '../../zigTsExports.js'
+import { PropType, PropTypeEnum } from '../../zigTsExports.js'
 import { ReadCtx } from './ast.js'
 
-export const isLocalized = (prop: PropDef) => {
-  return (
-    prop.type === PropType.jsonLocalized ||
-    prop.type === PropType.stringLocalized
-  )
+export const isLocalized = (type: PropTypeEnum) => {
+  return type === PropType.jsonLocalized || type === PropType.stringLocalized
 }
 
 export const getFallbacks = (ctx: ReadCtx) => {

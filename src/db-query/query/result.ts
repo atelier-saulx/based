@@ -1,7 +1,7 @@
 import {
   resultToObject,
-  type ReaderSchema,
-  ReaderSchemaEnum,
+  type ReadSchema,
+  ReadSchemaEnum,
 } from '../../protocol/index.js'
 import { readUint32 } from '../../utils/uint8.js'
 
@@ -45,8 +45,8 @@ const handler: ProxyHandler<any> = {
     }
     if (prop === 'then') {
       // this can be improved!!
-      const schema: ReaderSchema = result[$schema]
-      if (schema.type !== ReaderSchemaEnum.single || !schema.props?.then) {
+      const schema: ReadSchema = result[$schema]
+      if (schema.type !== ReadSchemaEnum.single || !schema.props?.then) {
         return undefined
       }
     }
@@ -66,11 +66,11 @@ const handler: ProxyHandler<any> = {
   },
 }
 
-export const proxyResult = (buffer: Uint8Array, schema: ReaderSchema) => {
+export const proxyResult = (buffer: Uint8Array, schema: ReadSchema) => {
   if ('aggregate' in schema) {
     return resultToObject(schema, buffer, buffer.byteLength - 4)
   }
-  const single = schema.type === ReaderSchemaEnum.single
+  const single = schema.type === ReadSchemaEnum.single
   const length = readUint32(buffer, 0)
   if (length === 0) return single ? null : []
   let stub, result
@@ -95,7 +95,7 @@ export const isBasedQueryResponse = (
   obj: unknown,
 ): obj is {
   [$buffer]: Uint8Array
-  [$schema]: ReaderSchema
+  [$schema]: ReadSchema
 } => typeof obj === 'object' && obj !== null && $buffer in obj
 
 export const checksum = (res: any): number => {

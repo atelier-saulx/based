@@ -1,5 +1,5 @@
 import { readUint32, readUtf8 } from '../../utils/index.js'
-import { Item, ReaderMeta, ReaderPropDef, ReaderSchema } from './types.js'
+import { Item, ReaderMeta, ReadProp, ReadSchema } from './types.js'
 import { addProp, addLangProp } from './addProps.js'
 import { readString } from './string.js'
 import { readVector } from './vector.js'
@@ -7,7 +7,7 @@ import { PropType } from '../../zigTsExports.js'
 import { VECTOR_BASE_TYPE_SIZE_MAP } from '../../schema/defs/props/vector.js'
 
 const readStringProp = (
-  prop: ReaderPropDef,
+  prop: ReadProp,
   buf: Uint8Array,
   offset: number,
   size: number,
@@ -29,7 +29,7 @@ const readStringProp = (
 
 export const readProp = (
   instruction: number,
-  q: ReaderSchema,
+  q: ReadSchema,
   result: Uint8Array,
   i: number,
   item: Item,

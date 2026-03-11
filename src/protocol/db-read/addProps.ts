@@ -1,9 +1,9 @@
 import { LangCodeEnum } from '../../zigTsExports.js'
 // import { emptyMeta } from './meta.js'
-import { Item, Meta, ReaderMeta, ReaderPropDef } from './types.js'
+import { Item, Meta, ReaderMeta, ReadProp } from './types.js'
 
 export const addLangProp = (
-  p: ReaderPropDef,
+  p: ReadProp,
   value: any,
   item: Item,
   lang: number,
@@ -32,7 +32,7 @@ export const addLangProp = (
   langs![p.locales![lang].name] = value
 }
 
-export const addProp = (p: ReaderPropDef, value: any, item: Item) => {
+export const addProp = (p: ReadProp, value: any, item: Item) => {
   const path = p.path
   const len = path.length - 1
   let select: any = item

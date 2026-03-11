@@ -1,4 +1,4 @@
-import { ReaderSchema, ReaderGroupBy, ReaderAggregates } from './types.js'
+import { ReadSchema, ReadGroupBy, ReadAggregates } from './types.js'
 import {
   PropType,
   type PropTypeEnum,
@@ -53,7 +53,7 @@ const readNumber = (
 }
 
 export const readAggregate = (
-  q: ReaderSchema,
+  q: ReadSchema,
   result: Uint8Array,
   offset: number,
   len: number,
@@ -114,7 +114,7 @@ export const readAggregate = (
 const readGroupKey = (
   result: Uint8Array,
   offset: number,
-  groupBy: ReaderGroupBy,
+  groupBy: ReadGroupBy,
 ): { key: string | number; bytesRead: number } => {
   if (groupBy.typeIndex === PropType.enum) {
     const enumIndex = result[offset + 2] - 1
@@ -161,7 +161,7 @@ const readGroupKey = (
 const readAggValues = (
   result: Uint8Array,
   baseOffset: number,
-  aggregates: ReaderAggregates[],
+  aggregates: ReadAggregates[],
   targetObject: any,
 ) => {
   for (const agg of aggregates) {

@@ -21,7 +21,7 @@ export type Meta = {
 
 export type AggItem = Partial<Item>
 
-export enum ReaderSchemaEnum {
+export enum ReadSchemaEnum {
   edge = 1,
   default = 2,
   single = 3,
@@ -33,15 +33,15 @@ export enum ReaderMeta {
 }
 
 export type ReadInstruction = (
-  q: ReaderSchema,
+  q: ReadSchema,
   result: Uint8Array,
   i: number,
   item: Item,
 ) => number
 
-export type ReaderLocales = { [langCode: string]: string }
+export type ReadLocales = { [langCode: string]: string }
 
-export type ReaderPropDef = {
+export type ReadProp = {
   path: string[]
   type: PropTypeEnum
   meta?: ReaderMeta
@@ -55,18 +55,18 @@ export type ReaderPropDef = {
   cardinalityPrecision?: number
 }
 
-export type ReaderAggregateSchema = {
-  aggregates: ReaderAggregates[]
-  groupBy?: ReaderGroupBy[]
+export type ReadAggregateSchema = {
+  aggregates: ReadAggregates[]
+  groupBy?: ReadGroupBy[]
   totalResultsSize: number
 }
-export type ReaderAggregates = {
+export type ReadAggregates = {
   path: string[]
   type: number
   resultPos: number
 }
 
-export type ReaderGroupBy = {
+export type ReadGroupBy = {
   typeIndex: PropTypeEnum
   stepRange?: number
   stepType?: boolean
@@ -74,20 +74,20 @@ export type ReaderGroupBy = {
   enum?: any[]
 }
 
-export type ReaderSchema = {
+export type ReadSchema = {
   readId: number
-  props: { [prop: string]: ReaderPropDef }
-  main: { props: { [start: string]: ReaderPropDef }; len: number }
-  type: ReaderSchemaEnum
+  props: { [prop: string]: ReadProp }
+  main: { props: { [start: string]: ReadProp }; len: number }
+  type: ReadSchemaEnum
   refs: {
     [prop: string]: {
-      schema: ReaderSchema
-      prop: ReaderPropDef
+      schema: ReadSchema
+      prop: ReadProp
     }
   }
   hook?: SchemaHooks['read']
-  aggregate?: ReaderAggregateSchema
-  edges?: ReaderSchema
+  aggregate?: ReadAggregateSchema
+  edges?: ReadSchema
   search: boolean
 }
 
