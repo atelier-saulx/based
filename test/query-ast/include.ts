@@ -1,4 +1,4 @@
-import { QueryAst } from '../../src/db-query/ast/ast.js'
+import { EdgeStrategy, QueryAst } from '../../src/db-query/ast/ast.js'
 import { astToQueryCtx } from '../../src/db-query/ast/toCtx.js'
 import { resultToObject } from '../../src/protocol/index.js'
 import { debugBuffer, type SchemaIn } from '../../src/sdk.js'
@@ -114,11 +114,12 @@ await test('include', async (t) => {
   let d = Date.now()
 
   const rand = fastPrng()
-
-  for (let i = 0; i < 1e4; i++) {
+  const ids: number[] = []
+  for (let i = 0; i < 1e6; i++) {
+    ids.push(i + 1)
     client.create('user', {
       big: syntheticData,
-      aliasId: `flap${i}`,
+      // aliasId: `flap${i}`,
       // name: `mr snurf ${i}`,
       // localized: {
       //   nl: 'giraffe NL',
@@ -160,32 +161,46 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
-    // target: [1, 2],
+    target: ids,
     // locale: 'fi',
     range: { start: 0, end: 1e6 },
     filter: {
       props: {
         y: {
-          ops: [{ op: '=', val: [1, 2] }],
+          ops: [{ op: '=', val: [1, 2, 15] }],
         },
-        // id: {
-        // ops: [{ op: '=', val: [1, 2] }],
-        // },
-        // aliasId: {
-        //   ops: [{ op: '=', val: 'jim' }],
-        // },
-        // localized: {
-        //   // ops: [{ op: '=', val: 'derpi yuz NL' }],
-        //   props: {
-        //     nl: {
-        //       ops: [{ op: '=', val: 'derpi yuz NL' }],
-        //     },
-        //   },
-        // },
       },
     },
+    // sort: { prop: 'y' },
+    // order: 'desc',
     props: {
       y: { include: {} },
+      name: { include: {} },
+      // friends: {
+      //   include: {},
+      //   filter: {
+      //     edgeStrategy: EdgeStrategy.noEdge,
+      //     props: {
+      //       y: {
+      //         ops: [{ op: '=', val: [1, 2] }],
+      //       },
+      //       id: {
+      //         ops: [{ op: '=', val: [1, 2] }],
+      //       },
+      //       aliasId: {
+      //         ops: [{ op: '=', val: 'jim' }],
+      //       },
+      //       localized: {
+      //         // ops: [{ op: '=', val: 'derpi yuz NL' }],
+      //         props: {
+      //           nl: {
+      //             ops: [{ op: '=', val: 'derpi yuz NL' }],
+      //           },
+      //         },
+      //       },
+      //     },
+      //   },
+      // },
       // localized: {
       //   // include: {
       //   //   meta: 'only', // few empty
@@ -218,9 +233,9 @@ await test('include', async (t) => {
 
   const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
 
-  console.log(deflateSync(ctx.query).byteLength)
+  console.log(deflateSync(ctx.query).byteLength, '/', ctx.query.byteLength)
 
-  debugBuffer(ctx.query)
+  // debugBuffer(ctx.query)
 
   // debugBuffer(deflateSync(ctx.query).toString('base64'))
 
@@ -233,7 +248,7 @@ await test('include', async (t) => {
 
   console.log('START PERF', Date.now() - d, 'ms')
 
-  await perf.skip(
+  await perf(
     async () => {
       const q: any = []
       for (let i = 0; i < 10; i++) {
