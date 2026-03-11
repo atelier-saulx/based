@@ -119,7 +119,7 @@ await test('modify localized json', async (t) => {
     content: {
       en: 'Hello',
       de: 'Hallo',
-      nl: '',
+      nl: null,
     },
   })
 
@@ -160,9 +160,9 @@ await test('modify localized json', async (t) => {
     content: null,
   })
   deepEqual((await db.query('thing', id1).get())!.content, {
-    nl: '',
-    en: '',
-    de: '',
+    nl: null,
+    en: null,
+    de: null,
   })
 })
 
@@ -238,8 +238,8 @@ await test('modify localized json with locale', async (t) => {
     id: id1,
     content: {
       en: 'Hello',
-      de: '',
-      nl: '',
+      de: null,
+      nl: null,
     },
   })
 })

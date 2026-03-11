@@ -62,7 +62,7 @@ export const string = class String extends BasePropDef {
       this.type = PropType.stringFixed
       this.pushValue = this.pushFixedValue
     } else {
-      this.pushValue = this.pushStringValue
+      this.pushValue = this.pushSingleValue
       this.deflate = prop.compression !== 'none'
     }
   }
@@ -70,7 +70,7 @@ export const string = class String extends BasePropDef {
   declare schema: SchemaString
   override type: PropTypeEnum = PropType.string
 
-  pushStringValue(
+  pushSingleValue(
     buf: AutoSizedUint8Array,
     value: unknown,
     _op?: ModifyEnum,
@@ -139,7 +139,7 @@ export const string = class String extends BasePropDef {
       }
       const index = buf.reserveUint32()
       const start = buf.length
-      this.pushStringValue(buf, value, op, lang)
+      this.pushSingleValue(buf, value, op, lang)
       buf.writeUint32(buf.length - start, index)
     } else if (typeof value === 'object' && value !== null) {
       if (Array.isArray(value)) {
@@ -153,7 +153,7 @@ export const string = class String extends BasePropDef {
         }
         const index = buf.reserveUint32()
         const start = buf.length
-        this.pushStringValue(buf, value[key], op, LangCode[key])
+        this.pushSingleValue(buf, value[key], op, LangCode[key])
         buf.writeUint32(buf.length - start, index)
       }
     } else {
@@ -198,15 +198,13 @@ export const json = class Json extends string {
   constructor(prop: SchemaJson, path: string[], typeDef: TypeDef) {
     super(prop as any, path, typeDef)
     this.type = prop.localized ? PropType.jsonLocalized : PropType.json
-    this.pushStringValue = this.pushValue
-    this.pushValue = this.pushJsonValue
   }
-  pushJsonValue(
+  override pushSingleValue(
     buf: AutoSizedUint8Array,
     value: unknown,
     op: ModifyEnum,
     lang: LangCodeEnum = LangCode.none,
   ) {
-    this.pushStringValue(buf, JSON.stringify(value), op, lang)
+    super.pushSingleValue(buf, JSON.stringify(value), op, lang)
   }
 }

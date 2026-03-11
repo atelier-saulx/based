@@ -220,33 +220,21 @@ await test('reference changes', async (t) => {
     title: 'The Hype of AI',
   })
   await client.drain()
-  equal(
-    await countDirtyBlocks(db),
-    1,
-    'creating docs makes the range dirty',
-  )
+  equal(await countDirtyBlocks(db), 1, 'creating docs makes the range dirty')
   await db.save()
   equal(await countDirtyBlocks(db), 0, 'saving clears dirt')
 
   // Link user -> doc
   client.update('user', users[1], { docs: [doc2] })
   await client.drain()
-  equal(
-    await countDirtyBlocks(db),
-    2,
-    'Linking a user to doc makes both dirty',
-  )
+  equal(await countDirtyBlocks(db), 2, 'Linking a user to doc makes both dirty')
   await db.save()
   equal(await countDirtyBlocks(db), 0, 'saving clears dirt')
 
   // Link doc -> user
   client.update('doc', doc3, { creator: users[2] })
   await client.drain()
-  equal(
-    await countDirtyBlocks(db),
-    2,
-    'Linking a doc to user makes both dirty',
-  )
+  equal(await countDirtyBlocks(db), 2, 'Linking a doc to user makes both dirty')
   await db.save()
   equal(await countDirtyBlocks(db), 0, 'saving clears dirt')
 })
