@@ -269,7 +269,7 @@ export const filter = (
   edgeType?: TypeDef,
   prevOr?: Uint8Array,
 ) => {
-  ctx.query.pushUint32(0)
+  ctx.query.pushUint32(67)
   const len = filterInternal(
     ast,
     ctx,
@@ -279,5 +279,5 @@ export const filter = (
     edgeType,
     prevOr,
   )
-  return len
+  return len + 4
 }

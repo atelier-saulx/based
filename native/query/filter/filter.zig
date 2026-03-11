@@ -12,15 +12,6 @@ const Thread = @import("../../thread/thread.zig");
 
 const COND_ALIGN_BYTES = @alignOf(t.FilterCondition);
 
-inline fn needsPrepare(ctx: *Query.QueryCtx, q: []u8, i: usize) bool {
-    const needs = utils.read(u32, q, i) != ctx.thread.runId;
-    if (needs) {
-        utils.write(q, ctx.thread.runId, i);
-        return true;
-    }
-    return false;
-}
-
 fn recursionErrorBoundary(
     cb: anytype,
     node: Node.Node,
@@ -101,9 +92,11 @@ pub fn readFilter(
     q: []u8,
     typeEntry: Node.Type,
 ) ![]u8 {
+    const needPrep = utils.read(u32, q, i.*) != ctx.thread.runId;
     i.* += 4;
-    const filterBuf = utils.sliceNext(filterSize, q, i);
-    if (needsPrepare(ctx, q, i.* - 4)) {
+    const filterBuf = utils.sliceNext(filterSize - 4, q, i);
+    if (needPrep) {
+        utils.write(q, ctx.thread.runId, i.*);
         try prepare(filterBuf, ctx, typeEntry);
     }
     return filterBuf;

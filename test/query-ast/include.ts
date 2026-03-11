@@ -115,7 +115,7 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 1e4; i++) {
     client.create('user', {
       big: syntheticData,
       aliasId: `flap${i}`,
@@ -131,10 +131,10 @@ await test('include', async (t) => {
       // cook: {
       //   cookie: 1234,
       // },
-      // friends: [
-      //   { id: a, $level: rand(0, 200) },
-      //   { id: b, $level: rand(0, 200) },
-      // ],
+      friends: [
+        { id: a, $level: rand(0, 200) },
+        { id: b, $level: rand(0, 200) },
+      ],
     })
   }
 
@@ -165,13 +165,15 @@ await test('include', async (t) => {
     range: { start: 0, end: 1e6 },
     filter: {
       props: {
-        // id: {
-        //   ops: [{ op: '=', val: [1, 2] }],
-        // },
-        aliasId: {
-          ops: [{ op: '=', val: 'jim' }],
+        y: {
+          ops: [{ op: '=', val: [1, 2] }],
         },
-
+        // id: {
+        // ops: [{ op: '=', val: [1, 2] }],
+        // },
+        // aliasId: {
+        //   ops: [{ op: '=', val: 'jim' }],
+        // },
         // localized: {
         //   // ops: [{ op: '=', val: 'derpi yuz NL' }],
         //   props: {
@@ -181,62 +183,34 @@ await test('include', async (t) => {
         //   },
         // },
       },
-      or: {
-        props: {
-          aliasId: {
-            ops: [{ op: '=', val: 'jim' }],
-          },
-        },
-        // and: {
-        //   props: {
-        //     aliasId: {
-        //       ops: [{ op: '=', val: 'jim' }],
-        //     },
-        //   },
-        //   or: {
-        //     props: {
-        //       aliasId: {
-        //         ops: [{ op: '=', val: 'jim' }],
-        //       },
-        //     },
-        //     and: {
-        //       props: {
-        //         aliasId: {
-        //           ops: [{ op: '=', val: 'jim' }],
-        //         },
-        //       },
-        //     },
-        //   },
-        // },
-      },
     },
     props: {
       y: { include: {} },
-      localized: {
-        // include: {
-        //   meta: 'only', // few empty
-        //   // maxChars: 6,
-        // },
-        props: {
-          fi: {
-            include: {},
-          },
-          nl: {
-            include: {
-              meta: 'only',
-              // meta
-            },
-          },
-          en: {
-            include: {
-              maxChars: 6,
-              meta: true,
-              // maxChars: 4,
-              // meta
-            },
-          },
-        },
-      },
+      // localized: {
+      //   // include: {
+      //   //   meta: 'only', // few empty
+      //   //   // maxChars: 6,
+      //   // },
+      //   props: {
+      //     fi: {
+      //       include: {},
+      //     },
+      //     nl: {
+      //       include: {
+      //         meta: 'only',
+      //         // meta
+      //       },
+      //     },
+      //     en: {
+      //       include: {
+      //         maxChars: 6,
+      //         meta: true,
+      //         // maxChars: 4,
+      //         // meta
+      //       },
+      //     },
+      //   },
+      // },
     },
   }
 
@@ -246,7 +220,9 @@ await test('include', async (t) => {
 
   console.log(deflateSync(ctx.query).byteLength)
 
-  debugBuffer(deflateSync(ctx.query).toString('base64'))
+  debugBuffer(ctx.query)
+
+  // debugBuffer(deflateSync(ctx.query).toString('base64'))
 
   const queries: any = []
   for (let i = 0; i < 10; i++) {
