@@ -1,3 +1,5 @@
+import { deepEqual } from 'assert'
+import wait from '../../src/utils/wait.js'
 import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 
@@ -29,53 +31,37 @@ await test('query db', async (t) => {
 
   {
     const results: any[] = []
-    const tests = new Promise<void>((resolve) =>
-      db
+    const tests = new Promise<() => void>((resolve) => {
+      const next = [
+        () => db.update('user', john, { name: 'youzi' }),
+        () => db.update('user', john, { name: 'bob' }),
+      ]
+      const close = db
         .query('user', john)
         .include('name')
         .subscribe(async (res) => {
-          // console.log(res)
-          const count = results.push(res)
-          if (count === 1) {
-            await db.update('user', john, {
-              name: 'bob',
-              // age: 19,
-            })
+          results.push(res)
+          const cmd = next.shift()
+          if (cmd) {
+            cmd()
           } else {
-            resolve()
+            resolve(close)
           }
-        }),
-    )
+        })
+    })
 
-    await tests
-    console.dir(results)
+    const close = await tests
+    close()
+
+    db.update('user', john, { name: 'jamez' })
+    deepEqual(await db.query('user', john).include('name').get(), {
+      id: 1,
+      name: 'jamez',
+    })
+    deepEqual(results, [
+      { id: 1, name: 'john' },
+      { id: 1, name: 'youzi' },
+      { id: 1, name: 'bob' },
+    ])
   }
-
-  // {
-  //   const results: any[] = []
-  //   const tests = new Promise<void>((resolve) =>
-  //     db
-  //       .query('user', { nickname: 'masterchief' })
-  //       .include('name')
-  //       .subscribe(async (res) => {
-  //         console.log(res)
-  //         const count = results.push(res)
-  //         if (count === 1) {
-  //           await db.upsert(
-  //             'user',
-  //             { nickname: 'masterchief' },
-  //             {
-  //               name: 'bon jon',
-  //               // age: 19,
-  //             },
-  //           )
-  //         } else {
-  //           resolve()
-  //         }
-  //       }),
-  //   )
-
-  //   await tests
-
-  // }
 })
