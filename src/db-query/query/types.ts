@@ -10,7 +10,9 @@ export type GetLocales<Schema extends { locales?: any }> =
 export type InferSchemaOutput<
   Schema extends { types: any; locales?: any },
   Type extends keyof Schema['types'],
-> = InferType<ResolvedProps<Schema['types'], Type>, Schema> & { id: number }
+> = Prettify<
+  InferType<ResolvedProps<Schema['types'], Type>, Schema> & { id: number }
+>
 
 type TypeMap = {
   string: string
@@ -32,6 +34,7 @@ type TypeMap = {
 }
 
 type LocalizedString = { type: 'string'; localized: true }
+type LocalizedJson = { type: 'json'; localized: true }
 
 // Helper to check if Selection is provided (not never/any/unknown default behavior)
 type IsSelected<Type> = [Type] extends [never] ? false : true
@@ -42,7 +45,7 @@ export type FilterEdges<Type> = {
 
 // Utility to clean up intersection types
 type Prettify<Type> = {
-  [Key in keyof Type]: Type[Key]
+  -readonly [Key in keyof Type]: Type[Key]
 } & {}
 
 type PickOutputFromProps<
@@ -86,46 +89,51 @@ type InferPropLogic<
 > = Prop extends LocalizedString
   ? GetLocales<Schema> extends string
     ? string
-    : { [Key in Exclude<keyof GetLocales<Schema>, symbol | number>]-?: string }
-  : Prop extends { type: 'object'; props: infer Prop }
-    ? InferType<Prop, Schema>
-    : Prop extends { type: infer Type extends keyof TypeMap }
-      ? TypeMap[Type]
-      : Prop extends { enum: infer EnumValues extends readonly any[] }
-        ? EnumValues[number] | null
-        : Prop extends { ref: infer Ref extends string }
-          ? IsSelected<Selection> extends true
-            ? Ref extends keyof Schema['types']
-              ? PickOutputFromProps<
-                  Schema,
-                  ResolvedProps<Schema['types'], Ref> & FilterEdges<Prop>,
-                  ResolveInclude<
-                    ResolvedProps<Schema['types'], Ref> & FilterEdges<Prop>,
-                    Selection
-                  >
-                > | null
-              : never
-            : number // ID
-          : Prop extends {
-                items: { ref: infer Ref extends string } & infer Items
-              }
+    : { [Key in keyof GetLocales<Schema>]-?: string }
+  : Prop extends LocalizedJson
+    ? GetLocales<Schema> extends string
+      ? unknown
+      : { [Key in keyof GetLocales<Schema>]-?: unknown }
+    : Prop extends { type: 'object'; props: infer Prop }
+      ? InferType<Prop, Schema>
+      : Prop extends { type: infer Type extends keyof TypeMap }
+        ? TypeMap[Type]
+        : Prop extends { enum: infer EnumValues extends readonly any[] }
+          ? EnumValues[number] | null
+          : Prop extends { ref: infer Ref extends string }
             ? IsSelected<Selection> extends true
               ? Ref extends keyof Schema['types']
                 ? PickOutputFromProps<
                     Schema,
-                    ResolvedProps<Schema['types'], Ref> & FilterEdges<Items>,
+                    ResolvedProps<Schema['types'], Ref> & FilterEdges<Prop>,
                     ResolveInclude<
-                      ResolvedProps<Schema['types'], Ref> & FilterEdges<Items>,
+                      ResolvedProps<Schema['types'], Ref> & FilterEdges<Prop>,
                       Selection
                     >
-                  >[]
+                  > | null
                 : never
-              : number[] // IDs
-            : unknown
+              : number // ID
+            : Prop extends {
+                  items: { ref: infer Ref extends string } & infer Items
+                }
+              ? IsSelected<Selection> extends true
+                ? Ref extends keyof Schema['types']
+                  ? PickOutputFromProps<
+                      Schema,
+                      ResolvedProps<Schema['types'], Ref> & FilterEdges<Items>,
+                      ResolveInclude<
+                        ResolvedProps<Schema['types'], Ref> &
+                          FilterEdges<Items>,
+                        Selection
+                      >
+                    >[]
+                  : never
+                : number[] // IDs
+              : unknown
 
-type InferType<Props, Schema extends { types: any; locales?: any }> = {
+type InferType<Props, Schema extends { types: any; locales?: any }> = Prettify<{
   [Key in keyof Props]: InferProp<Props[Key], Schema>
-}
+}>
 
 // Helpers for include
 type IsRefProp<Prop> = [Prop] extends [
@@ -223,7 +231,7 @@ type PropsPath<
                 | '**'}`
             : Props[Key] extends { props: infer Prop }
               ? `${Key}.${PropsPath<Schema, Prop, Prev[Depth]>}`
-              : Props[Key] extends LocalizedString
+              : Props[Key] extends LocalizedString | LocalizedJson
                 ? Schema['locales'] extends string
                   ? never
                   : `${Key}.${keyof GetLocales<Schema> & string}`
@@ -266,7 +274,7 @@ type InferPropsPathType<
             : InferPathType<Schema, Ref & keyof Schema['types'], Tail>
           : Props[Head] extends { props: infer NestedProps }
             ? InferPropsPathType<Schema, NestedProps, Tail>
-            : Props[Head] extends LocalizedString
+            : Props[Head] extends LocalizedString | LocalizedJson
               ? Schema['locales'] extends string
                 ? never
                 : Tail extends keyof GetLocales<Schema>

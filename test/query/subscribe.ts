@@ -1,5 +1,4 @@
-import wait from '../../src/utils/wait.js'
-import { deepEqual, testDb } from '../shared/index.js'
+import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 
 await test('query db', async (t) => {
@@ -13,7 +12,7 @@ await test('query db', async (t) => {
         name: 'string',
         rank: 'uint8',
         age: 'uint8',
-
+        nickname: 'alias',
         address: {
           props: {
             street: 'string',
@@ -25,41 +24,57 @@ await test('query db', async (t) => {
 
   const john = await db.create('user', {
     name: 'john',
+    nickname: 'masterchief',
   })
 
-  const results: any[] = []
-  const tests = new Promise<void>((resolve) =>
-    db
-      .query('user', john)
-      .include('name')
-      .subscribe(async (res) => {
-        console.log(res)
-        const count = results.push(res)
-        if (count === 1) {
-          await db.update('user', john, {
-            name: 'bob',
-            // age: 19,
-          })
-        } else {
-          resolve()
-        }
-      }),
-  )
+  {
+    const results: any[] = []
+    const tests = new Promise<void>((resolve) =>
+      db
+        .query('user', john)
+        .include('name')
+        .subscribe(async (res) => {
+          // console.log(res)
+          const count = results.push(res)
+          if (count === 1) {
+            await db.update('user', john, {
+              name: 'bob',
+              // age: 19,
+            })
+          } else {
+            resolve()
+          }
+        }),
+    )
 
-  await tests
+    await tests
+  }
 
-  console.dir(results)
+  {
+    const results: any[] = []
+    const tests = new Promise<void>((resolve) =>
+      db
+        .query('user', { nickname: 'masterchief' })
+        .include('name')
+        .subscribe(async (res) => {
+          console.log(res)
+          const count = results.push(res)
+          if (count === 1) {
+            await db.upsert(
+              'user',
+              { nickname: 'masterchief' },
+              {
+                name: 'bon jon',
+                // age: 19,
+              },
+            )
+          } else {
+            resolve()
+          }
+        }),
+    )
 
-  // deepEqual(results, [
-  //   {
-  //     id: 1,
-  //     name: 'john',
-  //     age: 0,
-  //   },
-  //   {
-  //     id: 1,
-  //     name: 'bob',
-  //     age: 0,
-  //   },
-  // ])
+    await tests
+    console.dir(results)
+  }
 })

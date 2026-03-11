@@ -140,7 +140,6 @@ export class DbServer extends DbShared {
     return new Promise((resolve) => {
       const id = readUint32(buf, 0)
       const op: OpTypeEnum = buf[4] as OpTypeEnum
-
       const queryListeners = this.opListeners.get(op)!
       const onceListeners = !!queryListeners.get(id)?.once.length
       this.addOpOnceListener(op, id, resolve)
@@ -163,7 +162,6 @@ export class DbServer extends DbShared {
 
   subscribe(buf: Uint8Array, onData: (d: Uint8Array) => void): void {
     const subSize = readUint32(buf, 0)
-    console.log({ subSize })
     const query = buf.subarray(subSize)
     const id = readUint32(query, 0)
     const op = query[4] as OpTypeEnum

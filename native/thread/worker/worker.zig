@@ -149,7 +149,7 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                         try Modify.subscription(thread, m);
                     },
                     .subscribe => {
-                        try Subscription.subscribe(thread, m, threads.threads.len);
+                        try Subscription.subscribe(thread, m, threads.threads.len, threads.ctx);
                     },
                     else => {},
                 }

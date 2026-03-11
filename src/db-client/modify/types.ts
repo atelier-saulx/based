@@ -1,5 +1,6 @@
 import type { BasedModify } from './index.js'
 import type { TypedArray } from '../../schema/index.js'
+import type { ModifyOpts } from '../index.js'
 
 type NumInc = number | { increment: number }
 
@@ -35,11 +36,12 @@ type EdgeKeys<T> = keyof T extends infer K
 type InferEdgeProps<
   Prop,
   Types,
+  Opts extends ModifyOpts,
   Locales extends Record<string, any> = Record<string, any>,
 > = {
   [K in EdgeKeys<Prop>]?: Prop[K] extends keyof TypeMap
     ? TypeMap[Prop[K]]
-    : InferProp<Prop[K], Types, Locales>
+    : InferProp<Prop[K], Types, Opts, Locales>
 }
 
 type InferRefValue<
@@ -72,22 +74,27 @@ type InferReferences<
 type InferProp<
   Prop,
   Types,
+  Opts extends ModifyOpts,
   Locales extends Record<string, any> = Record<string, any>,
 > = Prop extends { type: 'string'; localized: true }
-  ? [keyof Locales] extends [never]
-    ? { [K in string]?: string }
-    : { [K in Exclude<keyof Locales, symbol | number>]?: string }
-  : Prop extends { type: 'object'; props: infer P }
-    ? InferType<P, Types, Locales>
-    : Prop extends { type: infer T extends keyof TypeMap }
-      ? TypeMap[T]
-      : Prop extends { enum: infer E extends readonly any[] }
-        ? E[number]
-        : Prop extends { ref: string }
-          ? Prettify<InferRefValue<Prop, Types, Locales>>
-          : Prop extends { items: { ref: string } }
-            ? Prettify<InferReferences<Prop['items'], Types, Locales>>
-            : never
+  ? Opts extends { locale: string }
+    ? string | { [K in keyof Locales]?: string }
+    : { [K in keyof Locales]?: string }
+  : Prop extends { type: 'json'; localized: true }
+    ? Opts extends { locale: string }
+      ? any
+      : { [K in keyof Locales]?: any }
+    : Prop extends { type: 'object'; props: infer P }
+      ? InferType<P, Types, Locales, Opts>
+      : Prop extends { type: infer T extends keyof TypeMap }
+        ? TypeMap[T]
+        : Prop extends { enum: infer E extends readonly any[] }
+          ? E[number]
+          : Prop extends { ref: string }
+            ? Prettify<InferRefValue<Prop, Types, Locales>>
+            : Prop extends { items: { ref: string } }
+              ? Prettify<InferReferences<Prop['items'], Types, Locales>>
+              : never
 
 type Prettify<Target> = Target extends any
   ? Target extends (infer U)[]
@@ -104,25 +111,28 @@ type Prettify<Target> = Target extends any
 type InferType<
   Props,
   Types,
+  Opts extends ModifyOpts,
   Locales extends Record<string, any> = Record<string, any>,
 > = Prettify<
   {
     [K in keyof Props as Props[K] extends { required: true }
       ? K
-      : never]: InferProp<Props[K], Types, Locales>
+      : never]: InferProp<Props[K], Types, Opts, Locales>
   } & {
     [K in keyof Props as Props[K] extends { required: true }
       ? never
-      : K]?: InferProp<Props[K], Types, Locales> | null
+      : K]?: InferProp<Props[K], Types, Opts, Locales> | null
   }
 >
 
 export type InferPayload<
   S extends { types: any; locales?: any },
   T extends keyof S['types'],
+  Opts extends ModifyOpts,
 > = InferType<
   S['types'][T]['props'],
   S['types'],
+  Opts,
   S['locales'] extends Record<string, any> ? S['locales'] : {}
 >
 

@@ -7,6 +7,8 @@ const t = @import("../types.zig");
 const DbCtx = @import("../db/ctx.zig").DbCtx;
 const napi = @import("../napi.zig");
 const Id = @import("singleId.zig");
+const Fields = @import("../selva/fields.zig");
+const Node = @import("../selva/node.zig");
 
 pub fn fireIdSubscription(threads: *Thread.Threads, thread: *Thread.Thread) !void {
     if (thread.subscriptions.lastIdMarked > 0) {
@@ -31,20 +33,30 @@ pub fn fireIdSubscription(threads: *Thread.Threads, thread: *Thread.Thread) !voi
     }
 }
 
-pub fn subscribe(thread: *Thread.Thread, buf: []u8, threadsLen: usize) !void {
-    var index: usize = 4;
-    const subHeader = utils.readNext(t.SubscriptionHeader, buf, &index);
+pub fn subscribe(thread: *Thread.Thread, buf: []u8, threadsLen: usize, db: *DbCtx) !void {
+    var i: usize = 4;
+    const subHeader = utils.readNext(t.SubscriptionHeader, buf, &i);
     if (subHeader.typeId % threadsLen != thread.id) return;
-    const fields = utils.sliceNext(subHeader.fieldsLen, buf, &index);
-    const partialFields = utils.sliceNext(subHeader.partialLen * 2, buf, &index);
-    const query = buf[index..];
-    index = 0;
-    const subId = utils.readNext(u32, query, &index);
-    const queryType: t.OpType = @enumFromInt(query[index]);
+    const fields = utils.sliceNext(subHeader.fieldsLen, buf, &i);
+    const partialFields = utils.sliceNext(subHeader.partialLen * 2, buf, &i);
+    const query = buf[i..];
+    i = 0;
+    const subId = utils.readNext(u32, query, &i);
+    const queryType: t.OpType = @enumFromInt(query[i]);
+
     switch (queryType) {
         .id, .idFilter => {
-            const header = utils.readNext(t.QueryHeaderSingle, query, &index);
+            const header = utils.readNext(t.QueryHeaderSingle, query, &i);
             try Id.addIdSubscription(thread, query, partialFields, fields, subId, &header, &subHeader);
+        },
+        .alias => {
+            var header = utils.readNext(t.QueryHeaderSingle, query, &i);
+            const typeEntry = try Node.getType(db, header.typeId);
+            const aliasValue = utils.sliceNext(header.aliasSize, query, &i);
+            if (Fields.getAliasByName(typeEntry, header.prop, aliasValue)) |node| {
+                header.id = Node.getNodeId(node);
+                try Id.addIdSubscription(thread, query, partialFields, fields, subId, &header, &subHeader);
+            }
         },
         else => {
             // multi - has to be scheduled for the specific thread handle this when flushing
