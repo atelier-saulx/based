@@ -1,4 +1,4 @@
-import { ReaderSchemaEnum } from '../../protocol/index.js'
+import { ReadSchemaEnum } from '../../protocol/index.js'
 import { PropDef, type TypeDef } from '../../schema/defs/index.js'
 import {
   pushQueryHeaderSingleReference,
@@ -94,7 +94,7 @@ export const reference = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     if (!edges) {
       throw new Error('Ref does not have edges')
     }
-    schema.edges = readSchema(ReaderSchemaEnum.edge)
+    schema.edges = readSchema(ReadSchemaEnum.edge)
     props.op(ctx.query.data, QueryType.referenceEdge, headerIndex)
     props.edgeTypeId(ctx.query.data, edges.id, headerIndex)
     const size = include(

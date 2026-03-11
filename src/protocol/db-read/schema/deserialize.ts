@@ -4,12 +4,12 @@ import type {
   VectorBaseTypeEnum,
 } from '../../../zigTsExports.js'
 import {
-  ReaderPropDef,
-  ReaderSchema,
+  ReadProp,
+  ReadSchema,
   PROPERTY_BIT_MAP,
   DEF_BIT_MAP,
   GROUP_BY_BIT_MAP,
-  type ReaderAggregateSchema,
+  type ReadAggregateSchema,
   ReaderMeta,
 } from '../types.js'
 import {
@@ -39,9 +39,9 @@ const readPath = (
 const deserializeAggregate = (
   p: Uint8Array,
   off: number,
-): { agg: ReaderAggregateSchema['aggregates'][number]; size: number } => {
+): { agg: ReadAggregateSchema['aggregates'][number]; size: number } => {
   let index = off
-  const agg: ReaderAggregateSchema['aggregates'][number] = {
+  const agg: ReadAggregateSchema['aggregates'][number] = {
     type: p[index],
     resultPos: readUint32(p, index + 1),
     path: [],
@@ -56,12 +56,12 @@ const deserializeAggregate = (
 const deserializeAggregates = (
   p: Uint8Array,
   off: number,
-): { agg: ReaderAggregateSchema; size: number } => {
+): { agg: ReadAggregateSchema; size: number } => {
   const aggs = p[off]
   const totalResultsSize = readUint32(p, off + 1)
   let index = off + 5
   let count = 0
-  const result: ReaderAggregateSchema = {
+  const result: ReadAggregateSchema = {
     aggregates: [],
     totalResultsSize,
   }
@@ -75,7 +75,7 @@ const deserializeAggregates = (
   const hasGroup = p[index]
   index++
   if (hasGroup) {
-    const groupBy: ReaderAggregateSchema['groupBy'] = []
+    const groupBy: ReadAggregateSchema['groupBy'] = []
 
     for (let i = 0; i < hasGroup; i++) {
       const opts = p[index]
@@ -141,12 +141,12 @@ const deSerializeProp = (
   p: Uint8Array,
   off: number,
   keySize: 1 | 2,
-): { def: ReaderPropDef; size: number; key: number } => {
+): { def: ReadProp; size: number; key: number } => {
   const key = keySize === 1 ? p[off] : readUint16(p, off)
 
   const map = p[off + keySize + 1]
   const path = readPath(p, off + 2 + keySize)
-  const prop: ReaderPropDef = {
+  const prop: ReadProp = {
     type: p[off + keySize] as PropTypeEnum,
     path: path.path,
     readBy: 0,
@@ -218,12 +218,12 @@ const deSerializeProp = (
 const deSerializeSchemaInner = (
   schema: Uint8Array,
   offset: number = 0,
-): { schema: ReaderSchema; size: number } => {
+): { schema: ReadSchema; size: number } => {
   let i = offset
 
   const map = schema[i + 1]
 
-  const s: Partial<ReaderSchema> = {
+  const s: Partial<ReadSchema> = {
     readId: 0,
     type: schema[i],
     search: (map & DEF_BIT_MAP.search) !== 0,
@@ -300,7 +300,7 @@ const deSerializeSchemaInner = (
     i += size
   }
 
-  return { schema: s as ReaderSchema, size: i - offset }
+  return { schema: s as ReadSchema, size: i - offset }
 }
 
 export const deSerializeSchema = (schema: Uint8Array, offset: number = 0) => {

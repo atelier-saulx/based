@@ -4,8 +4,8 @@ import {
   Item,
   Meta,
   ReaderMeta,
-  ReaderSchema,
-  ReaderSchemaEnum,
+  ReadSchema,
+  ReadSchemaEnum,
   ReadInstruction,
 } from './types.js'
 import { readAggregate } from './aggregate.js'
@@ -117,7 +117,7 @@ const edge: ReadInstruction = (q, result, i, item) => {
 
 const readInstruction = (
   instruction: number,
-  q: ReaderSchema,
+  q: ReadSchema,
   result: Uint8Array,
   i: number,
   item: Item,
@@ -142,7 +142,7 @@ const readInstruction = (
 }
 
 export const readProps = (
-  q: ReaderSchema,
+  q: ReadSchema,
   result: Uint8Array,
   offset: number,
   end: number,
@@ -166,7 +166,7 @@ export const readProps = (
 }
 
 export const resultToObject = (
-  q: ReaderSchema,
+  q: ReadSchema,
   result: Uint8Array,
   end: number,
   offset: number = 0,
@@ -179,7 +179,7 @@ export const resultToObject = (
   const len = readUint32(result, offset)
 
   if (len === 0) {
-    if (q.type === ReaderSchemaEnum.single) {
+    if (q.type === ReadSchemaEnum.single) {
       return null
     }
     return items
@@ -213,7 +213,7 @@ export const resultToObject = (
     }
   }
 
-  if (q.type === ReaderSchemaEnum.single) {
+  if (q.type === ReadSchemaEnum.single) {
     return items[0]
   }
 
@@ -221,11 +221,11 @@ export const resultToObject = (
 }
 
 export const readId = (
-  q: ReaderSchema,
+  q: ReadSchema,
   result: Uint8Array,
   offset: number = 0,
 ) => {
-  if (q.type === ReaderSchemaEnum.single && !q.aggregate) {
+  if (q.type === ReadSchemaEnum.single && !q.aggregate) {
     let i = 5 + offset
     return readUint32(result, i)
   }

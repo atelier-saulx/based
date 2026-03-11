@@ -1,9 +1,9 @@
-import { Item, ReaderMeta, ReaderPropDef, ReaderSchema } from './types.js'
+import { Item, ReaderMeta, ReadProp, ReadSchema } from './types.js'
 import { addProp } from './addProps.js'
 import { readVector } from './vector.js'
 import { PropType } from '../../zigTsExports.js'
 
-const undefinedValue = (prop: ReaderPropDef) => {
+const undefinedValue = (prop: ReadProp) => {
   const typeIndex = prop.type
   if (typeIndex === PropType.string || typeIndex === PropType.alias) {
     return ''
@@ -42,7 +42,7 @@ const undefinedValue = (prop: ReaderPropDef) => {
   return undefined
 }
 
-export const undefinedProps = (q: ReaderSchema, item: Item) => {
+export const undefinedProps = (q: ReadSchema, item: Item) => {
   for (const k in q.props) {
     const p = q.props[k]
     if (p.readBy !== q.readId) {

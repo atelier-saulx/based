@@ -12,7 +12,7 @@ import {
   FunctionClientSubType,
   FunctionClientType,
   resultToObject,
-  serializeReaderSchema,
+  serializeReadSchema,
   type FunctionServerType,
 } from '../protocol/index.js'
 import type { WebSocketSession } from '../functions/context.js'
@@ -241,7 +241,7 @@ export const valueToBuffer = (payload: any, deflate: boolean): ValueBuffer => {
   }
 
   if (isBasedQueryResponse(payload)) {
-    const serializedSchema = serializeReaderSchema(payload[$schema])
+    const serializedSchema = serializeReadSchema(payload[$schema])
     const res = payload[$buffer].subarray(0, -4) // minus 4 for hash
     // keep 4 for serializedSchema byteLength
     const buf = new Uint8Array(4 + serializedSchema.byteLength + res.byteLength)

@@ -1,4 +1,4 @@
-import { ReaderLocales, ReaderSchema } from '../../protocol/index.js'
+import { ReadLocales, ReadSchema } from '../../protocol/index.js'
 import { LangName } from '../../schema/schema/locales.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 import { LangCode, LangCodeEnum } from '../../zigTsExports.js'
@@ -107,8 +107,8 @@ export type QueryAst = {
 
 export type Ctx = {
   query: AutoSizedUint8Array
-  readSchema: ReaderSchema
-  locales: ReaderLocales
+  readSchema: ReadSchema
+  locales: ReadLocales
   locale: LangCodeEnum
   // localOverwrite for top level LOCALE (optional)
   LocaleFallBackOverwrite?: LangCodeEnum[]

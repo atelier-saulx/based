@@ -32,11 +32,11 @@ export const includeProp = (ctx: Ctx, prop: PropDef, include: Include) => {
   const readOpts: ReadOpts = {
     raw: include.raw ?? false,
     meta: include.meta ?? false,
-    code: isLocalized(prop) ? ctx.locale : LangCode.none,
+    code: isLocalized(prop.type) ? ctx.locale : LangCode.none,
     langs: [],
   }
   if (include.meta) {
-    if (isLocalized(prop) && ctx.locale !== LangCode.none) {
+    if (isLocalized(prop.type) && ctx.locale !== LangCode.none) {
       pushIncludeHeader(ctx.query, {
         op: IncludeOp.metaWithOpts,
         prop: prop.id,
@@ -61,7 +61,7 @@ export const includeProp = (ctx: Ctx, prop: PropDef, include: Include) => {
     }
   }
   if (include.meta !== 'only') {
-    if (isLocalized(prop) && ctx.locale !== LangCode.none) {
+    if (isLocalized(prop.type) && ctx.locale !== LangCode.none) {
       const fallBacks =
         ctx.LocaleFallBackOverwrite ?? ctx.localeFallbacks[ctx.locale]
       pushIncludeHeader(ctx.query, {

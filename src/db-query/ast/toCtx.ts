@@ -1,9 +1,9 @@
 import { crc32 } from '../../db-client/crc32.js'
-import { ReaderSchema, ReaderSchemaEnum } from '../../protocol/index.js'
+import { ReadSchema, ReadSchemaEnum } from '../../protocol/index.js'
 import { SchemaOut } from '../../schema/index.js'
 import {
   getLocaleFallbacks,
-  getLocaleReaderSchema,
+  getLocaleReadSchema,
   getTypeDefs,
 } from '../../schema/defs/getTypeDefs.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
@@ -25,7 +25,7 @@ export const astToQueryCtx = (
   isSubscription = false,
 ): {
   query: Uint8Array
-  readSchema: ReaderSchema
+  readSchema: ReadSchema
 } => {
   query.length = 0
 
@@ -44,7 +44,7 @@ export const astToQueryCtx = (
   const queryIdPos = query.reserveUint32()
 
   let locale: LangCodeEnum = LangCode.none
-  const locales = getLocaleReaderSchema(schema)
+  const locales = getLocaleReadSchema(schema)
 
   if (ast.locale) {
     const code = LangCode[ast.locale]
@@ -66,7 +66,7 @@ export const astToQueryCtx = (
 
   if (isSingleQuery) {
     defaultSingle(ast, ctx, typeDef)
-    ctx.readSchema.type = ReaderSchemaEnum.single
+    ctx.readSchema.type = ReadSchemaEnum.single
   } else {
     defaultMultiple(ast, ctx, typeDef)
   }

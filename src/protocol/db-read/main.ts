@@ -1,4 +1,4 @@
-import { ReaderMeta, ReaderPropDef, ReaderSchema } from './types.js'
+import { ReaderMeta, ReadProp, ReadSchema } from './types.js'
 import { addProp } from './addProps.js' // addMetaProp
 import {
   readInt64,
@@ -14,7 +14,7 @@ import { Item } from './types.js'
 import { PropType } from '../../zigTsExports.js'
 
 const readMainValue = (
-  prop: ReaderPropDef,
+  prop: ReadProp,
   result: Uint8Array,
   i: number,
   item: Item,
@@ -77,7 +77,7 @@ const readMainValue = (
 }
 
 export const readMain = (
-  q: ReaderSchema,
+  q: ReadSchema,
   result: Uint8Array,
   i: number,
   item: Item,

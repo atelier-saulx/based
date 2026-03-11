@@ -1,9 +1,9 @@
 import type { SchemaHooks } from '../../../schema/index.js'
 import {
-  ReaderAggregateSchema,
-  ReaderPropDef,
-  ReaderSchema,
-  ReaderSchemaEnum,
+  ReadAggregateSchema,
+  ReadProp,
+  ReadSchema,
+  ReadSchemaEnum,
   PROPERTY_BIT_MAP,
   DEF_BIT_MAP,
   GROUP_BY_BIT_MAP,
@@ -18,25 +18,25 @@ import {
   writeUint32,
 } from '../../../utils/index.js'
 
-export type ReaderSchema2 = {
+export type ReadSchema2 = {
   readId: number
-  props: { [prop: string]: ReaderPropDef }
-  main: { props: { [start: string]: ReaderPropDef }; len: number }
-  type: ReaderSchemaEnum
+  props: { [prop: string]: ReadProp }
+  main: { props: { [start: string]: ReadProp }; len: number }
+  type: ReadSchemaEnum
   refs: {
     [prop: string]: {
-      schema: ReaderSchema
-      prop: ReaderPropDef
+      schema: ReadSchema
+      prop: ReadProp
     }
   }
   hook?: SchemaHooks['read']
-  aggregate?: ReaderAggregateSchema
-  edges?: ReaderSchema
+  aggregate?: ReadAggregateSchema
+  edges?: ReadSchema
   search?: boolean
 }
 
 const serializeAggregate = (
-  agg: ReaderAggregateSchema['aggregates'][number],
+  agg: ReadAggregateSchema['aggregates'][number],
   blocks: Uint8Array[],
 ) => {
   const header = new Uint8Array(6)
@@ -78,7 +78,7 @@ const serializeEnum = (
 }
 
 const serializeAggregates = (
-  agg: ReaderAggregateSchema,
+  agg: ReadAggregateSchema,
   blocks: Uint8Array[],
 ) => {
   const header = new Uint8Array(5)
@@ -127,7 +127,7 @@ const serializeAggregates = (
 const serializeProp = (
   key: number,
   keySize: 1 | 2,
-  prop: ReaderPropDef,
+  prop: ReadProp,
   blocks: Uint8Array[],
 ) => {
   const header = new Uint8Array(3 + keySize)
@@ -206,7 +206,7 @@ const serializeProp = (
   header[keySize + 1] = options
 }
 
-const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
+const innerSerialize = (schema: ReadSchema, blocks: Uint8Array[] = []) => {
   const top = new Uint8Array(2)
   top[0] = schema.type
 
@@ -294,6 +294,6 @@ const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
   return blocks
 }
 
-export const serializeReaderSchema = (schema: ReaderSchema) => {
+export const serializeReadSchema = (schema: ReadSchema) => {
   return concatUint8Arr(innerSerialize(schema))
 }

@@ -1,4 +1,4 @@
-import { ReaderLocales } from '../../protocol/index.js'
+import { ReadLocales } from '../../protocol/index.js'
 import {
   type SchemaOut,
   type SchemaProp,
@@ -140,8 +140,8 @@ export const getLocaleFallbacks = (
   return locales
 }
 
-export const getReaderLocales = (schema: SchemaOut): ReaderLocales => {
-  const locales: ReaderLocales = {}
+export const getReadLocales = (schema: SchemaOut): ReadLocales => {
+  const locales: ReadLocales = {}
   for (const lang in schema.locales) {
     locales[LangCode[lang]] = lang
   }
@@ -149,7 +149,7 @@ export const getReaderLocales = (schema: SchemaOut): ReaderLocales => {
 }
 
 const localesReadSchemaCache = new WeakMap()
-export const getLocaleReaderSchema = (schema: SchemaOut): ReaderLocales => {
+export const getLocaleReadSchema = (schema: SchemaOut): ReadLocales => {
   if (!schema.locales) {
     return {}
   }
