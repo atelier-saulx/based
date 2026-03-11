@@ -1,15 +1,16 @@
-import { BasedDb } from '../../src/index.js'
 import { deepEqual } from '../shared/assert.js'
+import { DbServer } from '../../src/sdk.js'
+import { testDbClient } from '../shared/index.js'
 import test from '../shared/test.js'
 
 await test('save edge', async (t) => {
-  const db = new BasedDb({
+  const db = new DbServer({
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db.server))
+  t.after(() => t.backup(db))
 
-  const client = await db.setSchema({
+  const client = await testDbClient(db, {
     types: {
       user: {
         props: {

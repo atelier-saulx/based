@@ -2,12 +2,13 @@ import assert, { equal } from 'node:assert'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
-import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import native from '../../src/native.js'
 import { deepEqual } from '../shared/assert.js'
+import { DbServer } from '../../src/sdk.js'
 import { getBlockHash } from '../../src/db-server/blocks.js'
 import { checksum } from '../../src/db-query/query/index.js'
+import { testDbClient } from '../shared/index.js'
 
 const sha1 = async (path: string) =>
   createHash('sha1')
@@ -15,7 +16,7 @@ const sha1 = async (path: string) =>
     .digest('hex')
 
 await test('isomorphic types have equal hashes', async (t) => {
-  const db = new BasedDb({
+  const db = new DbServer({
     path: t.tmp,
   })
   await db.start({ clean: true })
@@ -33,7 +34,7 @@ await test('isomorphic types have equal hashes', async (t) => {
       },
     },
   } as const
-  const client = await db.setSchema(schema)
+  const client = await testDbClient(db, schema)
 
   for (let i = 0; i < 200_000; i++) {
     client.create('article', {
@@ -53,18 +54,18 @@ await test('isomorphic types have equal hashes', async (t) => {
   )
   assert(
     native.equals(
-      await getBlockHash(db.server, db.server.schemaTypesParsed.article.id, 1),
-      await getBlockHash(db.server, db.server.schemaTypesParsed.story.id, 1),
+      await getBlockHash(db, 1, 1),
+      await getBlockHash(db, 2, 1),
     ),
   )
 })
 
 // The result might be unexpected but 'cardinality' and 'string' are stored the same way
 await test('small diff in schema', async (t) => {
-  const db1 = new BasedDb({
+  const db1 = new DbServer({
     path: path.join(t.tmp, 'db1'),
   })
-  const db2 = new BasedDb({
+  const db2 = new DbServer({
     path: path.join(t.tmp, 'db2'),
   })
   await db1.start({ clean: true })
@@ -72,7 +73,7 @@ await test('small diff in schema', async (t) => {
   await db2.start({ clean: true })
   t.after(() => db2.destroy())
 
-  await db1.setSchema({
+  const client1 = await testDbClient(db1, {
     types: {
       item: {
         title: 'string',
@@ -80,7 +81,7 @@ await test('small diff in schema', async (t) => {
       },
     },
   })
-  await db2.setSchema({
+  const client2 = await testDbClient(db2, {
     types: {
       item: {
         title: 'string',
@@ -89,10 +90,10 @@ await test('small diff in schema', async (t) => {
     },
   })
 
-  await db1.create('item', {
+  await client1.create('item', {
     title: 'haha',
   })
-  await db2.create('item', {
+  await client2.create('item', {
     title: 'haha',
   })
 
@@ -106,10 +107,10 @@ await test('small diff in schema', async (t) => {
 })
 
 await test('ref dst type change', async (t) => {
-  const db1 = new BasedDb({
+  const db1 = new DbServer({
     path: path.join(t.tmp, 'db1'),
   })
-  const db2 = new BasedDb({
+  const db2 = new DbServer({
     path: path.join(t.tmp, 'db2'),
   })
   await db1.start({ clean: true })
@@ -117,7 +118,7 @@ await test('ref dst type change', async (t) => {
   await db2.start({ clean: true })
   t.after(() => db2.destroy())
 
-  await db1.setSchema({
+  const client1 = await testDbClient(db1, {
     types: {
       a: {
         title: 'string',
@@ -129,7 +130,7 @@ await test('ref dst type change', async (t) => {
       },
     },
   })
-  await db2.setSchema({
+  const client2 = await testDbClient(db2, {
     types: {
       a: {
         title: 'string',
@@ -142,32 +143,32 @@ await test('ref dst type change', async (t) => {
     },
   })
 
-  const db1a1 = await db1.create('a', {
+  const db1a1 = await client1.create('a', {
     title: 'haha',
   })
-  await db1.create('a', {
+  await client1.create('a', {
     title: 'haha',
     other: db1a1,
   })
-  const db1b1 = await db1.create('b', {
+  const db1b1 = await client1.create('b', {
     title: 'haha',
   })
-  await db1.create('b', {
+  await client1.create('b', {
     title: 'haha',
     other: db1b1,
   })
 
-  const db2a1 = await db2.create('a', {
+  const db2a1 = await client2.create('a', {
     title: 'haha',
   })
-  const db2a2 = await db2.create('a', {
+  const db2a2 = await client2.create('a', {
     title: 'haha',
   })
-  await db2.create('b', {
+  await client2.create('b', {
     title: 'haha',
     other: db2a2,
   })
-  await db2.create('b', {
+  await client2.create('b', {
     title: 'haha',
     other: db2a1,
   })
