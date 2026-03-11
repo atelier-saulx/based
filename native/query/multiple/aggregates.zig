@@ -47,8 +47,7 @@ pub fn aggregates(
             try Aggregates.finalizeResults(&aggCtx, q[i..], accumulatorProp, 0);
         },
         .aggregateFilter => {
-            const filter = utils.sliceNext(header.filterSize, q, &i);
-            try Filter.prepare(filter, ctx, typeEntry);
+            const filter = try Filter.readFilter(ctx, &i, header.filterSize, q, typeEntry);
             nodeCnt = try Aggregates.iterator(&aggCtx, &it, true, filter, q[i..], accumulatorProp);
             try Aggregates.finalizeResults(&aggCtx, q[i..], accumulatorProp, 0);
         },
@@ -59,8 +58,7 @@ pub fn aggregates(
             try GroupBy.finalizeGroupResults(&aggCtx, &groupByHashMap, q[i..]);
         },
         .groupByFilter => {
-            const filter = utils.sliceNext(header.filterSize, q, &i);
-            try Filter.prepare(filter, ctx, typeEntry);
+            const filter = try Filter.readFilter(ctx, &i, header.filterSize, q, typeEntry);
             var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
             defer groupByHashMap.deinit();
             nodeCnt = @intCast(GroupBy.iterator(&aggCtx, &groupByHashMap, &it, true, filter, q[i..]));

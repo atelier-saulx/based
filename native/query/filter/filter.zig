@@ -12,21 +12,6 @@ const Thread = @import("../../thread/thread.zig");
 
 const COND_ALIGN_BYTES = @alignOf(t.FilterCondition);
 
-pub fn readFilter(
-    ctx: *Query.QueryCtx,
-    i: *usize,
-    filterSize: u16, // Might need to make this u32
-    q: []u8,
-    typeEntry: Node.Type,
-) ![]u8 {
-    i.* += 4;
-    const filterBuf = utils.sliceNext(filterSize, q, i);
-    if (needsPrepare(ctx, q, i.* - 4)) {
-        try prepare(filterBuf, ctx, typeEntry);
-    }
-    return filterBuf;
-}
-
 inline fn needsPrepare(ctx: *Query.QueryCtx, q: []u8, i: usize) bool {
     const needs = utils.read(u32, q, i) != ctx.thread.runId;
     if (needs) {
@@ -34,6 +19,18 @@ inline fn needsPrepare(ctx: *Query.QueryCtx, q: []u8, i: usize) bool {
         return true;
     }
     return false;
+}
+
+fn recursionErrorBoundary(
+    cb: anytype,
+    node: Node.Node,
+    ctx: *Query.QueryCtx,
+    q: []u8,
+) bool {
+    return cb(node, ctx, q) catch |err| {
+        std.debug.print("Filter: recursionErrorBoundary: Error {any} \n", .{err});
+        return false;
+    };
 }
 
 fn prepare(
@@ -97,16 +94,19 @@ fn prepare(
     }
 }
 
-pub fn recursionErrorBoundary(
-    cb: anytype,
-    node: Node.Node,
+pub fn readFilter(
     ctx: *Query.QueryCtx,
+    i: *usize,
+    filterSize: u16, // Might need to make this u32
     q: []u8,
-) bool {
-    return cb(node, ctx, q) catch |err| {
-        std.debug.print("Filter: recursionErrorBoundary: Error {any} \n", .{err});
-        return false;
-    };
+    typeEntry: Node.Type,
+) ![]u8 {
+    i.* += 4;
+    const filterBuf = utils.sliceNext(filterSize, q, i);
+    if (needsPrepare(ctx, q, i.* - 4)) {
+        try prepare(filterBuf, ctx, typeEntry);
+    }
+    return filterBuf;
 }
 
 pub inline fn filter(
