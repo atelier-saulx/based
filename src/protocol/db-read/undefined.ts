@@ -1,53 +1,84 @@
-import { Item, ReaderMeta, ReadProp, ReadSchema } from './types.js'
-import { addProp } from './addProps.js'
+import { Item, Meta, ReadMeta, ReadProp, ReadSchema } from './types.js'
+import { addMetaProp, addProp } from './addProps.js'
 import { readVector } from './vector.js'
 import { PropType } from '../../zigTsExports.js'
 
+const undefinedMeta = (): Meta => {
+  return {
+    checksum: 0,
+    size: 0,
+    crc32: 0,
+    compressed: false,
+    compressedSize: 0,
+  }
+}
+
 const undefinedValue = (prop: ReadProp) => {
-  const typeIndex = prop.type
-  if (typeIndex === PropType.string || typeIndex === PropType.alias) {
+  const type = prop.type
+  if (
+    type === PropType.string ||
+    type === PropType.alias ||
+    type === PropType.stringLocalized
+  ) {
     return ''
   }
-  if (typeIndex === PropType.json || typeIndex === PropType.reference) {
+  if (
+    type === PropType.json ||
+    type === PropType.reference ||
+    type === PropType.jsonLocalized
+  ) {
     return null
   }
-  if (typeIndex === PropType.binary) {
+  if (type === PropType.binary) {
     return new Uint8Array()
   }
-  if (typeIndex === PropType.cardinality) {
+  if (type === PropType.cardinality) {
     return 0
   }
-  if (typeIndex === PropType.references) {
+  if (type === PropType.references) {
     return []
   }
-  if (typeIndex === PropType.vector) {
+  if (type === PropType.vector) {
     return readVector(prop, new Uint8Array())
   }
-  if (typeIndex === PropType.stringLocalized && prop.locales) {
-    const codes = {}
-    for (const code in prop.locales) {
-      // skip for meta
-      codes[prop.locales[code].name] = ''
-    }
-    return codes
-  }
-  if (typeIndex === PropType.jsonLocalized && prop.locales) {
-    const codes = {}
-    for (const code in prop.locales) {
-      // skip for meta
-      codes[prop.locales[code].name] = null
-    }
-    return codes
-  }
   return undefined
+}
+
+const addUndefinedProp = (
+  p: ReadProp,
+  item: Item,
+  meta?: ReadMeta,
+  lang?: string,
+) => {
+  if (meta === ReadMeta.only) {
+    addMetaProp(p, undefinedMeta(), item, lang)
+  } else if (p.meta === ReadMeta.combined) {
+    addMetaProp(p, undefinedMeta(), item, lang)
+    addProp(p, undefinedValue(p), item, lang)
+  } else {
+    addProp(p, undefinedValue(p), item, lang)
+  }
 }
 
 export const undefinedProps = (q: ReadSchema, item: Item) => {
   for (const k in q.props) {
     const p = q.props[k]
     if (p.readBy !== q.readId) {
-      p.readBy = q.readId
-      addProp(p, undefinedValue(p), item)
+      if (
+        p.type === PropType.stringLocalized ||
+        p.type === PropType.jsonLocalized
+      ) {
+        for (const langCode in p.locales) {
+          const lang = p.locales[langCode]
+          if (lang.readBy !== q.readId) {
+            lang.readBy = q.readId
+            addUndefinedProp(p, item, lang.meta, lang.name)
+          }
+        }
+      } else {
+        p.readBy = q.readId
+        addUndefinedProp(p, item, p.meta)
+      }
     }
   }
 }

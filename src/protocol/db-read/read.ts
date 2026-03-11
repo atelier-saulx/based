@@ -3,14 +3,13 @@ import {
   AggItem,
   Item,
   Meta,
-  ReaderMeta,
+  ReadMeta,
   ReadSchema,
   ReadSchemaEnum,
   ReadInstruction,
 } from './types.js'
 import { readAggregate } from './aggregate.js'
-// import { addLangMetaProp, addMetaProp, addProp } from './addProps.js'
-import { addProp } from './addProps.js'
+import { addMetaProp, addProp } from './addProps.js'
 import { readProp } from './prop.js'
 import { readMain } from './main.js'
 import { undefinedProps } from './undefined.js'
@@ -21,49 +20,11 @@ import {
   readIncludeResponseMeta,
   ReadOp,
 } from '../../zigTsExports.js'
+import { readMeta } from './meta.js'
 
 export * from './types.js'
 export * from './string.js'
 export * from './schema/deserialize.js'
-
-// const meta: ReadInstruction = (q, result, i, item) => {
-// const metaResponse: IncludeResponseMeta = readIncludeResponseMeta(
-//   result,
-//   i - 1,
-// )
-// const prop = metaResponse.prop
-// const propDef = q.props[prop]
-// const lang = metaResponse.lang
-// const propType = propDef.type
-// if (propDef.meta == 1 || propDef.meta === 3) {
-//   propDef.readBy = q.readId
-// }
-// const meta: Meta = {
-//   crc32: metaResponse.crc32,
-//   compressed: metaResponse.compressed,
-//   size: metaResponse.size,
-//   checksum: combineToNumber(metaResponse.crc32, metaResponse.size),
-//   compressedSize: metaResponse.size,
-// }
-// if (lang !== 0) {
-//   meta.lang = propDef.locales![lang]
-// }
-// i += IncludeResponseMetaByteSize - 1
-// if (meta.compressed) {
-//   meta.compressedSize = readUint32(result, i)
-//   i += 4
-// }
-// if (
-//   propType === PropType.stringLocalized &&
-//   propDef.locales &&
-//   propDef.meta! < ReaderMeta.onlyFallback
-// ) {
-//   addLangMetaProp(propDef, meta, item, lang)
-// } else {
-// addMetaProp(propDef, meta, item)
-// }
-// return i
-// }
 
 const aggregation: ReadInstruction = (q, result, i, item) => {
   let field = result[i]
@@ -122,11 +83,9 @@ const readInstruction = (
   i: number,
   item: Item,
 ): number => {
-  // if (instruction === ReadOp.meta) {
-  //   return meta(q, result, i, item)
-  // } else
-
-  if (instruction === ReadOp.aggregation) {
+  if (instruction === ReadOp.meta) {
+    return readMeta(q, result, i, item)
+  } else if (instruction === ReadOp.aggregation) {
     return aggregation(q, result, i, item)
   } else if (instruction === ReadOp.reference) {
     return reference(q, result, i, item)

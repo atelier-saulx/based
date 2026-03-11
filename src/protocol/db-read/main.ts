@@ -1,5 +1,5 @@
-import { ReaderMeta, ReadProp, ReadSchema } from './types.js'
-import { addProp } from './addProps.js' // addMetaProp
+import { Meta, ReadMeta, ReadProp, ReadSchema } from './types.js'
+import { addMetaProp, addProp } from './addProps.js' // addMetaProp
 import {
   readInt64,
   readDoubleLE,
@@ -8,10 +8,27 @@ import {
   readUint16,
   readInt32,
   readUtf8,
+  combineToNumber,
 } from '../../utils/index.js'
 import { Item } from './types.js'
-// import { readMetaMainString } from './meta.js'
 import { PropType } from '../../zigTsExports.js'
+import crc32c from '../../hash/crc32c.js'
+
+export const readMetaMainString = (
+  result: Uint8Array,
+  i: number,
+  len: number,
+): Meta => {
+  const crc32 = crc32c(result.subarray(i, i + len))
+  const checksum = combineToNumber(crc32, len)
+  return {
+    checksum,
+    size: len,
+    crc32,
+    compressed: false,
+    compressedSize: len,
+  }
+}
 
 const readMainValue = (
   prop: ReadProp,
@@ -39,13 +56,11 @@ const readMainValue = (
     const len = result[i]
     i++
     const value = len === 0 ? '' : readUtf8(result, i, len)
-    if (prop.meta) {
-      if (prop.meta === ReaderMeta.combined) {
-        // addMetaProp(prop, readMetaMainString(result, i, len), item)
-        addProp(prop, value, item)
-      } else {
-        // addMetaProp(prop, readMetaMainString(result, i, len), item)
-      }
+    if (prop.meta === ReadMeta.only) {
+      addMetaProp(prop, readMetaMainString(result, i, len), item)
+    } else if (prop.meta === ReadMeta.combined) {
+      addMetaProp(prop, readMetaMainString(result, i, len), item)
+      addProp(prop, value, item)
     } else {
       addProp(prop, value, item)
     }

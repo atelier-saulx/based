@@ -124,7 +124,7 @@ export const includeMultiLocalizedProp = (
     } else {
       onlyMeta = false
     }
-    readOpts.langs.push({
+    readOpts.langs!.push({
       code: include.langCode,
       raw: include.raw ?? false,
       meta: include.meta ?? false,

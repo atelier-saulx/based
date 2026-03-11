@@ -7,7 +7,6 @@ import {
   PROPERTY_BIT_MAP,
   DEF_BIT_MAP,
   GROUP_BY_BIT_MAP,
-  ReaderMeta,
 } from '../types.js'
 import {
   concatUint8Arr,
@@ -149,20 +148,7 @@ const serializeProp = (
   // Optional things
   let options = 0
   if ('meta' in prop) {
-    //   1 or 2
-    // options |= PROPERTY_BIT_MAP.meta
-    // blocks.push(new Uint8Array([prop.meta!]))
-    // if (
-    //   prop.meta === ReaderMeta.specificLocales ||
-    //   prop.meta === ReaderMeta.specificLocalesOnly
-    // ) {
-    //   blocks.push(
-    //     new Uint8Array([
-    //       prop.metaSpecificLangCodes!.length,
-    //       ...prop.metaSpecificLangCodes!,
-    //     ]),
-    //   )
-    // }
+    options |= PROPERTY_BIT_MAP.meta
   }
   if ('enum' in prop) {
     options |= PROPERTY_BIT_MAP.enum
@@ -186,22 +172,36 @@ const serializeProp = (
     blocks.push(len)
   }
   if ('locales' in prop) {
-    options |= PROPERTY_BIT_MAP.locales
     const keys = Object.keys(prop.locales!)
+    const localesHasMeta = keys.find((k) => !!prop.locales![k].meta)
     const len = keys.length
-    const locales = new Uint8Array(len * 4 + 1)
     let i = 1
-    // one for has meta one for without metas
-    for (const key of keys) {
-      writeUint16(locales, Number(key), i)
-      ENCODER.encodeInto(
-        prop.locales![key].name,
-        locales.subarray(i + 2, i + 4),
-      )
-      i += 4
+    if (localesHasMeta) {
+      options |= PROPERTY_BIT_MAP.localesWithMeta
+      const locales = new Uint8Array(len * 5 + 1)
+      for (const key of keys) {
+        const lang = prop.locales![key]
+        locales[i] = lang.meta ?? 0
+        writeUint16(locales, Number(key), i + 1)
+        ENCODER.encodeInto(lang.name, locales.subarray(i + 3, i + 5))
+        i += 5
+      }
+      locales[0] = len
+      blocks.push(locales)
+    } else {
+      options |= PROPERTY_BIT_MAP.locales
+      const locales = new Uint8Array(len * 4 + 1)
+      for (const key of keys) {
+        writeUint16(locales, Number(key), i)
+        ENCODER.encodeInto(
+          prop.locales![key].name,
+          locales.subarray(i + 2, i + 4),
+        )
+        i += 4
+      }
+      locales[0] = len
+      blocks.push(locales)
     }
-    locales[0] = len
-    blocks.push(locales)
   }
   header[keySize + 1] = options
 }

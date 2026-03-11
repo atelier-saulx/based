@@ -1,8 +1,4 @@
-import type {
-  LangCodeEnum,
-  PropTypeEnum,
-  VectorBaseTypeEnum,
-} from '../../../zigTsExports.js'
+import type { PropTypeEnum, VectorBaseTypeEnum } from '../../../zigTsExports.js'
 import {
   ReadProp,
   ReadSchema,
@@ -10,7 +6,6 @@ import {
   DEF_BIT_MAP,
   GROUP_BY_BIT_MAP,
   type ReadAggregateSchema,
-  ReaderMeta,
 } from '../types.js'
 import {
   DECODER,
@@ -155,21 +150,8 @@ const deSerializeProp = (
   let index = keySize + 2 + off + path.size
 
   if (map & PROPERTY_BIT_MAP.meta) {
-    // prop.meta = p[index]
-    // index++
-    // if (
-    //   prop.meta === ReaderMeta.specificLocales ||
-    //   prop.meta === ReaderMeta.specificLocalesOnly
-    // ) {
-    //   console.log('PUT PUT')
-    //   // amount
-    //   const amount = p[index]
-    //   index++
-    //   prop.metaSpecificLangCodes = [
-    //     ...p.subarray(index, index + amount),
-    //   ] as LangCodeEnum[]
-    //   index += amount
-    // }
+    prop.meta = p[index]
+    index++
   }
   if (map & PROPERTY_BIT_MAP.enum) {
     const useJSON = p[index] === 1
@@ -207,7 +189,7 @@ const deSerializeProp = (
     while (index < end) {
       prop.locales[readUint16(p, index)] = {
         name: DECODER.decode(p.subarray(index + 2, index + 4)),
-        meta: false,
+        readBy: 0,
       }
       index += 4
     }

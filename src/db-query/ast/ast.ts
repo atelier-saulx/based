@@ -122,11 +122,7 @@ export type ReadOpts = {
   raw: boolean
   meta: true | false | 'only'
   code: LangCodeEnum
-  langs: {
-    code: LangCodeEnum
-    raw: boolean
-    meta: true | false | 'only'
-  }[]
+  langs?: ReadOpts[]
 }
 
 export type ReadCtx = Omit<Ctx, 'query' | 'readSchema'> &

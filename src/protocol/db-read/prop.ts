@@ -1,6 +1,6 @@
 import { readUint32, readUtf8 } from '../../utils/index.js'
-import { Item, ReaderMeta, ReadProp, ReadSchema } from './types.js'
-import { addProp, addLangProp } from './addProps.js'
+import { Item, ReadProp, ReadSchema } from './types.js'
+import { addProp } from './addProps.js'
 import { readString } from './string.js'
 import { readVector } from './vector.js'
 import { PropType } from '../../zigTsExports.js'
@@ -35,6 +35,24 @@ export const readProp = (
   item: Item,
 ) => {
   const prop = q.props[instruction]
+
+  if (
+    prop.type == PropType.stringLocalized ||
+    prop.type === PropType.jsonLocalized
+  ) {
+    const size = readUint32(result, i)
+    if (size === 0) {
+      // do nothing
+    } else {
+      console.log('LANG TIME', result[i + 4], readProp)
+      const lang = prop.locales![result[i + 4]]
+      lang.readBy = q.readId
+      addProp(prop, readStringProp(prop, result, i + 4, size), item, lang.name)
+    }
+    i += size + 4
+    return i
+  }
+
   prop.readBy = q.readId
   if (prop.type === PropType.cardinality) {
     const size = readUint32(result, i)
@@ -51,26 +69,6 @@ export const readProp = (
   } else if (prop.type === PropType.string) {
     const size = readUint32(result, i)
     addProp(prop, readStringProp(prop, result, i + 4, size), item)
-    i += size + 4
-  } else if (
-    prop.type == PropType.stringLocalized ||
-    prop.type === PropType.jsonLocalized
-  ) {
-    const size = readUint32(result, i)
-    if (size === 0) {
-      // do nothing
-    } else {
-      if (!prop.locales) {
-        addProp(prop, readString(result, i + 4, size, true), item)
-      } else {
-        addLangProp(
-          prop,
-          readStringProp(prop, result, i + 4, size),
-          item,
-          result[i + 4],
-        )
-      }
-    }
     i += size + 4
   } else if (prop.type === PropType.alias) {
     const size = readUint32(result, i)
