@@ -6,12 +6,14 @@ const Sort = @import("../../sort/sort.zig");
 const References = @import("../../selva/references.zig");
 const Query = @import("../common.zig");
 const Iterate = @import("./iterate.zig");
+const Filter = @import("../filter/filter.zig");
 const std = @import("std");
 
 // Has to be inlined to force stack allocation
 inline fn referencesSort(
     comptime desc: bool,
     comptime edge: bool,
+    comptime hasFilter: bool,
     ctx: *Query.QueryCtx,
     q: []u8,
     from: Node.Node,
@@ -22,18 +24,25 @@ inline fn referencesSort(
 ) !Sort.SortIterator(desc, edge) {
     const sortHeader = utils.readNext(t.SortHeader, q, i);
     var refs = try References.iterator(desc, edge, ctx.db, from, header.prop, fromType);
+
+    const filter = if (hasFilter)
+        try Filter.readFilter(ctx, i, header.filterSize, q, typeEntry)
+    else
+        undefined;
+
     return try Sort.fromIterator(
         desc,
         edge,
-        ctx.db,
-        ctx.thread,
+        ctx,
         typeEntry,
         &sortHeader,
         &refs,
-        // .default,
-        // undefined,
+        hasFilter,
+        filter,
     );
 }
+
+// Add REFERENCE FILTER SORT
 
 pub fn references(
     ctx: *Query.QueryCtx,
@@ -61,12 +70,12 @@ pub fn references(
             nodeCnt = try Iterate.node(.default, ctx, q, &it, &header, typeEntry, i);
         },
         .sort => {
-            var it = try referencesSort(false, false, ctx, q, from, fromType, i, &header, typeEntry);
+            var it = try referencesSort(false, false, false, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try Iterate.node(.default, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
         .descSort => {
-            var it = try referencesSort(true, false, ctx, q, from, fromType, i, &header, typeEntry);
+            var it = try referencesSort(true, false, false, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try Iterate.node(.default, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
@@ -79,13 +88,14 @@ pub fn references(
             nodeCnt = try Iterate.node(.filter, ctx, q, &it, &header, typeEntry, i);
         },
         .filterSort => {
-            var it = try referencesSort(false, false, ctx, q, from, fromType, i, &header, typeEntry);
-            nodeCnt = try Iterate.node(.filter, ctx, q, &it, &header, typeEntry, i);
+            // here
+            var it = try referencesSort(false, false, true, ctx, q, from, fromType, i, &header, typeEntry);
+            nodeCnt = try Iterate.node(.default, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
         .descFilterSort => {
-            var it = try referencesSort(true, false, ctx, q, from, fromType, i, &header, typeEntry);
-            nodeCnt = try Iterate.node(.filter, ctx, q, &it, &header, typeEntry, i);
+            var it = try referencesSort(true, false, true, ctx, q, from, fromType, i, &header, typeEntry);
+            nodeCnt = try Iterate.node(.default, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
 
@@ -99,12 +109,12 @@ pub fn references(
             nodeCnt = try Iterate.node(.default, ctx, q, &it, &header, typeEntry, i);
         },
         .edgeSort => {
-            var it = try referencesSort(false, true, ctx, q, from, fromType, i, &header, typeEntry);
+            var it = try referencesSort(false, true, false, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try Iterate.node(.default, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
         .edgeDescSort => {
-            var it = try referencesSort(true, true, ctx, q, from, fromType, i, &header, typeEntry);
+            var it = try referencesSort(true, true, false, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try Iterate.node(.default, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
@@ -117,14 +127,15 @@ pub fn references(
             var it = try References.iterator(true, true, ctx.db, from, header.prop, fromType);
             nodeCnt = try Iterate.node(.filter, ctx, q, &it, &header, typeEntry, i);
         },
+
         .edgeFilterSort => {
-            var it = try referencesSort(false, true, ctx, q, from, fromType, i, &header, typeEntry);
-            nodeCnt = try Iterate.node(.filter, ctx, q, &it, &header, typeEntry, i);
+            var it = try referencesSort(false, true, true, ctx, q, from, fromType, i, &header, typeEntry);
+            nodeCnt = try Iterate.node(.default, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
         .edgeDescFilterSort => {
-            var it = try referencesSort(true, true, ctx, q, from, fromType, i, &header, typeEntry);
-            nodeCnt = try Iterate.node(.filter, ctx, q, &it, &header, typeEntry, i);
+            var it = try referencesSort(true, true, true, ctx, q, from, fromType, i, &header, typeEntry);
+            nodeCnt = try Iterate.node(.default, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
 
@@ -138,13 +149,14 @@ pub fn references(
             var it = try References.iterator(true, true, ctx.db, from, header.prop, fromType);
             nodeCnt = try Iterate.edge(.edgeFilterOnEdge, ctx, q, &it, &header, typeEntry, i);
         },
+
         .edgeFilterOnEdgeSort => {
-            var it = try referencesSort(false, true, ctx, q, from, fromType, i, &header, typeEntry);
+            var it = try referencesSort(false, true, false, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try Iterate.edge(.edgeFilterOnEdge, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
         .edgeFilterOnEdgeSortDesc => {
-            var it = try referencesSort(true, true, ctx, q, from, fromType, i, &header, typeEntry);
+            var it = try referencesSort(true, true, false, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try Iterate.edge(.edgeFilterOnEdge, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
@@ -161,12 +173,12 @@ pub fn references(
             nodeCnt = try Iterate.edge(.default, ctx, q, &it, &header, typeEntry, i);
         },
         .edgeIncludeSort => {
-            var it = try referencesSort(false, true, ctx, q, from, fromType, i, &header, typeEntry);
+            var it = try referencesSort(false, true, false, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try Iterate.edge(.default, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
         .edgeIncludeDescSort => {
-            var it = try referencesSort(true, true, ctx, q, from, fromType, i, &header, typeEntry);
+            var it = try referencesSort(true, true, false, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try Iterate.edge(.default, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
@@ -179,14 +191,15 @@ pub fn references(
             var it = try References.iterator(true, true, ctx.db, from, header.prop, fromType);
             nodeCnt = try Iterate.edge(.filter, ctx, q, &it, &header, typeEntry, i);
         },
+
         .edgeIncludeFilterSort => {
-            var it = try referencesSort(false, true, ctx, q, from, fromType, i, &header, typeEntry);
-            nodeCnt = try Iterate.edge(.filter, ctx, q, &it, &header, typeEntry, i);
+            var it = try referencesSort(false, true, true, ctx, q, from, fromType, i, &header, typeEntry);
+            nodeCnt = try Iterate.edge(.default, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
         .edgeIncludeDescFilterSort => {
-            var it = try referencesSort(true, true, ctx, q, from, fromType, i, &header, typeEntry);
-            nodeCnt = try Iterate.edge(.filter, ctx, q, &it, &header, typeEntry, i);
+            var it = try referencesSort(true, true, true, ctx, q, from, fromType, i, &header, typeEntry);
+            nodeCnt = try Iterate.edge(.default, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
 
@@ -198,13 +211,14 @@ pub fn references(
             var it = try References.iterator(true, true, ctx.db, from, header.prop, fromType);
             nodeCnt = try Iterate.edge(.edgeFilterAndFilterOnEdge, ctx, q, &it, &header, typeEntry, i);
         },
+
         .edgeFilterAndFilterOnEdgeSort => {
-            var it = try referencesSort(false, true, ctx, q, from, fromType, i, &header, typeEntry);
+            var it = try referencesSort(false, true, false, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try Iterate.edge(.edgeFilterAndFilterOnEdge, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
         .edgeFilterAndFilterOnEdgeSortDesc => {
-            var it = try referencesSort(true, true, ctx, q, from, fromType, i, &header, typeEntry);
+            var it = try referencesSort(true, true, false, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try Iterate.edge(.edgeFilterAndFilterOnEdge, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
@@ -220,12 +234,12 @@ pub fn references(
             nodeCnt = try Iterate.edge(.edgeIncludeFilterOnEdge, ctx, q, &it, &header, typeEntry, i);
         },
         .edgeIncludeFilterOnEdgeSort => {
-            var it = try referencesSort(false, true, ctx, q, from, fromType, i, &header, typeEntry);
+            var it = try referencesSort(false, true, false, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try Iterate.edge(.edgeIncludeFilterOnEdge, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
         .edgeIncludeFilterOnEdgeSortDesc => {
-            var it = try referencesSort(true, true, ctx, q, from, fromType, i, &header, typeEntry);
+            var it = try referencesSort(true, true, false, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try Iterate.edge(.edgeIncludeFilterOnEdge, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
@@ -239,12 +253,12 @@ pub fn references(
             nodeCnt = try Iterate.edge(.edgeIncludeFilterAndFilterOnEdge, ctx, q, &it, &header, typeEntry, i);
         },
         .edgeIncludeFilterAndFilterOnEdgeSort => {
-            var it = try referencesSort(false, true, ctx, q, from, fromType, i, &header, typeEntry);
+            var it = try referencesSort(false, true, false, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try Iterate.edge(.edgeIncludeFilterAndFilterOnEdge, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
         .edgeIncludeFilterAndFilterOnEdgeSortDesc => {
-            var it = try referencesSort(true, true, ctx, q, from, fromType, i, &header, typeEntry);
+            var it = try referencesSort(true, true, false, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try Iterate.edge(.edgeIncludeFilterAndFilterOnEdge, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
