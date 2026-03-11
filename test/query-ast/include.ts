@@ -172,26 +172,26 @@ await test('include', async (t) => {
     props: {
       y: { include: {} },
       localized: {
-        include: {
-          meta: 'only', // few empty
-          // maxChars: 6,
-        },
-        // props: {
-        //   nl: {
-        //     include: {
-        //       meta: 'only',
-        //       // meta
-        //     },
-        //   },
-        //   en: {
-        //     include: {
-        //       maxChars: 6,
-        //       meta: true,
-        //       // maxChars: 4,
-        //       // meta
-        //     },
-        //   },
+        // include: {
+        //   meta: 'only', // few empty
+        //   // maxChars: 6,
         // },
+        props: {
+          nl: {
+            include: {
+              meta: 'only',
+              // meta
+            },
+          },
+          en: {
+            include: {
+              maxChars: 6,
+              meta: true,
+              // maxChars: 4,
+              // meta
+            },
+          },
+        },
       },
     },
   }

@@ -1,13 +1,19 @@
 import { Item, Meta, ReadMeta, ReadProp } from './types.js'
 
-export const addProp = (p: ReadProp, value: any, item: Item, lang?: string) => {
+export const addProp = (
+  p: ReadProp,
+  value: any,
+  item: Item,
+  lang?: string,
+  meta = p.meta,
+) => {
   const path = lang ? [...p.path, lang] : p.path
   const len = path.length - 1
   let select: any = item
   for (let i = 0; i <= len; i++) {
     const field = path[i]
     if (i === len) {
-      if (p.meta) {
+      if (meta) {
         select[field].value = value
       } else {
         select[field] = value
@@ -20,9 +26,10 @@ export const addProp = (p: ReadProp, value: any, item: Item, lang?: string) => {
 
 export const addMetaProp = (
   p: ReadProp,
-  meta: Meta,
+  metaValue: Meta,
   item: Item,
   lang?: string,
+  meta = p.meta,
 ) => {
   const path = lang ? [...p.path, lang] : p.path
   const len = path.length - 1
@@ -30,9 +37,9 @@ export const addMetaProp = (
   for (let i = 0; i <= len; i++) {
     const field = path[i]
     if (i === len) {
-      select[field] = meta
-      if (p.meta === ReadMeta.combined) {
-        meta.value = ''
+      select[field] = metaValue
+      if (meta === ReadMeta.combined) {
+        metaValue.value = ''
       }
     } else {
       select = select[field] ?? (select[field] = {})

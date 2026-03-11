@@ -47,37 +47,37 @@ const undefinedValue = (prop: ReadProp) => {
 const addUndefinedProp = (
   p: ReadProp,
   item: Item,
-  meta?: ReadMeta,
   lang?: string,
+  meta = p.meta,
 ) => {
   if (meta === ReadMeta.only) {
-    addMetaProp(p, undefinedMeta(), item, lang)
-  } else if (p.meta === ReadMeta.combined) {
-    addMetaProp(p, undefinedMeta(), item, lang)
-    addProp(p, undefinedValue(p), item, lang)
+    addMetaProp(p, undefinedMeta(), item, lang, meta)
+  } else if (meta === ReadMeta.combined) {
+    addMetaProp(p, undefinedMeta(), item, lang, meta)
+    addProp(p, undefinedValue(p), item, lang, meta)
   } else {
-    addProp(p, undefinedValue(p), item, lang)
+    addProp(p, undefinedValue(p), item, lang, meta)
   }
 }
 
 export const undefinedProps = (q: ReadSchema, item: Item) => {
   for (const k in q.props) {
     const p = q.props[k]
-    if (p.readBy !== q.readId) {
-      if (
-        p.type === PropType.stringLocalized ||
-        p.type === PropType.jsonLocalized
-      ) {
-        for (const langCode in p.locales) {
-          const lang = p.locales[langCode]
-          if (lang.readBy !== q.readId) {
-            lang.readBy = q.readId
-            addUndefinedProp(p, item, lang.meta, lang.name)
-          }
+    if (
+      p.type === PropType.stringLocalized ||
+      p.type === PropType.jsonLocalized
+    ) {
+      for (const langCode in p.locales) {
+        const lang = p.locales[langCode]
+        if (lang.readBy !== q.readId) {
+          lang.readBy = q.readId
+          addUndefinedProp(p, item, lang.name, lang.meta)
         }
-      } else {
+      }
+    } else if (p.readBy !== q.readId) {
+      {
         p.readBy = q.readId
-        addUndefinedProp(p, item, p.meta)
+        addUndefinedProp(p, item)
       }
     }
   }

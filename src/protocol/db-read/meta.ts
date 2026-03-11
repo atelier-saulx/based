@@ -14,13 +14,11 @@ export const readMeta = (
   i: number,
   item: Item,
 ) => {
-  // make this readMeta
   const metaResponse: IncludeResponseMeta = readIncludeResponseMeta(
     result,
     i - 1,
   )
   const readProp = q.props[metaResponse.prop]
-  console.log('READ META', metaResponse.lang, readProp)
 
   if (readProp.meta == ReadMeta.only) {
     readProp.readBy = q.readId
@@ -49,7 +47,7 @@ export const readMeta = (
     if (lang.meta == ReadMeta.only) {
       lang.readBy = q.readId
     }
-    addMetaProp(readProp, meta, item, meta.lang)
+    addMetaProp(readProp, meta, item, meta.lang, lang.meta)
   } else {
     if (readProp.meta == ReadMeta.only) {
       readProp.readBy = q.readId

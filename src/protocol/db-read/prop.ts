@@ -44,10 +44,15 @@ export const readProp = (
     if (size === 0) {
       // do nothing
     } else {
-      console.log('LANG TIME', result[i + 4], readProp)
       const lang = prop.locales![result[i + 4]]
       lang.readBy = q.readId
-      addProp(prop, readStringProp(prop, result, i + 4, size), item, lang.name)
+      addProp(
+        prop,
+        readStringProp(prop, result, i + 4, size),
+        item,
+        lang.name,
+        lang.meta,
+      )
     }
     i += size + 4
     return i
