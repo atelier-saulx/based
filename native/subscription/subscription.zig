@@ -43,7 +43,7 @@ pub fn subscribe(thread: *Thread.Thread, buf: []u8, threadsLen: usize, db: *DbCt
     i = 0;
     const subId = utils.readNext(u32, query, &i);
     const queryType: t.OpType = @enumFromInt(query[i]);
-    std.debug.print("party time {any}\n", .{queryType});
+
     switch (queryType) {
         .id, .idFilter => {
             const header = utils.readNext(t.QueryHeaderSingle, query, &i);

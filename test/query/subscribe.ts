@@ -48,16 +48,7 @@ await test('query db', async (t) => {
     )
 
     await tests
-    // console.dir(results)
   }
-
-  // const res = await db
-  //   .query('user', { nickname: 'masterchief' })
-  //   .include('name')
-  //   .get()
-
-  //   // what to do with alias
-  // console.dir({ res }, { depth: null })
 
   {
     const results: any[] = []
@@ -86,17 +77,4 @@ await test('query db', async (t) => {
     await tests
     console.dir(results)
   }
-
-  // deepEqual(results, [
-  //   {
-  //     id: 1,
-  //     name: 'john',
-  //     age: 0,
-  //   },
-  //   {
-  //     id: 1,
-  //     name: 'bob',
-  //     age: 0,
-  //   },
-  // ])
 })

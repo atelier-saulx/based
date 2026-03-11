@@ -4,7 +4,7 @@ export type LangName = keyof typeof LangCode
 
 export type SchemaLocale<strict = false> = RequiredIfStrict<
   {
-    fallback: LangName[]
+    fallback: readonly LangName[]
   },
   strict
 >

@@ -164,7 +164,6 @@ export class DbServer extends DbShared {
     const subSize = readUint32(buf, 0)
     const query = buf.subarray(subSize)
     const id = readUint32(query, 0)
-    console.log({ subSize, id })
     const op = query[4] as OpTypeEnum
     const queryListeners = this.opListeners.get(op)!
     const qIdListeners = queryListeners.get(id)

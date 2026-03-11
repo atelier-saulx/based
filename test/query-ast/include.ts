@@ -1,7 +1,7 @@
 import { QueryAst } from '../../src/db-query/ast/ast.js'
 import { astToQueryCtx } from '../../src/db-query/ast/toCtx.js'
 import { resultToObject } from '../../src/protocol/index.js'
-import { debugBuffer } from '../../src/sdk.js'
+import { debugBuffer, type SchemaIn } from '../../src/sdk.js'
 import { AutoSizedUint8Array } from '../../src/utils/AutoSizedUint8Array.js'
 import { writeUint32 } from '../../src/utils/uint8.js'
 import wait from '../../src/utils/wait.js'
@@ -13,7 +13,7 @@ import { testDbClient, testDbServer } from '../shared/index.js'
 
 await test('include', async (t) => {
   const server = await testDbServer(t, { noBackup: true })
-  const client = await testDbClient(server, {
+  const schema = {
     locales: {
       en: true,
       nl: { fallback: ['en'] },
@@ -57,7 +57,8 @@ await test('include', async (t) => {
         },
       },
     },
-  })
+  } as const
+  const client = await testDbClient(server, schema)
 
   let syntheticData = ''
 
