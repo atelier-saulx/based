@@ -80,17 +80,21 @@ type InferProp<
   ? Opts extends { locale: string }
     ? string | { [K in keyof Locales]?: string }
     : { [K in keyof Locales]?: string }
-  : Prop extends { type: 'object'; props: infer P }
-    ? InferType<P, Types, Locales, Opts>
-    : Prop extends { type: infer T extends keyof TypeMap }
-      ? TypeMap[T]
-      : Prop extends { enum: infer E extends readonly any[] }
-        ? E[number]
-        : Prop extends { ref: string }
-          ? Prettify<InferRefValue<Prop, Types, Locales>>
-          : Prop extends { items: { ref: string } }
-            ? Prettify<InferReferences<Prop['items'], Types, Locales>>
-            : never
+  : Prop extends { type: 'json'; localized: true }
+    ? Opts extends { locale: string }
+      ? any
+      : { [K in keyof Locales]?: any }
+    : Prop extends { type: 'object'; props: infer P }
+      ? InferType<P, Types, Locales, Opts>
+      : Prop extends { type: infer T extends keyof TypeMap }
+        ? TypeMap[T]
+        : Prop extends { enum: infer E extends readonly any[] }
+          ? E[number]
+          : Prop extends { ref: string }
+            ? Prettify<InferRefValue<Prop, Types, Locales>>
+            : Prop extends { items: { ref: string } }
+              ? Prettify<InferReferences<Prop['items'], Types, Locales>>
+              : never
 
 type Prettify<Target> = Target extends any
   ? Target extends (infer U)[]
