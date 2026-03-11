@@ -145,12 +145,9 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
             } else {
                 switch (op) {
                     .emptyMod => {},
-                    .modify => {
-                        try Modify.subscription(thread, m);
-                    },
-                    .subscribe => {
-                        try Subscription.subscribe(thread, m, threads.threads.len, threads.ctx);
-                    },
+                    .modify => try Modify.subscription(thread, m),
+                    .subscribe => try Subscription.subscribe(thread, m, threads),
+                    .unsubscribe => try Subscription.unsubscribe(thread, m, threads.ctx),
                     else => {},
                 }
 

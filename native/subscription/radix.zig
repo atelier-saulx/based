@@ -3,7 +3,7 @@ const std = @import("std");
 pub const RadixTree = struct {
     const Node = struct {
         prefix: []const u8,
-        id: ?u32,
+        ids: []u32,
         children: []*Node, // Replaced ArrayList with a raw slice
     };
 
@@ -23,7 +23,7 @@ pub const RadixTree = struct {
         tree.root = try tree.allocNode();
         tree.root.* = .{
             .prefix = &[_]u8{},
-            .id = null,
+            .ids = &[_]u32{},
             .children = &[_]*Node{},
         };
 
@@ -52,10 +52,14 @@ pub const RadixTree = struct {
         return dest;
     }
 
+    fn alignCursor(self: *RadixTree, comptime alignment: usize) void {
+        const cur_addr = @intFromPtr(self.memory.ptr) + self.cursor;
+        const aligned_addr = std.mem.alignForward(usize, cur_addr, alignment);
+        self.cursor += (aligned_addr - cur_addr);
+    }
+
     fn allocNode(self: *RadixTree) !*Node {
-        // We must align the cursor so the Node struct doesn't cause a CPU alignment panic
-        const align_mask = @alignOf(Node) - 1;
-        self.cursor = (self.cursor + align_mask) & ~align_mask;
+        self.alignCursor(@alignOf(Node));
 
         if (self.cursor + @sizeOf(Node) > self.memory.len) return error.OutOfMemory;
 
@@ -64,11 +68,23 @@ pub const RadixTree = struct {
         return ptr;
     }
 
+    fn allocIds(self: *RadixTree, n: usize) ![]u32 {
+        if (n == 0) return &[_]u32{};
+
+        self.alignCursor(@alignOf(u32));
+
+        const bytes_needed = n * @sizeOf(u32);
+        if (self.cursor + bytes_needed > self.memory.len) return error.OutOfMemory;
+
+        const ptr = @as([*]u32, @ptrCast(@alignCast(&self.memory[self.cursor])));
+        self.cursor += bytes_needed;
+        return ptr[0..n];
+    }
+
     fn allocChildren(self: *RadixTree, n: usize) ![]*Node {
         if (n == 0) return &[_]*Node{};
 
-        const align_mask = @alignOf(*Node) - 1;
-        self.cursor = (self.cursor + align_mask) & ~align_mask;
+        self.alignCursor(@alignOf(*Node));
 
         const bytes_needed = n * @sizeOf(*Node);
         if (self.cursor + bytes_needed > self.memory.len) return error.OutOfMemory;
@@ -83,32 +99,41 @@ pub const RadixTree = struct {
     // ==========================================
 
     fn commonPrefixLen(a: []const u8, b: []const u8) usize {
-        var i: usize = 0;
-        const min_len = @min(a.len, b.len);
-        while (i < min_len and a[i] == b[i]) : (i += 1) {}
-        return i;
+        return std.mem.indexOfDiff(u8, a, b) orelse @min(a.len, b.len);
     }
 
-    pub fn get(self: *const RadixTree, key: []const u8) ?u32 {
+    pub fn get(self: *const RadixTree, key: []const u8) []const u32 {
         var current = self.root;
         var remaining = key;
 
         while (true) {
-            const match_len = commonPrefixLen(current.prefix, remaining);
-            if (match_len < current.prefix.len) return null;
-            if (match_len == current.prefix.len and match_len == remaining.len) return current.id;
+            if (!std.mem.startsWith(u8, remaining, current.prefix)) return &[_]u32{};
+            if (current.prefix.len == remaining.len) return current.ids;
 
-            remaining = remaining[match_len..];
+            remaining = remaining[current.prefix.len..];
+            const c = remaining[0];
             var found = false;
             for (current.children) |child| {
-                if (child.prefix.len > 0 and child.prefix[0] == remaining[0]) {
+                // Radix nodes (except root) always have prefix.len > 0
+                if (child.prefix[0] == c) {
                     current = child;
                     found = true;
                     break;
                 }
             }
-            if (!found) return null;
+            if (!found) return &[_]u32{};
         }
+    }
+
+    fn appendId(self: *RadixTree, current_ids: []u32, id: u32) ![]u32 {
+        for (current_ids) |existing| {
+            if (existing == id) return current_ids;
+        }
+
+        const new_ids = try self.allocIds(current_ids.len + 1);
+        @memcpy(new_ids[0..current_ids.len], current_ids);
+        new_ids[current_ids.len] = id;
+        return new_ids;
     }
 
     pub fn insert(self: *RadixTree, key: []const u8, id: u32) !void {
@@ -119,7 +144,7 @@ pub const RadixTree = struct {
             const match_len = commonPrefixLen(current.prefix, remaining);
 
             if (match_len == current.prefix.len and match_len == remaining.len) {
-                current.id = id;
+                current.ids = try self.appendId(current.ids, id);
                 return;
             }
 
@@ -127,7 +152,7 @@ pub const RadixTree = struct {
                 remaining = remaining[match_len..];
                 var found = false;
                 for (current.children) |child| {
-                    if (child.prefix.len > 0 and child.prefix[0] == remaining[0]) {
+                    if (child.prefix[0] == remaining[0]) {
                         current = child;
                         found = true;
                         break;
@@ -138,7 +163,7 @@ pub const RadixTree = struct {
                     const new_node = try self.allocNode();
                     new_node.* = .{
                         .prefix = try self.dupeBytes(remaining),
-                        .id = id,
+                        .ids = try self.appendId(&[_]u32{}, id),
                         .children = &[_]*Node{},
                     };
 
@@ -157,13 +182,14 @@ pub const RadixTree = struct {
             // SPLIT LOGIC
             const split_node = try self.allocNode();
             split_node.* = .{
-                .prefix = try self.dupeBytes(current.prefix[match_len..]),
-                .id = current.id,
+                // Prefix is already in the bump buffer; we can just slice it! No allocation needed.
+                .prefix = current.prefix[match_len..],
+                .ids = current.ids,
                 .children = current.children,
             };
 
-            current.prefix = try self.dupeBytes(current.prefix[0..match_len]);
-            current.id = null;
+            current.prefix = current.prefix[0..match_len];
+            current.ids = &[_]u32{};
 
             // Current now only has one child (the split tail)
             current.children = try self.allocChildren(1);
@@ -174,7 +200,7 @@ pub const RadixTree = struct {
                 const new_node = try self.allocNode();
                 new_node.* = .{
                     .prefix = try self.dupeBytes(leftover),
-                    .id = id,
+                    .ids = try self.appendId(&[_]u32{}, id),
                     .children = &[_]*Node{},
                 };
 
@@ -184,31 +210,45 @@ pub const RadixTree = struct {
                 new_children[old_children.len] = new_node;
                 current.children = new_children;
             } else {
-                current.id = id;
+                current.ids = try self.appendId(current.ids, id);
             }
             return;
         }
     }
 
-    pub fn remove(self: *RadixTree, key: []const u8) void {
-        _ = self.removeRecursive(self.root, key);
+    pub fn remove(self: *RadixTree, key: []const u8, id: u32) void {
+        _ = self.removeRecursive(self.root, key, id);
     }
 
-    fn removeRecursive(self: *RadixTree, current: *Node, key: []const u8) bool {
+    fn removeRecursive(self: *RadixTree, current: *Node, key: []const u8, id: u32) bool {
         const match_len = commonPrefixLen(current.prefix, key);
 
         if (match_len < current.prefix.len) return false;
 
         if (match_len == current.prefix.len and match_len == key.len) {
-            current.id = null;
+            // Unset the ID by sliding
+            var found_idx: ?usize = null;
+            for (current.ids, 0..) |v, i| {
+                if (v == id) {
+                    found_idx = i;
+                    break;
+                }
+            }
+
+            if (found_idx) |idx| {
+                for (idx..current.ids.len - 1) |i| {
+                    current.ids[i] = current.ids[i + 1];
+                }
+                current.ids = current.ids[0 .. current.ids.len - 1];
+            }
         } else {
             const remaining = key[match_len..];
             var child_idx: usize = 0;
             var found = false;
             while (child_idx < current.children.len) : (child_idx += 1) {
                 const child = current.children[child_idx];
-                if (child.prefix.len > 0 and child.prefix[0] == remaining[0]) {
-                    if (self.removeRecursive(child, remaining)) {
+                if (child.prefix[0] == remaining[0]) {
+                    if (self.removeRecursive(child, remaining, id)) {
                         // In-place removal. We just shift the pointers left and shrink the slice.
                         // This costs ZERO memory overhead.
                         for (child_idx..current.children.len - 1) |i| {
@@ -223,11 +263,11 @@ pub const RadixTree = struct {
             if (!found) return false;
         }
 
-        if (current.id == null and current.children.len == 0 and current != self.root) {
+        if (current.ids.len == 0 and current.children.len == 0 and current != self.root) {
             return true;
         }
 
-        if (current.id == null and current.children.len == 1 and current != self.root) {
+        if (current.ids.len == 0 and current.children.len == 1 and current != self.root) {
             const child = current.children[0];
 
             // To be totally safe without an allocator, we allocate the merged string.
@@ -237,7 +277,7 @@ pub const RadixTree = struct {
                 @memcpy(merged_prefix[current.prefix.len..], child.prefix);
 
                 current.prefix = merged_prefix;
-                current.id = child.id;
+                current.ids = child.ids;
                 current.children = child.children;
             } else |_| {
                 // If we run out of memory during a compression merge, we gracefully fail
@@ -271,9 +311,10 @@ pub const RadixTree = struct {
 
         dest.* = .{
             .prefix = try self.dupeBytes(src.prefix),
-            .id = src.id,
+            .ids = try self.allocIds(src.ids.len),
             .children = try self.allocChildren(src.children.len),
         };
+        @memcpy(dest.ids, src.ids);
 
         for (src.children, 0..) |child, i| {
             dest.children[i] = try self.cloneNodeRecursive(child);
@@ -286,20 +327,25 @@ pub const RadixTree = struct {
 // EXAMPLE
 // pub fn main() !void {
 //     // 1. You entirely control the memory block. No standard allocators exist here.
-//     var memory_block: [4096]u8 = undefined;
+//     var memory_block: [4096]u8 align(8) = undefined;
 //     var tree = try RadixTree.init(&memory_block);
 
 //     try tree.insert("/api/users", 1);
 //     try tree.insert("/api/products", 2);
 
+//     // 2. Lookup (.get) example
+//     if (tree.get("/api/users")) |id| {
+//         std.debug.print("Found User Route ID: {d}\n", .{id});
+//     }
+
 //     std.debug.print("Raw Bytes Used: {}\n", .{tree.usedMemory()});
 
-//     // 2. Remove. Notice how `remove` doesn't even return an error anymore,
+//     // 3. Remove. Notice how `remove` doesn't even return an error anymore,
 //     // because shifting the slice left requires ZERO new bytes.
 //     tree.remove("/api/users");
 
-//     // 3. Defrag into a smaller block
-//     var compact_block: [1024]u8 = undefined;
+//     // 4. Defrag into a smaller block
+//     var compact_block: [1024]u8 align(8) = undefined;
 //     var compacted_tree = try tree.defrag(&compact_block);
 
 //     std.debug.print("Defrag Bytes Used: {}\n", .{compacted_tree.usedMemory()});

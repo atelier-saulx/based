@@ -111,7 +111,7 @@
     "node": "24",
     "npm": "11"
   },
-  "devEngines": {
+  "_devEngines": {
     "runtime": {
       "name": "node",
       "version": "24",
