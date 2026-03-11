@@ -44,6 +44,7 @@ pub fn poll(threads: *Thread.Threads) !void {
         }
 
         for (threads.threads) |thread| {
+            thread.runId = thread.runId +% 1;
             const elapsed = now - thread.lastModifyTime;
             if (elapsed > common.SUB_EXEC_INTERVAL) {
                 thread.lastModifyTime = now;

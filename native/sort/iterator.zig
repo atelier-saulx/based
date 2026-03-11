@@ -219,7 +219,7 @@ pub inline fn fromIterator(
     typeEntry: Node.Type,
     header: *const t.SortHeader,
     it: anytype,
-    // add this latwr
+    // ADD THIS
     // filter: t.QueryIteratorType,
     // _: if (filter == .edgeFilter or filter == t.QueryIteratorType.) []u8 else void,
 ) !SortIterator(desc, isEdge) {
@@ -234,6 +234,9 @@ pub inline fn fromIterator(
         .isCreated = false,
         .decay = Decay.init(),
     };
+
+    // use filter here
+    // make comptime filter as option
 
     try fillSortIndex(
         &sortIndex,

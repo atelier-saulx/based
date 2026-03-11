@@ -82,7 +82,6 @@ const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
         } else {
           walkCtx.prop = prop.id
           for (const op of ops) {
-            // Can prob just push this directly
             const condition = comparison(
               ctx,
               prop,
@@ -132,10 +131,7 @@ const indexOf = (
   return -1
 }
 
-// filter + EDGE
-
-// EDGE ONLY?
-export const filter = (
+const filterInternal = (
   ast: FilterAst,
   ctx: Ctx,
   typeDef: TypeDef,
@@ -193,7 +189,7 @@ export const filter = (
         offset,
       )
       andOrReplace = condition
-      filter(
+      filterInternal(
         ast.and,
         ctx,
         typeDef,
@@ -203,7 +199,13 @@ export const filter = (
         andOrReplace,
       )
     } else {
-      filter(ast.and, ctx, typeDef, ctx.query.length - startIndex, walkCtx.prop)
+      filterInternal(
+        ast.and,
+        ctx,
+        typeDef,
+        ctx.query.length - startIndex,
+        walkCtx.prop,
+      )
     }
   }
 
@@ -244,7 +246,7 @@ export const filter = (
         index + FilterConditionAlignOf + 1,
       )
     }
-    filter(
+    filterInternal(
       ast.or,
       ctx,
       typeDef,
@@ -256,4 +258,26 @@ export const filter = (
   }
 
   return ctx.query.length - startIndex
+}
+
+export const filter = (
+  ast: FilterAst,
+  ctx: Ctx,
+  typeDef: TypeDef,
+  filterIndex: number = 0,
+  lastProp: number = PropType.id,
+  edgeType?: TypeDef,
+  prevOr?: Uint8Array,
+) => {
+  ctx.query.pushUint32(0)
+  const len = filterInternal(
+    ast,
+    ctx,
+    typeDef,
+    filterIndex,
+    lastProp,
+    edgeType,
+    prevOr,
+  )
+  return len
 }

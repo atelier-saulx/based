@@ -160,6 +160,7 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
+    // target: [1, 2],
     // locale: 'fi',
     range: { start: 0, end: 1e6 },
     filter: {
@@ -170,11 +171,40 @@ await test('include', async (t) => {
         aliasId: {
           ops: [{ op: '=', val: 'jim' }],
         },
+
         // localized: {
         //   // ops: [{ op: '=', val: 'derpi yuz NL' }],
         //   props: {
         //     nl: {
         //       ops: [{ op: '=', val: 'derpi yuz NL' }],
+        //     },
+        //   },
+        // },
+      },
+      or: {
+        props: {
+          aliasId: {
+            ops: [{ op: '=', val: 'jim' }],
+          },
+        },
+        // and: {
+        //   props: {
+        //     aliasId: {
+        //       ops: [{ op: '=', val: 'jim' }],
+        //     },
+        //   },
+        //   or: {
+        //     props: {
+        //       aliasId: {
+        //         ops: [{ op: '=', val: 'jim' }],
+        //       },
+        //     },
+        //     and: {
+        //       props: {
+        //         aliasId: {
+        //           ops: [{ op: '=', val: 'jim' }],
+        //         },
+        //       },
         //     },
         //   },
         // },

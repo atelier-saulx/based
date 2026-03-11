@@ -12,18 +12,41 @@ const Thread = @import("../../thread/thread.zig");
 
 const COND_ALIGN_BYTES = @alignOf(t.FilterCondition);
 
+pub fn readFilter(
+    ctx: *Query.QueryCtx,
+    i: *usize,
+    filterSize: u16, // might need to make this u32
+    q: []u8,
+    typeEntry: Node.Type,
+) ![]u8 {
+    i.* += 4;
+    const filterBuf = utils.sliceNext(filterSize, q, i);
+    if (needsPrepare(ctx, q, i.* - 4)) {
+        try prepare(filterBuf, ctx, typeEntry);
+    }
+    return filterBuf;
+}
+
+pub fn needsPrepare(ctx: *Query.QueryCtx, q: []u8, i: usize) bool {
+    const needs = utils.read(u32, q, i) != ctx.thread.runId;
+    if (needs) {
+        utils.write(q, ctx.thread.runId, i);
+        return true;
+    }
+    return false;
+}
+
 pub fn prepare(
     q: []u8,
     ctx: *Query.QueryCtx,
     typeEntry: Node.Type,
 ) !void {
+    // add a number on query ctx dont run this if filter is set
     var i: usize = 0;
-
     while (i < q.len) {
         const headerSize = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition);
         var c: *t.FilterCondition = undefined;
         // 255 means its unprepared - the condition new index will be set when aligned
-
         if (q[i] == 255) {
             const condSize = utils.read(u32, q, i + 3 + COND_ALIGN_BYTES);
             const totalSize = headerSize + condSize;
@@ -92,6 +115,7 @@ pub inline fn filter(
     q: []u8,
 ) !bool {
     var i: usize = 0;
+
     var pass: bool = true;
     var v: []const u8 = undefined;
     var prop: u8 = 255;
@@ -195,7 +219,6 @@ pub inline fn filter(
             },
             // else => false,
         };
-
         if (!pass) {
             i = end;
             end = q.len;
@@ -203,6 +226,5 @@ pub inline fn filter(
             i = nextIndex;
         }
     }
-
     return pass;
 }

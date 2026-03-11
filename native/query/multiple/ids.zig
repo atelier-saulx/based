@@ -40,6 +40,15 @@ pub fn ids(
         .default => {
             nodeCnt = try Iterate.node(.default, ctx, q, &it, &header, typeEntry, &i);
         },
+        .filter => {},
+        .filterSort => {
+            // derp
+            // make filtered iterator
+        },
+        .descFilterSort => {
+            // derp
+            // make filtered iterator
+        },
         .desc => {
             nodeCnt = try Iterate.node(.default, ctx, q, &it, &header, typeEntry, &i);
         },
