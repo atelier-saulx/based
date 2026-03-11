@@ -1,10 +1,10 @@
-import { BasedDb, DbClient, getDefaultHooks } from '../../src/index.js'
+import { DbClient, DbServer, getDefaultHooks } from '../../src/sdk.js'
 import { deepEqual, equal } from '../shared/assert.js'
+import { testDbClient } from '../shared/index.js'
 import test from '../shared/test.js'
-import { setTimeout } from 'node:timers/promises'
 
 await test('simple', async (t) => {
-  const db = new BasedDb({
+  const db = new DbServer({
     path: t.tmp,
   })
   await db.start({ clean: true })
@@ -47,7 +47,7 @@ await test('simple', async (t) => {
           e: { type: 'timestamp' },
           f: { type: 'binary' },
           g: { type: 'alias' },
-          h: { type: 'text' },
+          h: { type: 'string', localized: true },
           i: { type: 'json' },
           j: { type: 'cardinality' },
           k: { type: 'int8' },
@@ -64,7 +64,7 @@ await test('simple', async (t) => {
       },
     },
   } as const
-  const client = await db.setSchema(schema)
+  const client = await testDbClient(db, schema)
 
   client.create('user', {
     name: 'youzi',
@@ -81,13 +81,13 @@ await test('simple', async (t) => {
   await client.drain()
   await db.save()
 
-  const db2 = new BasedDb({
+  const db2 = new DbServer({
     path: t.tmp,
   })
   await db2.start()
   t.after(() => db2.destroy())
   const client2 = new DbClient<typeof schema>({
-    hooks: getDefaultHooks(db2.server),
+    hooks: getDefaultHooks(db2),
   })
 
   const a = await client.query('user').get()
@@ -106,30 +106,6 @@ await test('simple', async (t) => {
 
   await client2.create('user', { name: 'jerp' })
   await db2.save()
-})
-
-await test('empty root', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start()
-  t.after(() => db.destroy())
-
-  await db.setSchema({
-    types: {
-      user: {
-        props: {
-          name: { type: 'string' },
-          email: { type: 'string' },
-          age: { type: 'uint32' },
-          story: { type: 'string' },
-        },
-      },
-    },
-  })
-
-  await db.save()
-  await setTimeout(1e3)
 })
 
 await test('refs', async (t) => {
@@ -159,13 +135,13 @@ await test('refs', async (t) => {
     },
   } as const
 
-  const db = new BasedDb({
+  const db = new DbServer({
     path: t.tmp,
   })
   await db.start({ clean: true })
   t.after(() => db.destroy())
 
-  const client = await db.setSchema(schema)
+  const client = await testDbClient(db, schema)
 
   const grp = client.create('group', {
     name: 'best',
@@ -185,13 +161,13 @@ await test('refs', async (t) => {
   await client.drain()
   await db.save()
 
-  const db2 = new BasedDb({
+  const db2 = new DbServer({
     path: t.tmp,
   })
   t.after(() => db2.destroy())
   await db2.start()
   const client2 = new DbClient<typeof schema>({
-    hooks: getDefaultHooks(db2.server),
+    hooks: getDefaultHooks(db2),
   })
 
   const users1 = await client.query('user').include('group').get()
@@ -200,62 +176,29 @@ await test('refs', async (t) => {
   deepEqual(users1, users2)
 })
 
-await test('auto save', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.destroy())
-
-  await db.setSchema({
-    types: {
-      group: {
-        props: {
-          name: { type: 'string' },
-          users: {
-            items: {
-              ref: 'user',
-              prop: 'group',
-            },
-          },
-        },
-      },
-      user: {
-        props: {
-          name: { type: 'string' },
-          email: { type: 'string' },
-          group: {
-            ref: 'group',
-            prop: 'users',
-          },
-        },
-      },
-    },
-  })
-})
-
 await test('text', async (t) => {
   const schema = {
     locales: {
-      en: {},
-      fi: { fallback: ['en'] },
+      en: true,
+      nl: { fallback: ['en'] },
+      fi: { fallback: ['en', 'nl'] },
     },
     types: {
       article: {
         props: {
-          title: { type: 'text' },
-          body: { type: 'text' },
+          title: { type: 'string', localized: true },
+          body: { type: 'string', localized: true },
         },
       },
     },
   } as const
-  const db = new BasedDb({
+  const db = new DbServer({
     path: t.tmp,
   })
   await db.start({ clean: true })
   t.after(() => db.destroy())
 
-  const client = await db.setSchema(schema)
+  const client = await testDbClient(db, schema)
 
   // Text: Wikipedia CC BY-SA 4.0
   client.create('article', {
@@ -282,13 +225,13 @@ await test('text', async (t) => {
   await client.drain()
   await db.save()
 
-  const db2 = new BasedDb({
+  const db2 = new DbServer({
     path: t.tmp,
   })
   t.after(() => db2.destroy())
   await db2.start()
   const client2 = new DbClient<typeof schema>({
-    hooks: getDefaultHooks(db2.server),
+    hooks: getDefaultHooks(db2),
   })
 
   const articles1 = await client.query('article').get()
@@ -296,139 +239,8 @@ await test('text', async (t) => {
   deepEqual(articles1, articles2)
 })
 
-await test.skip('db is drained before save', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  await db.setSchema({
-    types: {
-      book: {
-        props: {
-          name: { type: 'string', max: 16 },
-          isbn: { type: 'string', max: 13 },
-          owner: { ref: 'person', prop: 'books' },
-        },
-      },
-      person: {
-        props: {
-          name: { type: 'string', max: 16 },
-          age: { type: 'uint32' },
-          bf: { ref: 'person', prop: 'bf' },
-          books: { items: { ref: 'book', prop: 'owner' } },
-        },
-      },
-    },
-  })
-
-  t.after(() => db.destroy())
-
-  const people = await Promise.all([
-    db.create('person', {
-      name: 'Slim',
-    }),
-    db.create('person', {
-      name: 'Slick',
-    }),
-    db.create('person', {
-      name: 'Joe',
-    }),
-  ])
-  db.update('person', people[1], {
-    bf: people[2],
-  })
-
-  for (let i = 0; i < 5; i++) {
-    db.create('book', {
-      name: `book ${i}`,
-      isbn: '9789295055025',
-      owner: people[i % people.length],
-    })
-  }
-  await db.save()
-  for (let i = 0; i < 5; i++) {
-    db.create('book', {
-      name: `book ${1000 + i}`,
-      isbn: '9789295055025',
-      owner: people[i % people.length],
-    })
-  }
-  await db.save()
-
-  const db2 = new BasedDb({
-    path: t.tmp,
-  })
-  t.after(() => db2.destroy())
-  await db2.start()
-
-  deepEqual(
-    await db2.query('person').include('name', 'books').get(),
-    await db.query('person').include('name', 'books').get(),
-  )
-})
-
-await test('create', async (t) => {
-  const schema = {
-    types: {
-      person: {
-        props: {
-          name: { type: 'string', max: 8 },
-          alias: { type: 'alias' },
-        },
-      },
-    },
-  } as const
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  const client = await db.setSchema(schema)
-
-  t.after(() => db.destroy())
-
-  client.create('person', {
-    name: 'Joe',
-  })
-  await client.drain()
-  await db.save()
-  client.create('person', {
-    name: 'John',
-  })
-  await client.drain()
-  await db.save()
-  client.create('person', {
-    name: 'Neo',
-    alias: 'haxor',
-  })
-  await client.drain()
-  await db.save()
-  client.create('person', {
-    name: 'trinity',
-    alias: 'haxor',
-  })
-  await client.drain()
-  await db.save()
-
-  // load the same db into a new instance
-  const db2 = new BasedDb({
-    path: t.tmp,
-  })
-  await db2.start()
-  t.after(() => db2.destroy())
-  const client2 = new DbClient<typeof schema>({
-    hooks: getDefaultHooks(db2.server),
-  })
-
-  deepEqual(
-    await client2.query('person').get(),
-    await client.query('person').get(),
-  )
-})
-
 await test('upsert', async (t) => {
-  const db = new BasedDb({
+  const db = new DbServer({
     path: t.tmp,
   })
   await db.start({ clean: true })
@@ -445,7 +257,7 @@ await test('upsert', async (t) => {
       },
     },
   } as const
-  const client = await db.setSchema(schema)
+  const client = await testDbClient(db, schema)
 
   client.create('person', {
     name: 'Joe',
@@ -458,13 +270,13 @@ await test('upsert', async (t) => {
   await db.save()
 
   // load the same db into a new instance
-  const db2 = new BasedDb({
+  const db2 = new DbServer({
     path: t.tmp,
   })
   await db2.start()
   t.after(() => db2.destroy())
   const client2 = new DbClient<typeof schema>({
-    hooks: getDefaultHooks(db2.server),
+    hooks: getDefaultHooks(db2),
   })
 
   deepEqual(await client.query('person').get(), [
@@ -476,7 +288,7 @@ await test('upsert', async (t) => {
 })
 
 await test('alias blocks', async (t) => {
-  const db = new BasedDb({
+  const db = new DbServer({
     path: t.tmp,
   })
   await db.start({ clean: true })
@@ -492,7 +304,7 @@ await test('alias blocks', async (t) => {
       },
     },
   } as const
-  const client = await db.setSchema(schema)
+  const client = await testDbClient(db, schema)
 
   for (let i = 0; i < 100_000; i++) {
     client.create('person', {
@@ -515,13 +327,13 @@ await test('alias blocks', async (t) => {
   await db.save()
 
   // load the same db into a new instance
-  const db2 = new BasedDb({
+  const db2 = new DbServer({
     path: t.tmp,
   })
   await db2.start()
   t.after(() => db2.destroy())
   const client2 = new DbClient<typeof schema>({
-    hooks: getDefaultHooks(db2.server),
+    hooks: getDefaultHooks(db2),
   })
 
   deepEqual(
@@ -531,7 +343,7 @@ await test('alias blocks', async (t) => {
 })
 
 await test('simulated periodic save', async (t) => {
-  const db = new BasedDb({
+  const db = new DbServer({
     path: t.tmp,
   })
   await db.start({ clean: true })
@@ -557,7 +369,7 @@ await test('simulated periodic save', async (t) => {
       },
     },
   } as const
-  const client = await db.setSchema(schema)
+  const client = await testDbClient(db, schema)
 
   // create some people
   const people = await Promise.all([
@@ -631,13 +443,13 @@ await test('simulated periodic save', async (t) => {
   await db.save()
 
   // load the same db into a new instance
-  const db2 = new BasedDb({
+  const db2 = new DbServer({
     path: t.tmp,
   })
   await db2.start()
   t.after(() => db2.destroy())
   const client2 = new DbClient<typeof schema>({
-    hooks: getDefaultHooks(db.server),
+    hooks: getDefaultHooks(db2),
   })
 
   // Change node using alias saved
@@ -702,13 +514,13 @@ await test('simulated periodic save', async (t) => {
 })
 
 await test('edge val', async (t) => {
-  const db = new BasedDb({
+  const db = new DbServer({
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db.server))
+  t.after(() => t.backup(db))
 
-  const client = await db.setSchema({
+  const client = await testDbClient(db, {
     types: {
       round: {
         name: 'alias',
@@ -773,7 +585,7 @@ await test('edge val', async (t) => {
 })
 
 await test('no mismatch', async (t) => {
-  const db = new BasedDb({
+  const db = new DbServer({
     path: t.tmp,
   })
   await db.start({ clean: true })
@@ -788,7 +600,7 @@ await test('no mismatch', async (t) => {
       },
     },
   } as const
-  const client = await db.setSchema(schema)
+  const client = await testDbClient(db, schema)
 
   await client.create('user', {
     name: 'xxx',
@@ -796,14 +608,14 @@ await test('no mismatch', async (t) => {
 
   await db.save()
 
-  const db2 = new BasedDb({
+  const db2 = new DbServer({
     path: t.tmp,
   })
   t.after(() => t.backup(db2))
   await db2.start()
 
   const client2 = new DbClient<typeof schema>({
-    hooks: getDefaultHooks(db2.server),
+    hooks: getDefaultHooks(db2),
   })
 
   await client2.create('user', {
