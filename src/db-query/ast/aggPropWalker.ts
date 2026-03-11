@@ -56,9 +56,10 @@ export const resolveProp = (
   propFullName: string,
   asReference?: PropDef,
   isCount?: boolean,
-): { isEdge: boolean; propDef: PropDef } => {
+): { isEdge: boolean; propDef: PropDef; edgePropId?: number } => {
   let propDef: PropDef | any = typeDef.props.get(propFullName)
   let isEdge = false
+  let edgePropId: number | undefined
 
   if (!propDef && asReference?.edges) {
     let edgePropName = propFullName
@@ -74,6 +75,19 @@ export const resolveProp = (
     propDef = asReference.edges.props.get(edgePropName)
     if (propDef) {
       isEdge = true
+      edgePropId = asReference.id
+    }
+  } else if (!propDef && propFullName.includes('.')) {
+    const parts = propFullName.split('.')
+    const edgePropName = parts.pop()!
+    const parentPath = parts.join('.')
+    const parentPropDef: any = typeDef.props.get(parentPath)
+    if (parentPropDef && parentPropDef.edges) {
+      propDef = parentPropDef.edges.props.get(edgePropName)
+      if (propDef) {
+        isEdge = true
+        edgePropId = parentPropDef.id
+      }
     }
   }
 
@@ -90,7 +104,7 @@ export const resolveProp = (
     throw new Error(`Property '${propFullName}' not found`)
   }
 
-  return { isEdge, propDef }
+  return { isEdge, propDef, edgePropId }
 }
 
 export const walkProp = (
@@ -101,8 +115,8 @@ export const walkProp = (
   fn: AggFunctionEnum,
   asReference?: PropDef,
   isCount?: boolean,
-): { isEdge: boolean; propDef: PropDef } => {
-  const { isEdge, propDef } = resolveProp(
+): { isEdge: boolean; propDef: PropDef; edgePropId?: number } => {
+  const { isEdge, propDef, edgePropId } = resolveProp(
     typeDef,
     propFullName,
     asReference,
@@ -144,7 +158,7 @@ export const walkProp = (
 
   ctx.readSchema.aggregate!.totalResultsSize += resSize
 
-  return { isEdge, propDef }
+  return { isEdge, propDef, edgePropId }
 }
 
 export const walkProps = (
@@ -154,8 +168,9 @@ export const walkProps = (
   targetAst: QueryAst,
   currentPath: string[],
   asReference?: PropDef,
-): boolean => {
+): { hasEdges: boolean; edgePropId?: number } => {
   let hasEdges = false
+  let defaultEdgePropId: number | undefined
   let i = 0
 
   for (const key in AggFunction) {
@@ -189,7 +204,7 @@ export const walkProps = (
       }
       const fullPropName = fullParts.join('.')
 
-      const { isEdge, propDef } = walkProp(
+      const { isEdge, propDef, edgePropId } = walkProp(
         ctx,
         sizes,
         typeDef,
@@ -198,7 +213,10 @@ export const walkProps = (
         asReference,
         isCount,
       )
-      if (isEdge) hasEdges = true
+      if (isEdge) {
+        hasEdges = true
+        if (edgePropId) defaultEdgePropId = edgePropId
+      }
       ctx.readSchema.main.props[i] = readPropDef(propDef, ctx)
       ctx.readSchema.main.len += propDef.size
       i += propDef.size
@@ -211,28 +229,19 @@ export const walkProps = (
       const childPropDef = typeDef.props.get(childPath)
 
       if (
-        childPropDef &&
-        (childPropDef.type === PropType.reference ||
-          childPropDef.type === PropType.references ||
-          childPropDef.isEdge)
-      ) {
-        continue
-      }
-
-      if (
         isAggregateAst(targetAst.props[key], typeDef, [...currentPath, key])
       ) {
-        if (
-          walkProps(
-            ctx,
-            sizes,
-            typeDef,
-            targetAst.props[key],
-            [...currentPath, key],
-            asReference,
-          )
-        ) {
+        const result = walkProps(
+          ctx,
+          sizes,
+          typeDef,
+          targetAst.props[key],
+          [...currentPath, key],
+          asReference,
+        )
+        if (result.hasEdges) {
           hasEdges = true
+          if (result.edgePropId) defaultEdgePropId = result.edgePropId
         }
       }
     }
@@ -255,21 +264,21 @@ export const walkProps = (
       if (
         isAggregateAst(targetAst.edges[key], typeDef, [...currentPath, key])
       ) {
-        if (
-          walkProps(
-            ctx,
-            sizes,
-            typeDef,
-            targetAst.edges[key],
-            [...currentPath, key],
-            asReference,
-          )
-        ) {
+        const result = walkProps(
+          ctx,
+          sizes,
+          typeDef,
+          targetAst.edges[key],
+          [...currentPath, key],
+          asReference,
+        )
+        if (result.hasEdges) {
           hasEdges = true
+          if (result.edgePropId) defaultEdgePropId = result.edgePropId
         }
       }
     }
   }
 
-  return hasEdges
+  return { hasEdges, edgePropId: defaultEdgePropId }
 }

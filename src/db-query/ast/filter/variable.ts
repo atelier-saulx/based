@@ -6,6 +6,7 @@ import {
   LangCode,
   LangCodeEnum,
   FilterOpCompare as Op,
+  PropType,
 } from '../../../zigTsExports.js'
 import { FilterOpts, Operator } from '../ast.js'
 import { createCondition } from './condition.js'
@@ -113,7 +114,7 @@ export const variableComparison = (
 
   if (
     (op === Op.eq || op === Op.neq) &&
-    isFixedLenString(prop) &&
+    (isFixedLenString(prop) || prop.type === PropType.alias) &&
     val.length > 1
   ) {
     op = op === Op.eq ? Op.eqVarBatch : Op.neqVarBatch
@@ -134,7 +135,10 @@ export const variableComparison = (
     return condition
   }
 
-  if ((op === Op.eq || op === Op.neq) && isFixedLenString(prop)) {
+  if (
+    (op === Op.eq || op === Op.neq) &&
+    (isFixedLenString(prop) || prop.type === PropType.alias)
+  ) {
     op = op === Op.eq ? Op.eqVar : Op.neqVar
     const value = val[0].normalize('NFKD')
     const size = native.stringByteLength(value)

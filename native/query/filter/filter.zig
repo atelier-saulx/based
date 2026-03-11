@@ -12,18 +12,29 @@ const Thread = @import("../../thread/thread.zig");
 
 const COND_ALIGN_BYTES = @alignOf(t.FilterCondition);
 
-pub fn prepare(
+fn recursionErrorBoundary(
+    cb: anytype,
+    node: Node.Node,
+    ctx: *Query.QueryCtx,
+    q: []u8,
+) bool {
+    return cb(node, ctx, q) catch |err| {
+        std.debug.print("Filter: recursionErrorBoundary: Error {any} \n", .{err});
+        return false;
+    };
+}
+
+fn prepare(
     q: []u8,
     ctx: *Query.QueryCtx,
     typeEntry: Node.Type,
 ) !void {
+    // add a number on query ctx dont run this if filter is set
     var i: usize = 0;
-
     while (i < q.len) {
         const headerSize = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition);
         var c: *t.FilterCondition = undefined;
         // 255 means its unprepared - the condition new index will be set when aligned
-
         if (q[i] == 255) {
             const condSize = utils.read(u32, q, i + 3 + COND_ALIGN_BYTES);
             const totalSize = headerSize + condSize;
@@ -31,7 +42,9 @@ pub fn prepare(
             q[i] = COND_ALIGN_BYTES - utils.alignLeft(t.FilterCondition, q[i + 1 .. i + totalSize]) + 1;
             c = utils.readPtr(t.FilterCondition, q, q[i] + i);
 
-            if (c.op.compare != t.FilterOpCompare.nextOrIndex) {
+            if (c.op.compare != t.FilterOpCompare.nextOrIndex and
+                c.op.prop != t.PropType.id)
+            {
                 c.fieldSchema = try Schema.getFieldSchema(typeEntry, c.prop);
             }
 
@@ -72,16 +85,22 @@ pub fn prepare(
     }
 }
 
-pub fn recursionErrorBoundary(
-    cb: anytype,
-    node: Node.Node,
+pub fn readFilter(
     ctx: *Query.QueryCtx,
+    i: *usize,
+    filterSize: u16, // Might need to make this u32
     q: []u8,
-) bool {
-    return cb(node, ctx, q) catch |err| {
-        std.debug.print("Filter: recursionErrorBoundary: Error {any} \n", .{err});
-        return false;
-    };
+    typeEntry: Node.Type,
+) ![]u8 {
+    const offset = i.*;
+    const needPrep = utils.read(u32, q, offset) != ctx.thread.runId;
+    i.* += 4;
+    const filterBuf = utils.sliceNext(filterSize - 4, q, i);
+    if (needPrep) {
+        utils.write(q, ctx.thread.runId, offset);
+        try prepare(filterBuf, ctx, typeEntry);
+    }
+    return filterBuf;
 }
 
 pub inline fn filter(
@@ -90,6 +109,7 @@ pub inline fn filter(
     q: []u8,
 ) !bool {
     var i: usize = 0;
+
     var pass: bool = true;
     var v: []const u8 = undefined;
     var prop: u8 = 255;
@@ -102,17 +122,23 @@ pub inline fn filter(
 
         if (prop != c.prop) {
             prop = c.prop;
-            // handle alias seperate;ly (seperate command)
-            // if (c.fieldSchema.type == Selva.c.SELVA_FIELD_TYPE_ALIAS) {
-            //     v = try Fields.getAliasByNode(try Node.getType(ctx.db, node), node, c.fieldSchema.field);
-            // } else {
             v = Fields.getRaw(node, c.fieldSchema);
-            // }
         }
 
         pass = switch (c.op.compare) {
-            // select Id
-            // select Alias
+            .selectAlias => blk: {
+                const typeEntry = Node.getType(ctx.db, node) catch {
+                    break :blk false;
+                };
+                v = Fields.getAliasByNode(typeEntry, node, c.fieldSchema.field) catch {
+                    break :blk false;
+                };
+                break :blk true;
+            },
+            .selectId => blk: {
+                v = Node.getNodeIdAsSlice(node);
+                break :blk true;
+            },
             .nextOrIndex => blk: {
                 end = utils.readPtr(u64, q, index + @alignOf(u64) - c.offset).*;
                 break :blk true;
@@ -177,6 +203,8 @@ pub inline fn filter(
             => |op| blk: {
                 @setEvalBranchQuota(2000);
                 break :blk switch (c.op.prop) {
+                    // optionaly make this into a var len
+                    .alias => Variable.compare(.raw, op, q, v, index, c, ctx.thread),
                     .string, .json, .binary => Variable.compare(.default, op, q, v, index, c, ctx.thread),
                     .stringFixed, .jsonFixed, .binaryFixed => Variable.compare(.fixed, op, q, v, index, c, ctx.thread),
                     .stringLocalized, .jsonLocalized => Variable.compare(.localized, op, q, v, index, c, ctx.thread),
@@ -185,7 +213,6 @@ pub inline fn filter(
             },
             // else => false,
         };
-
         if (!pass) {
             i = end;
             end = q.len;
@@ -193,6 +220,5 @@ pub inline fn filter(
             i = nextIndex;
         }
     }
-
     return pass;
 }

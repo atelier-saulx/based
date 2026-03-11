@@ -13,6 +13,7 @@ pub const SUB_EXEC_INTERVAL = 1000; // ms
 pub const Thread = struct {
     thread: std.Thread,
     id: usize,
+    runId: u32 = 1,
     decompressor: *deflate.Decompressor,
     libdeflateBlockState: deflate.BlockState,
     pendingModifies: usize,
@@ -34,6 +35,7 @@ pub const Thread = struct {
     pub fn init(allocator: std.mem.Allocator, id: usize) !*Thread {
         const thread = jemalloc.create(Thread);
         thread.*.id = id;
+        thread.*.runId = 1;
         thread.*.decompressor = deflate.createDecompressor();
         thread.*.libdeflateBlockState = deflate.initBlockState(305000);
         thread.*.pendingModifies = 0;

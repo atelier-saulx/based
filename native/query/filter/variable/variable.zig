@@ -21,6 +21,7 @@ const Type = enum(u8) {
     default = 0,
     fixed = 1,
     localized = 2,
+    raw = 3,
 };
 
 inline fn valueType(
@@ -67,6 +68,8 @@ pub fn parse(
                 compareFn,
             );
         }
+    } else if (T == .raw) {
+        return compareFn(query, v);
     } else if (T == .fixed) {
         return compareFn(query, v[1 + c.start .. v[c.start] + 1 + c.start]);
     } else {

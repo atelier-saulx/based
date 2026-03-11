@@ -11,6 +11,10 @@ pub const Type = selva.Type;
 pub const Node = selva.Node;
 pub const ExpireRes = selva.c.struct_SelvaExpireNodeRes;
 
+pub inline fn getMaxType(ctx: *DbCtx) t.TypeId {
+    return selva.c.selva_get_max_type(ctx.selva);
+}
+
 pub inline fn getType(ctx: *DbCtx, v: anytype) !Type {
     var selvaTypeEntry: ?Type = undefined;
 
@@ -27,7 +31,7 @@ pub inline fn getType(ctx: *DbCtx, v: anytype) !Type {
                 return errors.SelvaError.SELVA_ENOENT;
             }
         }
-        selvaTypeEntry = selva.c.selva_get_type_by_node(ctx.selva.?, v);
+        selvaTypeEntry = selva.c.selva_get_type_by_node(ctx.selva, v);
     } else {
         @compileLog("Invalid type: ", @TypeOf(v));
         @compileError("Invalid type");

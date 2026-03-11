@@ -108,6 +108,11 @@ struct SelvaTypeEntry {
     struct SelvaNode *max_node;
 
     /**
+     * Expiring nodes.
+     */
+    struct SelvaExpire expiring;
+
+    /**
      * Copy of the original selvaBuffer tha was used to initialize this type.
      * Alloc & free with selva_jemalloc.
      */
@@ -138,11 +143,6 @@ struct SelvaDbExpireToken {
  * Database instance.
  */
 struct SelvaDb {
-    /**
-     * Expiring nodes.
-     */
-    struct SelvaExpire expiring;
-
     /**
      * Backup directory file descriptor.
      */

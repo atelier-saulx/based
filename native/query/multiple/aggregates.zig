@@ -3,6 +3,7 @@ const Query = @import("../common.zig");
 const t = @import("../../types.zig");
 const Node = @import("../../selva/node.zig");
 const Iterate = @import("./iterate.zig");
+const Schema = @import("../../selva/schema.zig");
 const Sort = @import("../../sort/sort.zig");
 const Selva = @import("../../selva/selva.zig");
 const Filter = @import("../filter/filter.zig");
@@ -47,8 +48,7 @@ pub fn aggregates(
             try Aggregates.finalizeResults(&aggCtx, q[i..], accumulatorProp, 0);
         },
         .aggregateFilter => {
-            const filter = utils.sliceNext(header.filterSize, q, &i);
-            try Filter.prepare(filter, ctx, typeEntry);
+            const filter = try Filter.readFilter(ctx, &i, header.filterSize, q, typeEntry);
             nodeCnt = try Aggregates.iterator(&aggCtx, &it, true, filter, q[i..], accumulatorProp);
             try Aggregates.finalizeResults(&aggCtx, q[i..], accumulatorProp, 0);
         },
@@ -59,11 +59,40 @@ pub fn aggregates(
             try GroupBy.finalizeGroupResults(&aggCtx, &groupByHashMap, q[i..]);
         },
         .groupByFilter => {
-            const filter = utils.sliceNext(header.filterSize, q, &i);
-            try Filter.prepare(filter, ctx, typeEntry);
+            const filterBuf = try Filter.readFilter(ctx, &i, header.filterSize, q, typeEntry);
             var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
             defer groupByHashMap.deinit();
-            nodeCnt = @intCast(GroupBy.iterator(&aggCtx, &groupByHashMap, &it, true, filter, q[i..]));
+            nodeCnt = @intCast(GroupBy.iterator(&aggCtx, &groupByHashMap, &it, true, filterBuf, q[i..]));
+            try GroupBy.finalizeGroupResults(&aggCtx, &groupByHashMap, q[i..]);
+        },
+        .aggregateEdge => {
+            const fieldSchema = try Schema.getFieldSchema(typeEntry, header.edgePropId);
+            aggCtx.edgeTypeEntry = try Node.getEdgeType(ctx.db, fieldSchema);
+            nodeCnt = try Aggregates.iteratorEdge(&aggCtx, &it, false, undefined, q[i..], accumulatorProp, header.edgePropId);
+            try Aggregates.finalizeResults(&aggCtx, q[i..], accumulatorProp, 0);
+        },
+        .aggregateEdgeFilter => {
+            const filterBuf = try Filter.readFilter(ctx, &i, header.filterSize, q, typeEntry);
+            const fieldSchema = try Schema.getFieldSchema(typeEntry, header.edgePropId);
+            aggCtx.edgeTypeEntry = try Node.getEdgeType(ctx.db, fieldSchema);
+            nodeCnt = try Aggregates.iteratorEdge(&aggCtx, &it, true, filterBuf, q[i..], accumulatorProp, header.edgePropId);
+            try Aggregates.finalizeResults(&aggCtx, q[i..], accumulatorProp, 0);
+        },
+        .groupByEdge => {
+            var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
+            defer groupByHashMap.deinit();
+            const fieldSchema = try Schema.getFieldSchema(typeEntry, header.edgePropId);
+            aggCtx.edgeTypeEntry = try Node.getEdgeType(ctx.db, fieldSchema);
+            nodeCnt = @intCast(try GroupBy.iteratorEdge(&aggCtx, &groupByHashMap, &it, false, undefined, q[i..], header.edgePropId));
+            try GroupBy.finalizeGroupResults(&aggCtx, &groupByHashMap, q[i..]);
+        },
+        .groupByEdgeFilter => {
+            const filterBuf = try Filter.readFilter(ctx, &i, header.filterSize, q, typeEntry);
+            var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
+            defer groupByHashMap.deinit();
+            const fieldSchema = try Schema.getFieldSchema(typeEntry, header.edgePropId);
+            aggCtx.edgeTypeEntry = try Node.getEdgeType(ctx.db, fieldSchema);
+            nodeCnt = @intCast(try GroupBy.iteratorEdge(&aggCtx, &groupByHashMap, &it, true, filterBuf, q[i..], header.edgePropId));
             try GroupBy.finalizeGroupResults(&aggCtx, &groupByHashMap, q[i..]);
         },
         else => {},

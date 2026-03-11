@@ -1,12 +1,13 @@
 import { readdir } from 'node:fs/promises'
-import { BasedDb, DbClient, getDefaultHooks } from '../../src/index.js'
+import { DbClient, getDefaultHooks } from '../../src/index.js'
+import { DbServer } from '../../src/sdk.js'
 import test from '../shared/test.js'
 import { italy } from '../shared/examples.js'
 import { deepEqual, equal, notEqual } from '../shared/assert.js'
-import { countDirtyBlocks, hashType } from '../shared/index.js'
+import { countDirtyBlocks, hashType, testDbClient } from '../shared/index.js'
 
 await test('save simple range', async (t) => {
-  const db = new BasedDb({
+  const db = new DbServer({
     path: t.tmp,
   })
   await db.start({ clean: true })
@@ -24,9 +25,10 @@ await test('save simple range', async (t) => {
           story: { type: 'string' },
         },
       },
+      mute: {},
     },
   } as const
-  const client = await db.setSchema(schema)
+  const client = await testDbClient(db, schema)
 
   const N = 800_000
   const slen = 80
@@ -54,7 +56,7 @@ await test('save simple range', async (t) => {
   const save1_start = performance.now()
   await db.save()
   const save1_end = performance.now()
-  const firstHash = await hashType(db.server, 'user')
+  const firstHash = await hashType(db, 'user')
 
   client.update('user', 1, {
     age: 1337,
@@ -70,7 +72,7 @@ await test('save simple range', async (t) => {
   const save2_start = performance.now()
   await db.save()
   const save2_end = performance.now()
-  const secondHash = await hashType(db.server, 'user')
+  const secondHash = await hashType(db, 'user')
   await db.stop()
 
   //console.log(save2_end - save2_start, save1_end - save1_start)
@@ -78,23 +80,24 @@ await test('save simple range', async (t) => {
   notEqual(firstHash, secondHash)
 
   const ls = await readdir(t.tmp)
-  equal(ls.length, N / 100_000 + 2)
+  equal(ls.length, N / 100_000 + 3)
 
   deepEqual(ls, [
-    '1_0.sdb',
-    '1_1.sdb',
-    '1_2.sdb',
-    '1_3.sdb',
-    '1_4.sdb',
-    '1_5.sdb',
-    '1_6.sdb',
-    '1_7.sdb',
-    'common.sdb',
+    '1_common.sdb',
+    '2_0.sdb',
+    '2_1.sdb',
+    '2_2.sdb',
+    '2_3.sdb',
+    '2_4.sdb',
+    '2_5.sdb',
+    '2_6.sdb',
+    '2_7.sdb',
+    '2_common.sdb',
     'schema.bin',
   ])
 
   //const load_start = performance.now()
-  const db2 = new BasedDb({
+  const db2 = new DbServer({
     path: t.tmp,
   })
   await db2.start()
@@ -102,10 +105,10 @@ await test('save simple range', async (t) => {
   //const load_end = performance.now()
 
   const client2 = new DbClient<typeof schema>({
-    hooks: getDefaultHooks(db2.server),
+    hooks: getDefaultHooks(db2),
   })
 
-  const thirdHash = await hashType(db2.server, 'user')
+  const thirdHash = await hashType(db2, 'user')
   notEqual(firstHash, secondHash)
   equal(secondHash, thirdHash)
 
@@ -160,13 +163,13 @@ await test('save simple range', async (t) => {
 })
 
 await test('reference changes', async (t) => {
-  const db = new BasedDb({
+  const db = new DbServer({
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db.server))
+  t.after(() => t.backup(db))
 
-  const client = await db.setSchema({
+  const client = await testDbClient(db, {
     types: {
       user: {
         props: {
@@ -191,7 +194,7 @@ await test('reference changes', async (t) => {
   )
   await client.drain()
   equal(
-    await countDirtyBlocks(db.server),
+    await countDirtyBlocks(db),
     1,
     'creating new users creates a dirty range',
   )
@@ -202,13 +205,13 @@ await test('reference changes', async (t) => {
   })
   await client.drain()
   equal(
-    await countDirtyBlocks(db.server),
+    await countDirtyBlocks(db),
     2,
     'creating nodes in two types makes both dirty',
   )
 
   await db.save()
-  equal(await countDirtyBlocks(db.server), 0, 'saving clears dirt')
+  equal(await countDirtyBlocks(db), 0, 'saving clears dirt')
 
   const doc2 = client.create('doc', {
     title: 'The Slops of AI',
@@ -218,44 +221,44 @@ await test('reference changes', async (t) => {
   })
   await client.drain()
   equal(
-    await countDirtyBlocks(db.server),
+    await countDirtyBlocks(db),
     1,
     'creating docs makes the range dirty',
   )
   await db.save()
-  equal(await countDirtyBlocks(db.server), 0, 'saving clears dirt')
+  equal(await countDirtyBlocks(db), 0, 'saving clears dirt')
 
   // Link user -> doc
   client.update('user', users[1], { docs: [doc2] })
   await client.drain()
   equal(
-    await countDirtyBlocks(db.server),
+    await countDirtyBlocks(db),
     2,
     'Linking a user to doc makes both dirty',
   )
   await db.save()
-  equal(await countDirtyBlocks(db.server), 0, 'saving clears dirt')
+  equal(await countDirtyBlocks(db), 0, 'saving clears dirt')
 
   // Link doc -> user
   client.update('doc', doc3, { creator: users[2] })
   await client.drain()
   equal(
-    await countDirtyBlocks(db.server),
+    await countDirtyBlocks(db),
     2,
     'Linking a doc to user makes both dirty',
   )
   await db.save()
-  equal(await countDirtyBlocks(db.server), 0, 'saving clears dirt')
+  equal(await countDirtyBlocks(db), 0, 'saving clears dirt')
 })
 
 await test('ref block moves', async (t) => {
-  const db = new BasedDb({
+  const db = new DbServer({
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db.server))
+  t.after(() => t.backup(db))
 
-  const client = await db.setSchema({
+  const client = await testDbClient(db, {
     types: {
       a: {
         props: {
@@ -292,13 +295,13 @@ await test('ref block moves', async (t) => {
 })
 
 await test('ref removal', async (t) => {
-  const db = new BasedDb({
+  const db = new DbServer({
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db.server))
+  t.after(() => t.backup(db))
 
-  const client = await db.setSchema({
+  const client = await testDbClient(db, {
     types: {
       a: {
         props: {
@@ -328,13 +331,13 @@ await test('ref removal', async (t) => {
 })
 
 await test('refs removal with delete', async (t) => {
-  const db = new BasedDb({
+  const db = new DbServer({
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db.server))
+  t.after(() => t.backup(db))
 
-  const client = await db.setSchema({
+  const client = await testDbClient(db, {
     types: {
       a: {
         props: {
@@ -360,13 +363,13 @@ await test('refs removal with delete', async (t) => {
 })
 
 await test('large block gap', async (t) => {
-  const db = new BasedDb({
+  const db = new DbServer({
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db.server))
+  t.after(() => t.backup(db))
 
-  const client = await db.setSchema({
+  const client = await testDbClient(db, {
     types: {
       b: {
         blockCapacity: 10_000,

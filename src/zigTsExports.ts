@@ -3384,9 +3384,10 @@ export type AggHeader = {
   accumulatorSize: number
   hasGroupBy: boolean
   isSamplingSet: boolean
+  edgePropId: number
 }
 
-export const AggHeaderByteSize = 19
+export const AggHeaderByteSize = 20
 
 export const AggHeaderAlignOf = 16
 
@@ -3414,6 +3415,10 @@ export const writeAggHeader = (
   buf[offset] = 0
   buf[offset] |= (((header.hasGroupBy ? 1 : 0) >>> 0) & 1) << 0
   buf[offset] |= (((header.isSamplingSet ? 1 : 0) >>> 0) & 1) << 1
+  buf[offset] |= ((header.edgePropId >>> 0) & 63) << 2
+  offset += 1
+  buf[offset] = 0
+  buf[offset] |= ((header.edgePropId >>> 6) & 3) << 0
   buf[offset] |= ((0 >>> 0) & 63) << 2
   offset += 1
   return offset
@@ -3450,6 +3455,10 @@ export const writeAggHeaderProps = {
   isSamplingSet: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 18] |= (((value ? 1 : 0) >>> 0) & 1) << 1
   },
+  edgePropId: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 18] |= ((value >>> 0) & 63) << 2
+    buf[offset + 19] |= ((value >>> 6) & 3) << 0
+  },
 }
 
 export const readAggHeader = (
@@ -3467,6 +3476,7 @@ export const readAggHeader = (
     accumulatorSize: readUint16(buf, offset + 16),
     hasGroupBy: (((buf[offset + 18] >>> 0) & 1)) === 1,
     isSamplingSet: (((buf[offset + 18] >>> 1) & 1)) === 1,
+    edgePropId: (((buf[offset + 18] >>> 2) & 63) | (((buf[offset + 19] >>> 0) & 3) << 6)),
   }
   return value
 }
@@ -3482,6 +3492,7 @@ export const readAggHeaderProps = {
     accumulatorSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 16),
     hasGroupBy: (buf: Uint8Array, offset: number) => (((buf[offset + 18] >>> 0) & 1)) === 1,
     isSamplingSet: (buf: Uint8Array, offset: number) => (((buf[offset + 18] >>> 1) & 1)) === 1,
+    edgePropId: (buf: Uint8Array, offset: number) => (((buf[offset + 18] >>> 2) & 63) | (((buf[offset + 19] >>> 0) & 3) << 6)),
 }
 
 export const createAggHeader = (header: AggHeader): Uint8Array => {
@@ -3506,6 +3517,9 @@ export const pushAggHeader = (
   buf.pushUint8(0)
   buf.view[buf.length - 1] |= (((header.hasGroupBy ? 1 : 0) >>> 0) & 1) << 0
   buf.view[buf.length - 1] |= (((header.isSamplingSet ? 1 : 0) >>> 0) & 1) << 1
+  buf.view[buf.length - 1] |= ((header.edgePropId >>> 0) & 63) << 2
+  buf.pushUint8(0)
+  buf.view[buf.length - 1] |= ((header.edgePropId >>> 6) & 3) << 0
   buf.view[buf.length - 1] |= ((0 >>> 0) & 63) << 2
   return index
 }
@@ -4044,6 +4058,8 @@ export const FilterOpCompare = {
   nlike: 43,
   likeBatch: 44,
   nlikeBatch: 45,
+  selectId: 200,
+  selectAlias: 201,
   selectLargeRefs: 203,
   selectRef: 204,
   selectSmallRefs: 205,
@@ -4089,6 +4105,8 @@ export const FilterOpCompareInverse = {
   43: 'nlike',
   44: 'likeBatch',
   45: 'nlikeBatch',
+  200: 'selectId',
+  201: 'selectAlias',
   203: 'selectLargeRefs',
   204: 'selectRef',
   205: 'selectSmallRefs',
@@ -4134,6 +4152,8 @@ export const FilterOpCompareInverse = {
   nlike, 
   likeBatch, 
   nlikeBatch, 
+  selectId, 
+  selectAlias, 
   selectLargeRefs, 
   selectRef, 
   selectSmallRefs, 

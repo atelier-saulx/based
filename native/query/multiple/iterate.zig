@@ -30,8 +30,7 @@ pub fn node(
     var nodeCnt: u32 = 0;
     var filter: []u8 = undefined;
     if (It == t.QueryIteratorType.filter) {
-        filter = utils.sliceNext(header.filterSize, q, i);
-        try Filter.prepare(filter, ctx, typeEntry);
+        filter = try Filter.readFilter(ctx, i, header.filterSize, q, typeEntry);
     }
     const nestedQuery = q[i.* .. i.* + header.includeSize];
     while (offset > 0) {
@@ -80,8 +79,7 @@ pub fn edge(
         It == t.QueryIteratorType.edgeFilterAndFilterOnEdge or
         It == t.QueryIteratorType.edgeIncludeFilterAndFilterOnEdge)
     {
-        filter = utils.sliceNext(header.filterSize, q, i);
-        try Filter.prepare(filter, ctx, typeEntry);
+        filter = try Filter.readFilter(ctx, i, header.filterSize, q, typeEntry);
     }
 
     if (It == t.QueryIteratorType.edgeIncludeFilterOnEdge or
@@ -89,8 +87,7 @@ pub fn edge(
         It == t.QueryIteratorType.edgeFilterAndFilterOnEdge or
         It == t.QueryIteratorType.edgeIncludeFilterAndFilterOnEdge)
     {
-        edgeFilter = utils.sliceNext(header.edgeFilterSize, q, i);
-        try Filter.prepare(edgeFilter, ctx, typeEntry);
+        edgeFilter = try Filter.readFilter(ctx, i, header.edgeFilterSize, q, typeEntry);
     }
 
     const nestedQuery = q[i.* .. i.* + header.includeSize];

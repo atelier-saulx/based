@@ -44,6 +44,7 @@ export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
   })
 
   if (Array.isArray(ast.target)) {
+    // and numbers...
     props.op(ctx.query.data, QueryType.ids, headerIndex)
     const start = ctx.query.length
     for (const id of ast.target) {
@@ -68,8 +69,6 @@ export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
     headerIndex,
   )
 }
-
-// ADD IDS
 
 export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
   const schema = readSchema()

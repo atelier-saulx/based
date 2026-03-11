@@ -1,5 +1,5 @@
 import {
-  ReaderMeta,
+  ReadMeta,
   ReadProp,
   ReadSchema,
   ReadSchemaEnum,
@@ -12,8 +12,8 @@ import {
   PropTypeEnum,
   VectorBaseType,
 } from '../../zigTsExports.js'
-import { Ctx, Include, ReadCtx, ReadOpts } from './ast.js'
-import { getFallbacks, isLocalized } from './utils.js'
+import { ReadCtx, ReadOpts } from './ast.js'
+import { isLocalized } from './utils.js'
 
 export const readSchema = (type?: ReadSchemaEnum): ReadSchema => {
   return {
@@ -33,23 +33,25 @@ const emptyReadOpts: ReadOpts = {
   langs: [],
 }
 
-const getReaderType = (
-  p: PropDef,
-  ctx: ReadCtx,
-  opts: ReadOpts,
-): PropTypeEnum => {
+const getReadMeta = (opts: ReadOpts) => {
+  return opts.meta === 'only'
+    ? ReadMeta.only
+    : opts.meta
+      ? ReadMeta.combined
+      : undefined
+}
+
+const getReadType = (p: PropDef, opts: ReadOpts): PropTypeEnum => {
   if (opts.raw) {
     return PropType.binary
   }
-
   if (
     isLocalized(p.type) &&
     opts.code !== LangCode.none &&
-    opts.langs.length === 0
+    !opts.langs?.length
   ) {
     return p.type === PropType.jsonLocalized ? PropType.json : PropType.string
   }
-
   return p.type
 }
 
@@ -60,12 +62,12 @@ export const readPropDef = (
 ): ReadProp => {
   const readProp: ReadProp = {
     path: p.isEdge ? p.path.slice(1) : p.path,
-    type: getReaderType(p, ctx, opts),
+    type: getReadType(p, opts),
     readBy: 0,
   }
 
-  if (opts.meta) {
-    if (isLocalized(p.type) && readProp.type !== p.type) {
+  if (opts.meta && !isLocalized(readProp.type)) {
+    if (isLocalized(p.type)) {
       if (ctx.locale) {
         const fallBacks =
           ctx.LocaleFallBackOverwrite ?? ctx.localeFallbacks[ctx.locale]
@@ -73,25 +75,25 @@ export const readPropDef = (
         for (const lang of fallBacks) {
           readProp.locales[lang] = {
             name: LangCodeInverse[lang],
-            meta: false,
+            readBy: 0,
           }
         }
       }
     }
-    readProp.meta = opts.meta === 'only' ? ReaderMeta.only : ReaderMeta.combined
+    readProp.meta = getReadMeta(opts)
   }
 
   if ('vals' in p) {
     // @ts-ignore TODO make this nice
-    readerPropDef.enum = Array.from(p.vals.keys())
+    readProp.enum = Array.from(p.vals.keys())
   }
 
   if (p.type === PropType.vector || p.type === PropType.colVec) {
-    // TODO Do something so that this works without ignore
-    // @ts-ignore
-    readerPropDef.vectorBaseType = VectorBaseType[p.schema.baseType]
-    // @ts-ignore
-    readerPropDef.len = p.schema.size
+    const baseType = (readProp.vectorBaseType =
+      // @ts-ignore TODO make this nice
+      VectorBaseType[p.schema.baseType])
+    // @ts-ignore TODO make this nice
+    readProp.len = p.schema.size
   }
 
   if (
@@ -99,18 +101,20 @@ export const readPropDef = (
     readProp.type === PropType.stringLocalized
   ) {
     readProp.locales = {}
-    if (opts.langs.length > 0) {
-      for (const lang of opts.langs) {
+    if (opts.langs!.length > 0) {
+      for (const lang of opts.langs!) {
         readProp.locales[lang.code] = {
           name: LangCodeInverse[lang.code],
-          meta: false,
+          meta: getReadMeta(lang),
+          readBy: 0,
         }
       }
     } else {
       for (const lang in ctx.locales) {
         readProp.locales[lang] = {
           name: ctx.locales[lang],
-          meta: false,
+          meta: getReadMeta(opts),
+          readBy: 0,
         }
       }
     }

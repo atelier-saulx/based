@@ -1,4 +1,4 @@
-import { QueryAst } from '../../src/db-query/ast/ast.js'
+import { EdgeStrategy, QueryAst } from '../../src/db-query/ast/ast.js'
 import { astToQueryCtx } from '../../src/db-query/ast/toCtx.js'
 import { resultToObject } from '../../src/protocol/index.js'
 import { debugBuffer, type SchemaIn } from '../../src/sdk.js'
@@ -10,6 +10,7 @@ import test, { T } from '../shared/test.js'
 import { deflateSync } from 'zlib'
 import { fastPrng } from '../../src/utils/fastPrng.js'
 import { testDbClient, testDbServer } from '../shared/index.js'
+import { alias } from '../../src/schema/defs/props/alias.js'
 
 await test('include', async (t) => {
   const server = await testDbServer(t, { noBackup: true })
@@ -25,6 +26,7 @@ await test('include', async (t) => {
         y: 'uint32',
       },
       user: {
+        aliasId: 'alias',
         name: 'string',
         big: { type: 'string', compression: 'none' },
         localized: {
@@ -80,6 +82,7 @@ await test('include', async (t) => {
       en: 'mr jim EN',
       nl: 'derpi yuz NL',
     },
+    aliasId: 'jim',
     // enum: 'ok',
     // derp: 'aa',
     // big: 'mr jim',
@@ -97,6 +100,7 @@ await test('include', async (t) => {
     localized: {
       en: 'MR B ENG',
     },
+    aliasId: 'snurf',
     y: 15,
     x: true,
     big: 'mr giraffe man',
@@ -110,10 +114,12 @@ await test('include', async (t) => {
   let d = Date.now()
 
   const rand = fastPrng()
-
-  for (let i = 0; i < 1; i++) {
+  const ids: number[] = []
+  for (let i = 0; i < 1e6; i++) {
+    ids.push(i + 1)
     client.create('user', {
       big: syntheticData,
+      // aliasId: `flap${i}`,
       // name: `mr snurf ${i}`,
       // localized: {
       //   nl: 'giraffe NL',
@@ -126,10 +132,10 @@ await test('include', async (t) => {
       // cook: {
       //   cookie: 1234,
       // },
-      // friends: [
-      //   { id: a, $level: rand(0, 200) },
-      //   { id: b, $level: rand(0, 200) },
-      // ],
+      friends: [
+        { id: a, $level: rand(0, 200) },
+        { id: b, $level: rand(0, 200) },
+      ],
     })
   }
 
@@ -155,44 +161,71 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
+    target: ids,
     // locale: 'fi',
     range: { start: 0, end: 1e6 },
-    // filter: {
-    //   props: {
-    //     localized: {
-    //       // ops: [{ op: '=', val: 'derpi yuz NL' }],
-    //       props: {
-    //         nl: {
-    //           ops: [{ op: '=', val: 'derpi yuz NL' }],
-    //         },
-    //       },
-    //     },
-    //   },
-    // },
+    filter: {
+      props: {
+        y: {
+          ops: [{ op: '=', val: [1, 2, 15] }],
+        },
+      },
+    },
+    // sort: { prop: 'y' },
+    // order: 'desc',
     props: {
       y: { include: {} },
-      localized: {
-        include: {
-          // meta: true, // few empty
-          // maxChars: 6,
-        },
-        // props: {
-        //   nl: {
-        //     include: {
-        //       meta: 'only',
-        //       // meta
-        //     },
-        //   },
-        //   en: {
-        //     include: {
-        //       maxChars: 6,
-        //       meta: true,
-        //       // maxChars: 4,
-        //       // meta
-        //     },
-        //   },
-        // },
-      },
+      name: { include: {} },
+      // friends: {
+      //   include: {},
+      //   filter: {
+      //     edgeStrategy: EdgeStrategy.noEdge,
+      //     props: {
+      //       y: {
+      //         ops: [{ op: '=', val: [1, 2] }],
+      //       },
+      //       id: {
+      //         ops: [{ op: '=', val: [1, 2] }],
+      //       },
+      //       aliasId: {
+      //         ops: [{ op: '=', val: 'jim' }],
+      //       },
+      //       localized: {
+      //         // ops: [{ op: '=', val: 'derpi yuz NL' }],
+      //         props: {
+      //           nl: {
+      //             ops: [{ op: '=', val: 'derpi yuz NL' }],
+      //           },
+      //         },
+      //       },
+      //     },
+      //   },
+      // },
+      // localized: {
+      //   // include: {
+      //   //   meta: 'only', // few empty
+      //   //   // maxChars: 6,
+      //   // },
+      //   props: {
+      //     fi: {
+      //       include: {},
+      //     },
+      //     nl: {
+      //       include: {
+      //         meta: 'only',
+      //         // meta
+      //       },
+      //     },
+      //     en: {
+      //       include: {
+      //         maxChars: 6,
+      //         meta: true,
+      //         // maxChars: 4,
+      //         // meta
+      //       },
+      //     },
+      //   },
+      // },
     },
   }
 
@@ -200,9 +233,11 @@ await test('include', async (t) => {
 
   const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
 
-  console.log(deflateSync(ctx.query).byteLength)
+  console.log(deflateSync(ctx.query).byteLength, '/', ctx.query.byteLength)
 
-  debugBuffer(deflateSync(ctx.query).toString('base64'))
+  // debugBuffer(ctx.query)
+
+  // debugBuffer(deflateSync(ctx.query).toString('base64'))
 
   const queries: any = []
   for (let i = 0; i < 10; i++) {
@@ -213,7 +248,7 @@ await test('include', async (t) => {
 
   console.log('START PERF', Date.now() - d, 'ms')
 
-  await perf.skip(
+  await perf(
     async () => {
       const q: any = []
       for (let i = 0; i < 10; i++) {

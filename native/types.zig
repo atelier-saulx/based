@@ -779,6 +779,7 @@ pub const AggHeader = packed struct {
     accumulatorSize: u16,
     hasGroupBy: bool,
     isSamplingSet: bool,
+    edgePropId: u8,
     _padding: u6,
 };
 
@@ -883,7 +884,9 @@ pub const FilterOpCompare = enum(u8) {
     likeBatch = 44,
     nlikeBatch = 45,
     // ----------
-
+    selectId = 200,
+    selectAlias = 201,
+    // ----------
     selectLargeRefs = 203,
     selectRef = 204,
     selectSmallRefs = 205,

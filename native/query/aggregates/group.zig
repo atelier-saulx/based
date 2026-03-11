@@ -13,6 +13,7 @@ const resultHeaderOffset = @import("../../thread/results.zig").resultHeaderOffse
 const Aggregates = @import("aggregates.zig");
 const GroupByHashMap = @import("hashMap.zig").GroupByHashMap;
 const filter = @import("../filter/filter.zig").filter;
+const References = @import("../../selva/references.zig");
 
 pub fn iterator(
     aggCtx: *Aggregates.AggCtx,
@@ -51,6 +52,55 @@ pub fn iterator(
             aggregatePropsWithGroupBy(groupByHashMap, node, null, aggDefs, aggCtx, &tmpKeyBuf, &tmpKeyLen) catch {
                 return 0;
             };
+            count += 1;
+            if (count >= aggCtx.limit) break;
+        }
+    }
+
+    return count;
+}
+
+pub fn iteratorEdge(
+    aggCtx: *Aggregates.AggCtx,
+    groupByHashMap: *GroupByHashMap,
+    it: anytype,
+    hasFilter: bool,
+    filterBuf: []u8,
+    aggDefs: []u8,
+    edgePropId: u8,
+) !usize {
+    var count: u32 = 0;
+    aggCtx.hadAccumulated = false;
+
+    var tmpKeyBuf: [1024]u8 = undefined;
+    var tmpKeyLen: usize = 0;
+
+    if (@hasDecl(@TypeOf(it.*), "nextRef")) {
+        while (it.nextRef()) |ref| {
+            if (hasFilter) {
+                if (!try filter(ref.node, aggCtx.queryCtx, filterBuf)) {
+                    continue;
+                }
+            }
+            aggregatePropsWithGroupBy(groupByHashMap, ref.node, ref.edge, aggDefs, aggCtx, &tmpKeyBuf, &tmpKeyLen) catch {
+                return 0;
+            };
+            count += 1;
+            if (count >= aggCtx.limit) break;
+        }
+    } else {
+        while (it.next()) |node| {
+            if (hasFilter) {
+                if (!try filter(node, aggCtx.queryCtx, filterBuf)) {
+                    continue;
+                }
+            }
+            var refsIt = try References.iterator(false, true, aggCtx.queryCtx.db, node, edgePropId, aggCtx.typeEntry);
+            while (refsIt.nextRef()) |ref| {
+                aggregatePropsWithGroupBy(groupByHashMap, node, ref.edge, aggDefs, aggCtx, &tmpKeyBuf, &tmpKeyLen) catch {
+                    return 0;
+                };
+            }
             count += 1;
             if (count >= aggCtx.limit) break;
         }

@@ -1,48 +1,45 @@
-import { LangCodeEnum } from '../../zigTsExports.js'
-// import { emptyMeta } from './meta.js'
-import { Item, Meta, ReaderMeta, ReadProp } from './types.js'
+import { Item, Meta, ReadMeta, ReadProp } from './types.js'
 
-export const addLangProp = (
+export const addProp = (
   p: ReadProp,
   value: any,
   item: Item,
-  lang: number,
+  lang?: string,
+  meta = p.meta,
 ) => {
-  const path = p.path
-  let langs: { [lang: string]: any } | undefined
+  const path = lang ? [...p.path, lang] : p.path
   const len = path.length - 1
   let select: any = item
   for (let i = 0; i <= len; i++) {
     const field = path[i]
     if (i === len) {
-      if (!(field in select)) {
-        select[field] = langs = {}
-        for (const lang in p.locales) {
-          const str = p.locales[lang].name
-          langs[str] = ''
-        }
+      if (meta) {
+        select[field].value = value
       } else {
-        langs = select[field]
+        select[field] = value
       }
     } else {
       select = select[field] ?? (select[field] = {})
     }
   }
-  console.info({ x: p.locales![lang] })
-  langs![p.locales![lang].name] = value
 }
 
-export const addProp = (p: ReadProp, value: any, item: Item) => {
-  const path = p.path
+export const addMetaProp = (
+  p: ReadProp,
+  metaValue: Meta,
+  item: Item,
+  lang?: string,
+  meta = p.meta,
+) => {
+  const path = lang ? [...p.path, lang] : p.path
   const len = path.length - 1
   let select: any = item
   for (let i = 0; i <= len; i++) {
     const field = path[i]
     if (i === len) {
-      if (p.meta) {
-        select[field].value = value
-      } else {
-        select[field] = value
+      select[field] = metaValue
+      if (meta === ReadMeta.combined) {
+        metaValue.value = ''
       }
     } else {
       select = select[field] ?? (select[field] = {})

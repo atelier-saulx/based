@@ -1,11 +1,17 @@
 import { PropDef } from '../../../schema/defs/index.js'
-import { LangCodeEnum } from '../../../zigTsExports.js'
-import { FilterOpts, Operator } from '../ast.js'
+import {
+  FilterOpCompare,
+  LangCodeEnum,
+  PropType,
+} from '../../../zigTsExports.js'
+import { Ctx, FilterOpts, Operator } from '../ast.js'
+import { createCondition } from './condition.js'
 import { fixedComparison } from './fixed.js'
 import { isFixedLenString } from './operatorToEnum.js'
 import { variableComparison } from './variable.js'
 
 export const comparison = (
+  ctx: Ctx,
   prop: PropDef,
   op: Operator,
   val: any,
@@ -16,7 +22,35 @@ export const comparison = (
     val = [val]
   }
   if (prop.size > 0 && !isFixedLenString(prop)) {
+    if (prop.type === PropType.id) {
+      const { condition } = createCondition(
+        {
+          id: PropType.id,
+          size: 0,
+          start: 0,
+          type: PropType.id,
+        },
+        FilterOpCompare.selectId,
+      )
+      ctx.query.set(condition, ctx.query.length)
+    }
     return fixedComparison(prop, op, val, opts)
+  }
+
+  if (prop.type === PropType.alias) {
+    // do shit
+    if (prop.type === PropType.alias) {
+      const { condition } = createCondition(
+        {
+          id: prop.id,
+          size: 0,
+          start: 0,
+          type: prop.type,
+        },
+        FilterOpCompare.selectAlias,
+      )
+      ctx.query.set(condition, ctx.query.length)
+    }
   }
   return variableComparison(prop, op, val, lang, opts)
 }

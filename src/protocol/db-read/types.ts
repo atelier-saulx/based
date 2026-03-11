@@ -27,7 +27,7 @@ export enum ReadSchemaEnum {
   single = 3,
 }
 
-export enum ReaderMeta {
+export enum ReadMeta {
   only = 1,
   combined = 2,
 }
@@ -44,13 +44,15 @@ export type ReadLocales = { [langCode: string]: string }
 export type ReadProp = {
   path: string[]
   type: PropTypeEnum
-  meta?: ReaderMeta
+  meta?: ReadMeta
   enum?: any[]
   vectorBaseType?: VectorBaseTypeEnum
   len?: number
   readBy: number
   // need to encode meta
-  locales?: { [code: string]: { name: string; meta: ReaderMeta | false } }
+  locales?: {
+    [code: string]: { name: string; meta?: ReadMeta; readBy: number }
+  }
   cardinalityMode?: number
   cardinalityPrecision?: number
 }
