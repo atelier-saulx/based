@@ -177,6 +177,9 @@ await test('include', async (t) => {
         //   // maxChars: 6,
         // },
         props: {
+          fi: {
+            include: {},
+          },
           nl: {
             include: {
               meta: 'only',
