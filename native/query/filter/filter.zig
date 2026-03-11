@@ -115,8 +115,6 @@ pub inline fn filter(
                 v = Fields.getAliasByNode(typeEntry, node, c.fieldSchema.field) catch {
                     break :blk false;
                 };
-                // eq is different for alias
-                std.debug.print("Derp?? {s} \n", .{v});
                 break :blk true;
             },
             .selectId => blk: {
