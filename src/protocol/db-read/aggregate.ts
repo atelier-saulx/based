@@ -61,14 +61,48 @@ export const readAggregate = (
   const { groupBy, aggregates, totalResultsSize } = q.aggregate!
   const results = {}
 
-  if (groupBy) {
+  if (groupBy && groupBy.length > 0) {
     let cursor = offset
     while (cursor < len) {
-      const { key, bytesRead } = readGroupKey(result, cursor, groupBy)
-      cursor += bytesRead
-      results[key] = results[key] || {}
-      readAggValues(result, cursor, aggregates, results[key])
-      cursor += totalResultsSize
+      if (
+        result[cursor] === 0 &&
+        result[cursor + 1] === 0 &&
+        !result[cursor + 2]
+      ) {
+        // MV: empty key! len is always 0
+      }
+
+      if (groupBy.length === 1) {
+        const { key, bytesRead } = readGroupKey(result, cursor, groupBy[0])
+        cursor += bytesRead
+        results[key] = results[key] || {}
+        readAggValues(result, cursor, aggregates, results[key])
+        cursor += totalResultsSize
+        continue
+      }
+
+      const totalKeyLen = readUint16(result, cursor)
+      let innerCursor = cursor + 2
+      let currentResultObj = results
+
+      for (let i = 0; i < groupBy.length; i++) {
+        const { key, bytesRead } = readGroupKey(result, innerCursor, groupBy[i])
+        innerCursor += bytesRead
+        if (i < groupBy.length - 1) {
+          currentResultObj[key] = currentResultObj[key] || {}
+          currentResultObj = currentResultObj[key]
+        } else {
+          currentResultObj[key] = currentResultObj[key] || {}
+          readAggValues(
+            result,
+            cursor + 2 + totalKeyLen,
+            aggregates,
+            currentResultObj[key],
+          )
+        }
+      }
+
+      cursor += 2 + totalKeyLen + totalResultsSize
     }
   } else {
     readAggValues(result, offset, aggregates, results)
@@ -82,10 +116,6 @@ const readGroupKey = (
   offset: number,
   groupBy: ReaderGroupBy,
 ): { key: string | number; bytesRead: number } => {
-  if (result[offset] === 0) {
-    return { key: '$undefined', bytesRead: 0 }
-  }
-
   if (groupBy.typeIndex === PropType.enum) {
     const enumIndex = result[offset + 2] - 1
     return {
@@ -97,6 +127,10 @@ const readGroupKey = (
   const len = readUint16(result, offset)
   const contentOffset = offset + 2
 
+  if (len === 0) {
+    return { key: '$undefined', bytesRead: 2 }
+  }
+
   let key: string | number
 
   if (isNumberType(groupBy.typeIndex)) {
@@ -106,11 +140,8 @@ const readGroupKey = (
   } else if (groupBy.typeIndex === PropType.timestamp) {
     const tsValue = readInt64(result, contentOffset)
     if (groupBy.stepType) {
-      // MV: to check, it is a reread
       key = readNumber(result, contentOffset, PropType.int32)
-    }
-    // MV: to review
-    else {
+    } else {
       const { display, stepRange } = groupBy
       if (!display) {
         key = tsValue.toString()

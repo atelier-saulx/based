@@ -158,6 +158,7 @@ export const filter = (
         },
         FilterOpCompare.nextOrIndex,
       )
+      // can be better just pass
       writeUint64(
         condition,
         MAX_INDEX + Math.floor(Math.random() * 1e9),

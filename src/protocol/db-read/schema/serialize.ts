@@ -7,6 +7,7 @@ import {
   PROPERTY_BIT_MAP,
   DEF_BIT_MAP,
   GROUP_BY_BIT_MAP,
+  ReaderMeta,
 } from '../types.js'
 import {
   concatUint8Arr,
@@ -90,34 +91,34 @@ const serializeAggregates = (
     serializeAggregate(a, blocks)
   }
 
-  if (agg.groupBy) {
-    let options = 0
-    const opts = new Uint8Array([1, 0, agg.groupBy.typeIndex])
-    blocks.push(opts)
-    if ('stepRange' in agg.groupBy) {
-      options |= GROUP_BY_BIT_MAP.stepRange
-      const step = new Uint8Array(8)
-      writeDoubleLE(step, agg.groupBy.stepRange!, 0)
-      blocks.push(step)
+  if (agg.groupBy && agg.groupBy.length > 0) {
+    for (const g of agg.groupBy) {
+      let options = 0
+      const opts = new Uint8Array([1, 0, g.typeIndex])
+      blocks.push(opts)
+      if ('stepRange' in g) {
+        options |= GROUP_BY_BIT_MAP.stepRange
+        const step = new Uint8Array(8)
+        writeDoubleLE(step, g.stepRange!, 0)
+        blocks.push(step)
+      }
+      if ('stepType' in g) {
+        options |= GROUP_BY_BIT_MAP.stepType
+      }
+      if ('display' in g) {
+        options |= GROUP_BY_BIT_MAP.display
+        const displayString = JSON.stringify(g.display!.resolvedOptions())
+        const n = ENCODER.encode(displayString)
+        const sizeHeader = new Uint8Array(2)
+        writeUint16(sizeHeader, n.byteLength, 0)
+        blocks.push(sizeHeader, n)
+      }
+      if ('enum' in g) {
+        options |= GROUP_BY_BIT_MAP.enum
+        serializeEnum(g, blocks)
+      }
+      opts[0] = options
     }
-    if ('stepType' in agg.groupBy) {
-      options |= GROUP_BY_BIT_MAP.stepType
-    }
-    if ('display' in agg.groupBy) {
-      options |= GROUP_BY_BIT_MAP.display
-      const displayString = JSON.stringify(
-        agg.groupBy.display!.resolvedOptions(),
-      )
-      const n = ENCODER.encode(displayString)
-      const sizeHeader = new Uint8Array(2)
-      writeUint16(sizeHeader, n.byteLength, 0)
-      blocks.push(sizeHeader, n)
-    }
-    if ('enum' in agg.groupBy) {
-      options |= GROUP_BY_BIT_MAP.enum
-      serializeEnum(agg.groupBy, blocks)
-    }
-    opts[1] = options
   } else {
     blocks.push(new Uint8Array([0]))
   }
@@ -136,7 +137,7 @@ const serializeProp = (
     writeUint16(header, key, 0)
   }
 
-  header[keySize] = prop.typeIndex
+  header[keySize] = prop.type
   // 2 opions
   header[keySize + 2] = prop.path.length
   blocks.push(header)
@@ -149,8 +150,19 @@ const serializeProp = (
   let options = 0
   if ('meta' in prop) {
     //   1 or 2
-    options |= PROPERTY_BIT_MAP.meta
-    blocks.push(new Uint8Array([prop.meta!]))
+    // options |= PROPERTY_BIT_MAP.meta
+    // blocks.push(new Uint8Array([prop.meta!]))
+    // if (
+    //   prop.meta === ReaderMeta.specificLocales ||
+    //   prop.meta === ReaderMeta.specificLocalesOnly
+    // ) {
+    //   blocks.push(
+    //     new Uint8Array([
+    //       prop.metaSpecificLangCodes!.length,
+    //       ...prop.metaSpecificLangCodes!,
+    //     ]),
+    //   )
+    // }
   }
   if ('enum' in prop) {
     options |= PROPERTY_BIT_MAP.enum
@@ -179,9 +191,13 @@ const serializeProp = (
     const len = keys.length
     const locales = new Uint8Array(len * 4 + 1)
     let i = 1
+    // one for has meta one for without metas
     for (const key of keys) {
       writeUint16(locales, Number(key), i)
-      ENCODER.encodeInto(prop.locales![key], locales.subarray(i + 2, i + 4))
+      ENCODER.encodeInto(
+        prop.locales![key].name,
+        locales.subarray(i + 2, i + 4),
+      )
       i += 4
     }
     locales[0] = len

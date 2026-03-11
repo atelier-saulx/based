@@ -2468,93 +2468,6 @@ export const pushIncludeHeader = (
   return index
 }
 
-export type IncludeMetaHeader = {
-  op: IncludeOpEnum
-  prop: number
-  propType: PropTypeEnum
-}
-
-export const IncludeMetaHeaderByteSize = 3
-
-export const IncludeMetaHeaderAlignOf = 4
-
-export const packIncludeMetaHeader = (obj: IncludeMetaHeader): number => {
-  let val = 0
-  val |= (Number(obj.op) & 255) << 0
-  val |= (Number(obj.prop) & 255) << 8
-  val |= (Number(obj.propType) & 255) << 16
-  return val
-}
-
-export const unpackIncludeMetaHeader = (val: number): IncludeMetaHeader => {
-  return {
-    op: ((val >>> 0) & 255) as IncludeOpEnum,
-    prop: Number((val >>> 8) & 255),
-    propType: ((val >>> 16) & 255) as PropTypeEnum,
-  }
-}
-
-export const writeIncludeMetaHeader = (
-  buf: Uint8Array,
-  header: IncludeMetaHeader,
-  offset: number,
-): number => {
-  buf[offset] = Number(header.op)
-  offset += 1
-  buf[offset] = Number(header.prop)
-  offset += 1
-  buf[offset] = Number(header.propType)
-  offset += 1
-  return offset
-}
-
-export const writeIncludeMetaHeaderProps = {
-  op: (buf: Uint8Array, value: IncludeOpEnum, offset: number) => {
-    buf[offset] = Number(value)
-  },
-  prop: (buf: Uint8Array, value: number, offset: number) => {
-    buf[offset + 1] = Number(value)
-  },
-  propType: (buf: Uint8Array, value: PropTypeEnum, offset: number) => {
-    buf[offset + 2] = Number(value)
-  },
-}
-
-export const readIncludeMetaHeader = (
-  buf: Uint8Array,
-  offset: number,
-): IncludeMetaHeader => {
-  const value: IncludeMetaHeader = {
-    op: (buf[offset]) as IncludeOpEnum,
-    prop: buf[offset + 1],
-    propType: (buf[offset + 2]) as PropTypeEnum,
-  }
-  return value
-}
-
-export const readIncludeMetaHeaderProps = {
-    op: (buf: Uint8Array, offset: number) => (buf[offset]) as IncludeOpEnum,
-    prop: (buf: Uint8Array, offset: number) => buf[offset + 1],
-    propType: (buf: Uint8Array, offset: number) => (buf[offset + 2]) as PropTypeEnum,
-}
-
-export const createIncludeMetaHeader = (header: IncludeMetaHeader): Uint8Array => {
-  const buffer = new Uint8Array(IncludeMetaHeaderByteSize)
-  writeIncludeMetaHeader(buffer, header, 0)
-  return buffer
-}
-
-export const pushIncludeMetaHeader = (
-  buf: AutoSizedUint8Array,
-  header: IncludeMetaHeader,
-): number => {
-  const index = buf.length
-  buf.pushUint8(Number(header.op))
-  buf.pushUint8(Number(header.prop))
-  buf.pushUint8(Number(header.propType))
-  return index
-}
-
 export type IncludePartialHeader = {
   op: IncludeOpEnum
   prop: number
@@ -3983,6 +3896,7 @@ export type GroupByKeyProp = {
   stepRange: number
   timezone: number
   isEdge: boolean
+  hasNext: boolean
 }
 
 export const GroupByKeyPropByteSize = 12
@@ -4008,7 +3922,8 @@ export const writeGroupByKeyProp = (
   offset += 2
   buf[offset] = 0
   buf[offset] |= (((header.isEdge ? 1 : 0) >>> 0) & 1) << 0
-  buf[offset] |= ((0 >>> 0) & 127) << 1
+  buf[offset] |= (((header.hasNext ? 1 : 0) >>> 0) & 1) << 1
+  buf[offset] |= ((0 >>> 0) & 63) << 2
   offset += 1
   return offset
 }
@@ -4035,6 +3950,9 @@ export const writeGroupByKeyPropProps = {
   isEdge: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 11] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
+  hasNext: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 11] |= (((value ? 1 : 0) >>> 0) & 1) << 1
+  },
 }
 
 export const readGroupByKeyProp = (
@@ -4049,6 +3967,7 @@ export const readGroupByKeyProp = (
     stepRange: readUint32(buf, offset + 5),
     timezone: readUint16(buf, offset + 9),
     isEdge: (((buf[offset + 11] >>> 0) & 1)) === 1,
+    hasNext: (((buf[offset + 11] >>> 1) & 1)) === 1,
   }
   return value
 }
@@ -4061,6 +3980,7 @@ export const readGroupByKeyPropProps = {
     stepRange: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 5),
     timezone: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 9),
     isEdge: (buf: Uint8Array, offset: number) => (((buf[offset + 11] >>> 0) & 1)) === 1,
+    hasNext: (buf: Uint8Array, offset: number) => (((buf[offset + 11] >>> 1) & 1)) === 1,
 }
 
 export const createGroupByKeyProp = (header: GroupByKeyProp): Uint8Array => {
@@ -4082,7 +4002,8 @@ export const pushGroupByKeyProp = (
   buf.pushUint16(Number(header.timezone))
   buf.pushUint8(0)
   buf.view[buf.length - 1] |= (((header.isEdge ? 1 : 0) >>> 0) & 1) << 0
-  buf.view[buf.length - 1] |= ((0 >>> 0) & 127) << 1
+  buf.view[buf.length - 1] |= (((header.hasNext ? 1 : 0) >>> 0) & 1) << 1
+  buf.view[buf.length - 1] |= ((0 >>> 0) & 63) << 2
   return index
 }
 

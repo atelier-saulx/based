@@ -10,7 +10,9 @@ const errors = @import("../errors.zig");
 const read = utils.read;
 const DbCtx = @import("../db/ctx.zig").DbCtx;
 const Iterator = @import("iterator.zig");
+const Decay = @import("decay.zig");
 pub const SortIndexMeta = @import("common.zig").SortIndexMeta;
+const SortUseCounter = @import("common.zig").SortUseCounter;
 
 pub const iterator = Iterator.iterator;
 pub const fromIterator = Iterator.fromIterator;
@@ -121,6 +123,7 @@ fn createSortIndexMeta(
         .langCode = header.lang,
         .field = header.prop,
         .isCreated = false,
+        .decay = Decay.init(),
     };
 
     return s;
@@ -131,7 +134,6 @@ pub fn getOrCreateFromCtx(
     typeId: t.TypeId,
     sortHeader: *const t.SortHeader,
 ) !*SortIndexMeta {
-    var sortIndex: ?*SortIndexMeta = undefined;
     var typeIndexes: ?*TypeIndex = dbCtx.sortIndexes.get(typeId);
     if (typeIndexes == null) {
         typeIndexes = jemalloc.create(TypeIndex);
@@ -143,18 +145,20 @@ pub fn getOrCreateFromCtx(
         try dbCtx.sortIndexes.put(typeId, typeIndexes.?);
     }
     const tI: *TypeIndex = typeIndexes.?;
-    sortIndex = getSortIndex(typeIndexes, sortHeader.prop, sortHeader.start, sortHeader.lang);
-    if (sortIndex == null) {
-        sortIndex = try createSortIndexMeta(sortHeader, 0, false);
+    if (getSortIndex(typeIndexes, sortHeader.prop, sortHeader.start, sortHeader.lang)) |sortIndex| {
+        return sortIndex;
+    } else {
+        const sortIndex = try createSortIndexMeta(sortHeader, 0, false);
         if (sortHeader.prop == 0) {
-            try tI.main.put(sortHeader.start, sortIndex.?);
+            try tI.main.put(sortHeader.start, sortIndex);
         } else if (sortHeader.propType == t.PropType.stringLocalized) {
-            try tI.text.put(getTextKey(sortHeader.prop, sortHeader.lang), sortIndex.?);
+            try tI.text.put(getTextKey(sortHeader.prop, sortHeader.lang), sortIndex);
         } else {
-            try tI.field.put(sortHeader.prop, sortIndex.?);
+            try tI.field.put(sortHeader.prop, sortIndex);
         }
+
+        return sortIndex;
     }
-    return sortIndex.?;
 }
 
 pub fn destroySortIndex(
@@ -183,17 +187,24 @@ pub fn getSortIndex(
     start: u16,
     lang: t.LangCode,
 ) ?*SortIndexMeta {
+    var sortIndex: ?*SortIndexMeta = undefined;
     if (typeSortIndexes == null) {
         return null;
     }
     const tI = typeSortIndexes.?;
     if (lang != t.LangCode.none) {
-        return tI.text.get(getTextKey(field, lang));
+        sortIndex = tI.text.get(getTextKey(field, lang));
     } else if (field == 0) {
-        return tI.main.get(start);
+        sortIndex = tI.main.get(start);
     } else {
-        return tI.field.get(field);
+        sortIndex = tI.field.get(field);
     }
+
+    if (sortIndex) |index| {
+        _ = index.decay.useCounter.fetchAdd(1, std.builtin.AtomicOrder.monotonic);
+    }
+
+    return sortIndex;
 }
 
 pub fn getTypeSortIndexes(

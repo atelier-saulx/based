@@ -17,7 +17,7 @@ pub const c = @cImport({
 });
 
 fn slicify(comptime T: type, ptr: *anyopaque, n: usize) []T {
-    const p: [*]T = @as([*]T, @alignCast(@ptrCast(ptr)));
+    const p: [*]T = @as([*]T, @ptrCast(@alignCast(ptr)));
     return p[0..n];
 }
 
@@ -49,7 +49,7 @@ pub fn create(comptime T: type) *T {
         const ptr = comptime std.mem.alignBackward(usize, std.math.maxInt(usize), @alignOf(T));
         return @ptrFromInt(ptr);
     }
-    const ptr: *T = @alignCast(@ptrCast(c.selva_aligned_alloc(@alignOf(T), @sizeOf(T)).?));
+    const ptr: *T = @ptrCast(@alignCast(c.selva_aligned_alloc(@alignOf(T), @sizeOf(T)).?));
     valgrindMalloc(ptr, @sizeOf(T));
     return ptr;
 }
@@ -60,7 +60,6 @@ pub fn alloc(comptime T: type, n: usize) []T {
     if (config.enable_debug) {
         const buf = slicify(u8, ptr, n * @sizeOf(T));
         valgrindCalloc(buf.ptr, buf.len);
-
     }
 
     return slicify(T, ptr, n);
@@ -120,8 +119,7 @@ pub fn free(ptr: anytype) void {
             }
             return;
         },
-        else => {
-        }
+        else => {},
     }
     const info = @typeInfo(@TypeOf(ptr)).pointer;
     if (info.size == .one) {

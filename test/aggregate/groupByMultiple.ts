@@ -145,8 +145,7 @@ await test('multiple group by', async (t) => {
   const r4 = await db
     .query('customer')
     .avg('age')
-    //@ts-ignore
-    .groupBy('region', 'gender') // same effect of  .groupBy('region').groupBy('gender')
+    .groupBy('region', 'gender')
     .get()
 
   console.dir(r4, { depth: null })
@@ -157,7 +156,7 @@ await test('multiple group by', async (t) => {
     {
       central: {
         //@ts-ignore
-        // female: { age: { avg: 0 } }, // no data, no key
+        female: { age: { avg: 8 } },
         male: { age: { avg: 9 } },
       },
       south: {

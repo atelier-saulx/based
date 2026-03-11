@@ -17,7 +17,7 @@ await test('query db', async (t) => {
             street: 'string',
           },
         },
-        story: 'text',
+        story: { type: 'string', localized: true },
         friend: {
           ref: 'user',
           prop: 'friend',
@@ -40,7 +40,7 @@ await test('query db', async (t) => {
   const john = db.create('user', {
     name: 'john',
     isNice: false,
-    age: 21,
+    age: 10,
     address: {
       street: 'Cool street',
     },

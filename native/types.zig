@@ -677,12 +677,6 @@ pub const IncludeHeader = packed struct {
     propType: PropType,
 };
 
-pub const IncludeMetaHeader = packed struct {
-    op: IncludeOp,
-    prop: u8,
-    propType: PropType,
-};
-
 pub const IncludePartialHeader = packed struct {
     op: IncludeOp,
     prop: u8,
@@ -829,7 +823,8 @@ pub const GroupByKeyProp = packed struct {
     stepRange: u32,
     timezone: i16,
     isEdge: bool,
-    _padding: u7,
+    hasNext: bool,
+    _padding: u6,
 };
 
 // pub const AggGroupByKey = packed struct {

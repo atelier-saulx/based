@@ -1,6 +1,9 @@
 import type { SchemaHooks } from '../../schema/index.js'
-import type { PropTypeEnum, VectorBaseTypeEnum } from '../../zigTsExports.js'
-import type { TypedArray } from '../../schema/index.js'
+import type {
+  LangCodeEnum,
+  PropTypeEnum,
+  VectorBaseTypeEnum,
+} from '../../zigTsExports.js'
 
 export type Item = {
   id: number
@@ -27,8 +30,6 @@ export enum ReaderSchemaEnum {
 export enum ReaderMeta {
   only = 1,
   combined = 2,
-  onlyFallback = 3,
-  combinedFallback = 4,
 }
 
 export type ReadInstruction = (
@@ -42,20 +43,21 @@ export type ReaderLocales = { [langCode: string]: string }
 
 export type ReaderPropDef = {
   path: string[]
-  typeIndex: PropTypeEnum
+  type: PropTypeEnum
   meta?: ReaderMeta
   enum?: any[]
   vectorBaseType?: VectorBaseTypeEnum
   len?: number
   readBy: number
-  locales?: { [langCode: string]: string }
+  // need to encode meta
+  locales?: { [code: string]: { name: string; meta: ReaderMeta | false } }
   cardinalityMode?: number
   cardinalityPrecision?: number
 }
 
 export type ReaderAggregateSchema = {
   aggregates: ReaderAggregates[]
-  groupBy?: ReaderGroupBy
+  groupBy?: ReaderGroupBy[]
   totalResultsSize: number
 }
 export type ReaderAggregates = {
@@ -98,6 +100,7 @@ export const PROPERTY_BIT_MAP = {
   vectorBaseType: 1 << 2,
   len: 1 << 3,
   locales: 1 << 4,
+  localesWithMeta: 1 << 5,
 }
 
 export const DEF_BIT_MAP = {

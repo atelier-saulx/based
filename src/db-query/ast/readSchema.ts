@@ -1,19 +1,19 @@
 import {
-  ReaderLocales,
+  ReaderMeta,
   ReaderPropDef,
   ReaderSchema,
   ReaderSchemaEnum,
 } from '../../protocol/index.js'
-import { SchemaOut } from '../../schema/index.js'
 import { PropDef } from '../../schema/defs/index.js'
 import {
   LangCode,
-  LangCodeEnum,
   LangCodeInverse,
   PropType,
+  PropTypeEnum,
   VectorBaseType,
 } from '../../zigTsExports.js'
-import { Include } from './ast.js'
+import { Ctx, Include, ReadCtx, ReadOpts } from './ast.js'
+import { getFallbacks, isLocalized } from './utils.js'
 
 export const readSchema = (type?: ReaderSchemaEnum): ReaderSchema => {
   return {
@@ -26,37 +26,54 @@ export const readSchema = (type?: ReaderSchemaEnum): ReaderSchema => {
   }
 }
 
-const isRaw = (include?: Include[]): boolean => {
-  return (
-    include !== undefined && include.length === 1 && include[0].raw === true
-  )
+const emptyReadOpts: ReadOpts = {
+  raw: false,
+  meta: false,
+  code: LangCode.none,
+  langs: [],
 }
 
-// add CTX
+const getReaderType = (
+  p: PropDef,
+  ctx: ReadCtx,
+  opts: ReadOpts,
+): PropTypeEnum => {
+  if (opts.raw) {
+    return PropType.binary
+  }
+
+  if (
+    isLocalized(p) &&
+    opts.code !== LangCode.none &&
+    opts.langs.length === 0
+  ) {
+    return p.type === PropType.jsonLocalized ? PropType.json : PropType.string
+  }
+
+  return p.type
+}
+
 export const readPropDef = (
   p: PropDef,
-  defaultLocale: LangCodeEnum,
-  locales: ReaderLocales, // add in ctx
-  include: Include[],
+  ctx: ReadCtx,
+  opts: ReadOpts = emptyReadOpts,
 ): ReaderPropDef => {
   const readerPropDef: ReaderPropDef = {
     path: p.isEdge ? p.path.slice(1) : p.path,
-    typeIndex: isRaw(include) ? PropType.binary : p.type,
+    type: getReaderType(p, ctx, opts),
     readBy: 0,
   }
 
-  // if (opts?.meta) {
-  //   if (opts?.codes?.size === 1 && opts.codes.has(opts.localeFromDef!)) {
-  //  > this means get .en without the object
-  //     readerPropDef.meta =
-  //       opts?.meta === 'only'
-  //         ? ReaderMeta.onlyFallback
-  //         : ReaderMeta.combinedFallback
-  //   } else {
-  //     readerPropDef.meta =
-  //       opts?.meta === 'only' ? ReaderMeta.only : ReaderMeta.combined
-  //   }
-  // }
+  if (opts.meta) {
+    if (isLocalized(p)) {
+      // opts.code !== LangCode.none &&
+      // opts.langs.length === 0
+      // add fallback
+    } else {
+      readerPropDef.meta =
+        opts.meta === 'only' ? ReaderMeta.only : ReaderMeta.combined
+    }
+  }
 
   if ('vals' in p) {
     // @ts-ignore TODO make this nice
@@ -70,54 +87,34 @@ export const readPropDef = (
     // @ts-ignore
     readerPropDef.len = p.schema.size
   }
+
   // if (p.type === PropType.cardinality) {
   //   readerPropDef.cardinalityMode = p.cardinalityMode
   //   readerPropDef.cardinalityPrecision = p.cardinalityPrecision
   // }
 
   if (
-    p.type === PropType.stringLocalized ||
-    p.type === PropType.jsonLocalized
+    readerPropDef.type === PropType.jsonLocalized ||
+    readerPropDef.type === PropType.stringLocalized
   ) {
-    for (const inc of include) {
-      if (inc.langCode) {
-        if (!readerPropDef.locales) {
-          readerPropDef.locales = {}
+    readerPropDef.locales = {}
+    if (opts.langs.length > 0) {
+      for (const lang of opts.langs) {
+        readerPropDef.locales[lang.code] = {
+          name: LangCodeInverse[lang.code],
+          meta: false,
         }
-        readerPropDef.locales[inc.langCode] = LangCodeInverse[inc.langCode]
+      }
+    } else {
+      // if meta put in there
+      for (const lang in ctx.locales) {
+        readerPropDef.locales[lang] = {
+          name: ctx.locales[lang],
+          meta: false,
+        }
       }
     }
-
-    if (!defaultLocale && !readerPropDef.locales) {
-      readerPropDef.locales = locales
-    }
-
-    // if (p.type === PropType.stringLocalized && opts?.codes) {
-    //   readerPropDef.locales = locales
-    //   if (opts.codes.has(0)) {
-    //     readerPropDef.locales = locales
-    //   } else {
-    //     if (opts.codes.size === 1 && opts.codes.has(opts.localeFromDef!)) {
-    //       if (readerPropDef.meta) {
-    //         readerPropDef.locales = {}
-    //         for (const code of opts.codes) {
-    //           readerPropDef.locales[code] = LangCodeInverse[code]
-    //         }
-    //         if (opts.fallBacks) {
-    //           for (const code of opts.fallBacks) {
-    //             readerPropDef.locales[code] = LangCodeInverse[code]
-    //           }
-    //         }
-    //       }
-    //       // dont add locales - interprets it as a normal prop
-    //     } else {
-    //       readerPropDef.locales = {}
-    //       for (const code of opts.codes) {
-    //         readerPropDef.locales[code] = LangCodeInverse[code]
-    //       }
-    //     }
-    //   }
-    // }
   }
+
   return readerPropDef
 }

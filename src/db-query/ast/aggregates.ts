@@ -284,49 +284,64 @@ const pushGroupBy = (
 ): { hasGroupBy: boolean; isEdge: boolean } => {
   if (!ast.groupBy) return { hasGroupBy: false, isEdge: false }
 
-  const { prop: propName, step, timeZone, display } = ast.groupBy
-  const { propDef, isEdge } = resolveProp(typeDef, propName, asReference)
+  const groupByArray: any[] = Array.isArray(ast.groupBy)
+    ? ast.groupBy
+    : [ast.groupBy]
+  if (groupByArray.length === 0) return { hasGroupBy: false, isEdge: false }
 
-  if (!propDef) {
-    throw new Error(`Group By property '${propName}' not found in AST.`)
-  }
+  let anyEdge = false
+  const groupByInfos: any[] = []
 
-  const { stepType, stepRange } = step
-    ? parseStep(step)
-    : { stepType: 0, stepRange: 0 }
+  for (let i = 0; i < groupByArray.length; i++) {
+    const { prop: propName, step, timeZone, display } = groupByArray[i]
+    const { propDef, isEdge } = resolveProp(typeDef, propName, asReference)
 
-  const timeZoneOffset = timeZone ? getTimeZoneOffsetInMinutes(timeZone) : 0
+    if (!propDef) {
+      throw new Error(`Group By property '${propName}' not found in AST.`)
+    }
 
-  const buffer = createGroupByKeyProp({
-    propId: propDef.id,
-    propType: propDef.type || 0,
-    propDefStart: propDef.start || 0,
-    stepType,
-    stepRange,
-    timezone: timeZoneOffset,
-    isEdge,
-  })
+    if (isEdge) anyEdge = true
 
-  let enumProxy
-  if (propDef.type === PropType.enum) {
-    // @ts-ignore
-    enumProxy = Object.values(propDef.enum)
-  }
+    const { stepType, stepRange } = step
+      ? parseStep(step)
+      : { stepType: 0, stepRange: 0 }
 
-  ctx.query.data.set(buffer, ctx.query.length)
-  ctx.query.length += GroupByKeyPropByteSize
+    const timeZoneOffset = timeZone ? getTimeZoneOffsetInMinutes(timeZone) : 0
 
-  if (ctx.readSchema.aggregate) {
-    ctx.readSchema.aggregate.groupBy = {
+    const buffer = createGroupByKeyProp({
+      propId: propDef.id,
+      propType: propDef.type || 0,
+      propDefStart: propDef.start || 0,
+      stepType,
+      stepRange,
+      timezone: timeZoneOffset,
+      isEdge,
+      hasNext: i < ast.groupBy.length - 1,
+    })
+
+    let enumProxy
+    if (propDef.type === PropType.enum) {
+      // @ts-ignore
+      enumProxy = Object.values(propDef.enum)
+    }
+
+    ctx.query.data.set(buffer, ctx.query.length)
+    ctx.query.length += GroupByKeyPropByteSize
+
+    groupByInfos.push({
       typeIndex: propDef.type,
       stepRange,
       ...(stepType !== 0 && { stepType: IntervalInverse[stepType] }),
       ...(display !== undefined && { display }),
       ...(enumProxy !== undefined && { enum: enumProxy }),
-    }
+    })
   }
 
-  return { hasGroupBy: true, isEdge }
+  if (ctx.readSchema.aggregate) {
+    ctx.readSchema.aggregate.groupBy = groupByInfos
+  }
+
+  return { hasGroupBy: true, isEdge: anyEdge }
 }
 
 type Step = { stepType: number; stepRange: number }

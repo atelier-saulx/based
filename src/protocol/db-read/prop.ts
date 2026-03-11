@@ -1,5 +1,5 @@
 import { readUint32, readUtf8 } from '../../utils/index.js'
-import { Item, ReaderPropDef, ReaderSchema } from './types.js'
+import { Item, ReaderMeta, ReaderPropDef, ReaderSchema } from './types.js'
 import { addProp, addLangProp } from './addProps.js'
 import { readString } from './string.js'
 import { readVector } from './vector.js'
@@ -13,16 +13,16 @@ const readStringProp = (
   size: number,
 ) => {
   if (
-    prop.typeIndex === PropType.stringLocalized ||
-    prop.typeIndex === PropType.string ||
-    prop.typeIndex === PropType.alias
+    prop.type === PropType.stringLocalized ||
+    prop.type === PropType.string ||
+    prop.type === PropType.alias
   ) {
     return readString(buf, offset, size, true)
   }
-  if (prop.typeIndex === PropType.json) {
+  if (prop.type === PropType.json || prop.type === PropType.jsonLocalized) {
     return global.JSON.parse(readString(buf, offset, size, true))
   }
-  if (prop.typeIndex === PropType.binary) {
+  if (prop.type === PropType.binary) {
     return buf.subarray(offset + 2, size + offset)
   }
 }
@@ -36,40 +36,43 @@ export const readProp = (
 ) => {
   const prop = q.props[instruction]
   prop.readBy = q.readId
-  if (prop.typeIndex === PropType.cardinality) {
+  if (prop.type === PropType.cardinality) {
     const size = readUint32(result, i)
     addProp(prop, readUint32(result, i + 4), item)
     i += size + 4
-  } else if (prop.typeIndex === PropType.json) {
+  } else if (prop.type === PropType.json) {
     const size = readUint32(result, i)
     addProp(prop, readStringProp(prop, result, i + 4, size), item)
     i += size + 4
-  } else if (prop.typeIndex === PropType.binary) {
+  } else if (prop.type === PropType.binary) {
     const size = readUint32(result, i)
     addProp(prop, readStringProp(prop, result, i + 4, size), item)
     i += size + 4
-  } else if (prop.typeIndex === PropType.string) {
+  } else if (prop.type === PropType.string) {
     const size = readUint32(result, i)
     addProp(prop, readStringProp(prop, result, i + 4, size), item)
     i += size + 4
-  } else if (prop.typeIndex == PropType.stringLocalized) {
+  } else if (
+    prop.type == PropType.stringLocalized ||
+    prop.type === PropType.jsonLocalized
+  ) {
     const size = readUint32(result, i)
     if (size === 0) {
       // do nothing
     } else {
-      if (!prop.locales || prop.meta! > 2) {
+      if (!prop.locales) {
         addProp(prop, readString(result, i + 4, size, true), item)
       } else {
         addLangProp(
           prop,
-          readString(result, i + 4, size, true),
+          readStringProp(prop, result, i + 4, size),
           item,
           result[i + 4],
         )
       }
     }
     i += size + 4
-  } else if (prop.typeIndex === PropType.alias) {
+  } else if (prop.type === PropType.alias) {
     const size = readUint32(result, i)
     i += 4
     if (size === 0) {
@@ -79,10 +82,7 @@ export const readProp = (
       i += size
       addProp(prop, string, item)
     }
-  } else if (
-    prop.typeIndex === PropType.vector ||
-    prop.typeIndex === PropType.colVec
-  ) {
+  } else if (prop.type === PropType.vector || prop.type === PropType.colVec) {
     const vecSize = prop.len! * VECTOR_BASE_TYPE_SIZE_MAP[prop.vectorBaseType!]
     const tmp = result.slice(i, i + vecSize) // maybe align?
     addProp(prop, readVector(prop, tmp), item)
