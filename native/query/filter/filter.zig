@@ -92,11 +92,12 @@ pub fn readFilter(
     q: []u8,
     typeEntry: Node.Type,
 ) ![]u8 {
-    const needPrep = utils.read(u32, q, i.*) != ctx.thread.runId;
+    const offset = i.*;
+    const needPrep = utils.read(u32, q, offset) != ctx.thread.runId;
     i.* += 4;
     const filterBuf = utils.sliceNext(filterSize - 4, q, i);
     if (needPrep) {
-        utils.write(q, ctx.thread.runId, i.*);
+        utils.write(q, ctx.thread.runId, offset);
         try prepare(filterBuf, ctx, typeEntry);
     }
     return filterBuf;

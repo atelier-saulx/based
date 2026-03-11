@@ -56,11 +56,14 @@ pub fn ids(
                 // .default,
                 // undefined,
             );
+            // std.debug.print(" FILTER SORT \n", .{});
             nodeCnt = try Iterate.node(.filter, ctx, q, &itSort, &header, typeEntry, &i);
             itSort.deinit();
             // make filtered iterator
         },
         .descFilterSort => {
+            // std.debug.print(" FILTER SORT DESC \n", .{});
+
             const sortHeader = utils.readNext(t.SortHeader, q, &i);
             var itSort = try Sort.fromIterator(
                 true,

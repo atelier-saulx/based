@@ -114,8 +114,9 @@ await test('include', async (t) => {
   let d = Date.now()
 
   const rand = fastPrng()
-
+  const ids: number[] = []
   for (let i = 0; i < 1e6; i++) {
+    ids.push(i + 1)
     client.create('user', {
       big: syntheticData,
       // aliasId: `flap${i}`,
@@ -160,43 +161,46 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
-    target: [1, 2],
+    target: ids,
     // locale: 'fi',
     range: { start: 0, end: 1e6 },
     filter: {
       props: {
         y: {
-          ops: [{ op: '=', val: [1, 2] }],
+          ops: [{ op: '=', val: [1, 2, 15] }],
         },
       },
     },
+    // sort: { prop: 'y' },
+    // order: 'desc',
     props: {
       y: { include: {} },
-      friends: {
-        include: {},
-        filter: {
-          edgeStrategy: EdgeStrategy.noEdge,
-          props: {
-            y: {
-              ops: [{ op: '=', val: [1, 2] }],
-            },
-            id: {
-              ops: [{ op: '=', val: [1, 2] }],
-            },
-            aliasId: {
-              ops: [{ op: '=', val: 'jim' }],
-            },
-            localized: {
-              // ops: [{ op: '=', val: 'derpi yuz NL' }],
-              props: {
-                nl: {
-                  ops: [{ op: '=', val: 'derpi yuz NL' }],
-                },
-              },
-            },
-          },
-        },
-      },
+      name: { include: {} },
+      // friends: {
+      //   include: {},
+      //   filter: {
+      //     edgeStrategy: EdgeStrategy.noEdge,
+      //     props: {
+      //       y: {
+      //         ops: [{ op: '=', val: [1, 2] }],
+      //       },
+      //       id: {
+      //         ops: [{ op: '=', val: [1, 2] }],
+      //       },
+      //       aliasId: {
+      //         ops: [{ op: '=', val: 'jim' }],
+      //       },
+      //       localized: {
+      //         // ops: [{ op: '=', val: 'derpi yuz NL' }],
+      //         props: {
+      //           nl: {
+      //             ops: [{ op: '=', val: 'derpi yuz NL' }],
+      //           },
+      //         },
+      //       },
+      //     },
+      //   },
+      // },
       // localized: {
       //   // include: {
       //   //   meta: 'only', // few empty
@@ -229,9 +233,9 @@ await test('include', async (t) => {
 
   const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
 
-  console.log(deflateSync(ctx.query).byteLength)
+  console.log(deflateSync(ctx.query).byteLength, '/', ctx.query.byteLength)
 
-  debugBuffer(ctx.query)
+  // debugBuffer(ctx.query)
 
   // debugBuffer(deflateSync(ctx.query).toString('base64'))
 
@@ -267,7 +271,7 @@ await test('include', async (t) => {
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
-  console.dir(obj[obj.length - 1], { depth: 10 })
+  console.dir(obj, { depth: 10 })
 
   await wait(1000)
 
