@@ -15,7 +15,7 @@ const COND_ALIGN_BYTES = @alignOf(t.FilterCondition);
 pub fn readFilter(
     ctx: *Query.QueryCtx,
     i: *usize,
-    filterSize: u16, // might need to make this u32
+    filterSize: u16, // Might need to make this u32
     q: []u8,
     typeEntry: Node.Type,
 ) ![]u8 {
@@ -27,7 +27,7 @@ pub fn readFilter(
     return filterBuf;
 }
 
-pub fn needsPrepare(ctx: *Query.QueryCtx, q: []u8, i: usize) bool {
+inline fn needsPrepare(ctx: *Query.QueryCtx, q: []u8, i: usize) bool {
     const needs = utils.read(u32, q, i) != ctx.thread.runId;
     if (needs) {
         utils.write(q, ctx.thread.runId, i);
@@ -36,7 +36,7 @@ pub fn needsPrepare(ctx: *Query.QueryCtx, q: []u8, i: usize) bool {
     return false;
 }
 
-pub fn prepare(
+fn prepare(
     q: []u8,
     ctx: *Query.QueryCtx,
     typeEntry: Node.Type,
