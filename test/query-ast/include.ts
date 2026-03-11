@@ -1,4 +1,4 @@
-import { QueryAst } from '../../src/db-query/ast/ast.js'
+import { EdgeStrategy, QueryAst } from '../../src/db-query/ast/ast.js'
 import { astToQueryCtx } from '../../src/db-query/ast/toCtx.js'
 import { resultToObject } from '../../src/protocol/index.js'
 import { debugBuffer, type SchemaIn } from '../../src/sdk.js'
@@ -115,10 +115,10 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 1e4; i++) {
+  for (let i = 0; i < 1e6; i++) {
     client.create('user', {
       big: syntheticData,
-      aliasId: `flap${i}`,
+      // aliasId: `flap${i}`,
       // name: `mr snurf ${i}`,
       // localized: {
       //   nl: 'giraffe NL',
@@ -163,29 +163,40 @@ await test('include', async (t) => {
     // target: [1, 2],
     // locale: 'fi',
     range: { start: 0, end: 1e6 },
-    filter: {
-      props: {
-        y: {
-          ops: [{ op: '=', val: [1, 2] }],
-        },
-        // id: {
-        // ops: [{ op: '=', val: [1, 2] }],
-        // },
-        // aliasId: {
-        //   ops: [{ op: '=', val: 'jim' }],
-        // },
-        // localized: {
-        //   // ops: [{ op: '=', val: 'derpi yuz NL' }],
-        //   props: {
-        //     nl: {
-        //       ops: [{ op: '=', val: 'derpi yuz NL' }],
-        //     },
-        //   },
-        // },
-      },
-    },
+    // filter: {
+    //   props: {
+    //     y: {
+    //       ops: [{ op: '=', val: [1, 2] }],
+    //     },
+    //   },
+    // },
     props: {
       y: { include: {} },
+      friends: {
+        include: {},
+        filter: {
+          edgeStrategy: EdgeStrategy.noEdge,
+          props: {
+            y: {
+              ops: [{ op: '=', val: [1, 2] }],
+            },
+            id: {
+              ops: [{ op: '=', val: [1, 2] }],
+            },
+            aliasId: {
+              ops: [{ op: '=', val: 'jim' }],
+            },
+            localized: {
+              // ops: [{ op: '=', val: 'derpi yuz NL' }],
+              props: {
+                nl: {
+                  ops: [{ op: '=', val: 'derpi yuz NL' }],
+                },
+              },
+            },
+          },
+        },
+      },
       // localized: {
       //   // include: {
       //   //   meta: 'only', // few empty
@@ -233,7 +244,7 @@ await test('include', async (t) => {
 
   console.log('START PERF', Date.now() - d, 'ms')
 
-  await perf.skip(
+  await perf(
     async () => {
       const q: any = []
       for (let i = 0; i < 10; i++) {
@@ -256,7 +267,7 @@ await test('include', async (t) => {
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
-  console.dir(obj, { depth: 10 })
+  console.dir(obj[obj.length - 1], { depth: 10 })
 
   await wait(1000)
 
