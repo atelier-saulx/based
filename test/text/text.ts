@@ -16,7 +16,8 @@ await test('simple', async (t) => {
       dialog: {
         props: {
           fun: {
-            type: 'text',
+            type: 'string',
+            localized: true,
           },
         },
       },
@@ -293,7 +294,8 @@ await test('search', async (t) => {
       dialog: {
         props: {
           fun: {
-            type: 'text',
+            type: 'string',
+            localized: true,
           },
         },
       },
@@ -435,7 +437,10 @@ await test('reference text', async (t) => {
     types: {
       country: {
         name: 'string',
-        votingLegal: 'text',
+        votingLegal: {
+          type: 'string',
+          localized: true,
+        },
       },
       contestant: {
         name: 'string',
@@ -489,7 +494,8 @@ await test('sort', async (t) => {
       dialog: {
         snurf: 'string',
         fun: {
-          type: 'text',
+          type: 'string',
+          localized: true,
         },
       },
     },
@@ -781,7 +787,10 @@ await test('in object only', async (t) => {
         dict: {
           type: 'object',
           props: {
-            nice: 'text',
+            nice: {
+              type: 'string',
+              localized: true,
+            },
           },
         },
       },
@@ -810,11 +819,17 @@ await test('correct return from obj', async (t) => {
     },
     types: {
       user: {
-        name: 'text',
+        name: {
+          type: 'string',
+          localized: true,
+        },
         dict: {
           type: 'object',
           props: {
-            nice: 'text',
+            nice: {
+              type: 'string',
+              localized: true,
+            },
           },
         },
       },
@@ -844,7 +859,10 @@ await test('clear field', async (t) => {
     },
     types: {
       user: {
-        name: 'text',
+        name: {
+          type: 'string',
+          localized: true,
+        },
       },
     },
   })
@@ -881,7 +899,10 @@ await test('text and compression', async (t) => {
     },
     types: {
       user: {
-        article: 'text',
+        article: {
+          type: 'string',
+          localized: true,
+        },
       },
     },
   })
@@ -918,7 +939,10 @@ await test('text and crc32', async (t) => {
     },
     types: {
       user: {
-        article: 'text',
+        article: {
+          type: 'string',
+          localized: true,
+        },
       },
     },
   })

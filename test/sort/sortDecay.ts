@@ -45,6 +45,6 @@ await test.skip('decay', async (t) => {
   for (let i = 0; i < 1000; i++) {
     isSorted(await db.query('example').sort('u32').include('u32').get(), 'u32')
   }
-  await wait(1*60e3)
+  await wait(1 * 60e3)
   console.log('done waiting')
 })

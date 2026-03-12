@@ -24,10 +24,12 @@ function makeMaxSchema() {
   return locs
 }
 
-function makeTextProps(): { [index: string]: { type: 'text' } } {
+function makeTextProps(): {
+  [index: string]: { type: 'string'; localized: true }
+} {
   const textProps = {}
 
-  const prop = { type: 'text' }
+  const prop = { type: 'string', localized: true }
   for (let i = 0; i < N_PROPS; i++) {
     textProps[`t${i}`] = prop
   }

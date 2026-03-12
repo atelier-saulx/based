@@ -1,6 +1,6 @@
 import test from '../shared/test.js'
 import { perf } from '../shared/assert.js'
-import {testDb} from '../shared/index.js'
+import { testDb } from '../shared/index.js'
 
 await test('create 1m single refs', async (t) => {
   const db = await testDb(t, {
