@@ -1,7 +1,10 @@
 import { QueryAst } from '../../src/db-query/ast/ast.js'
 import { astToQueryCtx } from '../../src/db-query/ast/toCtx.js'
-import { resultToObject } from '../../src/protocol/index.js'
-import { debugBuffer, type SchemaIn } from '../../src/sdk.js'
+import {
+  resultToObject,
+  serializeReadSchema,
+  deSerializeSchema,
+} from '../../src/protocol/index.js'
 import { AutoSizedUint8Array } from '../../src/utils/AutoSizedUint8Array.js'
 import { writeUint32 } from '../../src/utils/uint8.js'
 import wait from '../../src/utils/wait.js'
@@ -9,9 +12,8 @@ import { perf } from '../shared/perf.js'
 import test, { T } from '../shared/test.js'
 import { deflateSync } from 'zlib'
 import { fastPrng } from '../../src/utils/fastPrng.js'
-import { testDbClient, testDbServer } from '../shared/index.js'
-import { alias } from '../../src/schema/defs/props/alias.js'
-import { FilterType } from '../../src/zigTsExports.js'
+import { deepEqual, testDbClient, testDbServer } from '../shared/index.js'
+// import { deserialize } from 'v8' super nice to use
 
 await test('include', async (t) => {
   const server = await testDbServer(t, { noBackup: true })
@@ -65,35 +67,18 @@ await test('include', async (t) => {
 
   let syntheticData = ''
 
-  // for (let i = 0; i < 125e3; i++) {
-  //   syntheticData += 'ab'
-  // }
-
   for (let i = 0; i < 200; i++) {
     syntheticData += 'ab '
   }
 
-  // syntheticData = italy
-
-  // syntheticData = 'my snurfelbag my snurfelBag my snurfelbag my snurfelbag'
-
   const a = client.create('user', {
-    // name: 'mr jim',
     localized: {
       en: 'mr jim EN',
       nl: 'derpi yuz NL',
     },
     aliasId: 'jim',
     derp: 'aaaaa',
-    // enum: 'ok',
-    // derp: 'aa',
-    // big: 'mr jim',
     y: 15,
-    // x: false,
-    // flap: 9999,
-    // cook: {
-    //   cookie: 1234,
-    // },
   })
 
   const b = await client.create('user', {
@@ -122,59 +107,17 @@ await test('include', async (t) => {
     client.create('user', {
       y: i,
       derp: 'aaaaa',
-      friends: [
-        a,
-        // b,
-        // { id: a, $level: rand(0, 200) },
-        { id: b, $level: rand(0, 200) + '' },
-      ],
+      friends: [a, { id: b, $level: rand(0, 200) + '' }],
     })
   }
 
-  // for sort 1M we can prob do better with either INDEX (scince it will refire)
-
   await client.drain()
 
-  console.log('mod create done', Date.now() - d, 'ms')
-
-  // filter: RE-ADD REFERENCE
-  // filter: REFERENCES
-
-  // GET REFERENCEs
-  // SORT REFERENCES
-  // FILTER REFENRRENS
-  // FILTER REFS BY EDGE
-  // ALIAS
-
-  // const bigArray: string[] = []
-  // for (let i = 0; i < 1e3; i++) {
-  //   bigArray.push(i % 2 ? 'xy' : 'xx')
-  // }
-  // {
-  // type: 'thing',
-  // props: { '*': { include: {} }, '**': { include: {} } }
-  // }
   const ast: QueryAst = {
     type: 'user',
     range: { start: 0, end: 1e6 },
     props: {
-      // '*': { include: {} },
       '**': { include: {} },
-      // friends: {
-      //   props: {
-      //     '*': { include: {} },
-      //   },
-      // },
-
-      // y: { include: {} },
-      // name: { include: {} },
-      // friends: {
-      // edges: {
-      //   props: {
-      //     $level: { include: {} },
-      //   },
-      // },
-      // },
     },
   }
 
@@ -215,78 +158,20 @@ await test('include', async (t) => {
 
   console.log(' PERF DONE', Date.now() - d, 'ms')
 
-  // const readSchemaBuf = serializeReaderSchema(ctx.readSchema)
+  const readSchemaBuf = serializeReadSchema(ctx.readSchema)
+
   const result = await server.getQueryBuf(ctx.query)
   console.log(result.byteLength)
-
-  const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
+  const obj = resultToObject(
+    deSerializeSchema(readSchemaBuf),
+    result,
+    result.byteLength - 4,
+  )
+  deepEqual(obj, resultToObject(ctx.readSchema, result, result.byteLength - 4))
 
   console.dir(obj, { depth: 10 })
 
   await wait(1000)
 
-  // RETURN NULL FOR UNDEFINED
-
-  console.log(
-    'REACHED TILL END!',
-    // JSON.stringify(obj).length,
-    result.byteLength,
-    sizes,
-  )
+  console.log('REACHED TILL END!', result.byteLength, sizes)
 })
-
-// filter: {
-//   props: {
-//     flap: { ops: [{ op: '=', val: 9999 }] },
-//   },
-// and: {
-//   props: {
-//     y: { ops: [{ op: '=', val: 100 }] },
-//   },
-//   or: {
-//     props: {
-//       y: { ops: [{ op: '=', val: 3 }] },
-//     },
-//     or: {
-//       props: {
-//         y: { ops: [{ op: '=', val: 4 }] },
-//       },
-//     },
-//   },
-// },
-// or: {
-//   props: {
-//     y: { ops: [{ op: '=', val: 670 }] },
-//   },
-//   or: {
-//     props: {
-//       y: { ops: [{ op: '=', val: 15 }] },
-//     },
-//   },
-// },
-// },
-
-// edges: {
-//   props: {
-//     $level: { include: {} },
-//   },
-// },
-// filter: {
-//   edgeStrategy: EdgeStrategy.noEdge,
-//   props: {
-//     enum: { ops: [{ op: '=', val: 'ok' }] },
-//     x: {
-//       ops: [{ op: '=', val: false }],
-//     },
-//     // y: {
-//     //   ops: [{ op: '>', val: 5 }],
-//     // },
-//   },
-//   // edges: {
-//   //   props: {
-//   //     $level: {
-//   //       ops: [{ op: '>', val: 100 }],
-//   //     },
-//   //   },
-//   // },
-// },
