@@ -20,7 +20,6 @@ import { sort } from './sort.js'
 
 export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
   const rangeStart = ast.range?.start || 0
-
   const limit = (ast.range?.end || 1000) - rangeStart
 
   if (isAggregateAst(ast, typeDef)) {
@@ -87,14 +86,17 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
   }
 
   const edgeTypeId = prop.edges?.id ?? 0
+
   const rangeStart = ast.range?.start || 0
+  const limit = (ast.range?.end || 100) - rangeStart
+
   const headerIndex = pushQueryHeader(ctx.query, {
     op: edgeTypeId ? QueryType.referenceEdge : QueryType.references,
     prop: prop.id,
     includeSize: 0,
     typeId: prop.ref!.id,
     offset: rangeStart,
-    limit: (ast.range?.end || 100) + rangeStart,
+    limit,
     sort: !!ast.sort,
     filterSize: 0,
     searchSize: 0,
