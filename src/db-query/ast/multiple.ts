@@ -145,6 +145,7 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
       readSchema: schema,
     },
     prop.ref!,
+    prop,
   )
 
   props.includeSize(ctx.query.data, size, headerIndex)

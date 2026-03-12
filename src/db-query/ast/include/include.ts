@@ -88,10 +88,8 @@ const walkProp = (
   const include = astProp.include
   if (isPropDef(prop)) {
     if (prop.type === PropType.references) {
-      expandEdges(astProp, prop)
       references(astProp, ctx, prop)
     } else if (prop.type === PropType.reference) {
-      expandEdges(astProp, prop)
       reference(astProp, ctx, prop)
     } else if (
       prop.type === PropType.jsonLocalized ||
@@ -131,17 +129,28 @@ const walkProp = (
   }
 }
 
-const walk = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
+const walk = (
+  ast: QueryAst,
+  ctx: Ctx,
+  typeDef: TypeDef,
+  walkCtx: WalkCtx,
+  fromRef?: PropDef,
+) => {
   if (ast.include) {
     ast.props ??= {}
     ast.props['*'] ??= {}
-    ast.props['*'].include ??= ast.include
+    ast.props['*'].include ??= {}
   } else if (!ast.props) {
+    console.log('ADD FOR', ast)
     ast.props = { '*': { include: {} } }
   }
+
+  if (ast.props?.['*'] && fromRef) {
+    expandEdges(ast, fromRef)
+  }
   // if ast.include.glob === '*' include all from schema
-  // youri thinks we can just set this as a field, simpler (also for nested things like bla.**.id)
   // same for ast.include.glob === '**'
+
   for (const field in ast.props) {
     const astProp = ast.props[field]
     if (field === 'id') {
@@ -149,13 +158,13 @@ const walk = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
     }
     if (field === '*') {
       for (const [field, prop] of walkCtx.tree.props) {
-        if (!('ref' in prop)) {
+        if (!('ref' in prop) && !(field in ast.props)) {
           walkProp(astProp, ctx, typeDef, walkCtx, field)
         }
       }
     } else if (field === '**') {
       for (const [field, prop] of typeDef.tree.props) {
-        if ('ref' in prop) {
+        if (!(field in ast.props)) {
           walkProp(astProp, ctx, typeDef, walkCtx, field)
         }
       }
@@ -166,12 +175,23 @@ const walk = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
   return walkCtx
 }
 
-export const include = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef): number => {
+export const include = (
+  ast: QueryAst,
+  ctx: Ctx,
+  typeDef: TypeDef,
+  fromRef?: PropDef,
+): number => {
   const startIndex = ctx.query.length
-  const { main } = walk(ast, ctx, typeDef, {
-    main: [],
-    tree: typeDef.tree,
-  })
+  const { main } = walk(
+    ast,
+    ctx,
+    typeDef,
+    {
+      main: [],
+      tree: typeDef.tree,
+    },
+    fromRef,
+  )
   if (main.length) includeMainProps(ctx, main, typeDef)
   return ctx.query.length - startIndex
 }

@@ -13,6 +13,7 @@ import test, { T } from '../shared/test.js'
 import { deflateSync } from 'zlib'
 import { fastPrng } from '../../src/utils/fastPrng.js'
 import { deepEqual, testDbClient, testDbServer } from '../shared/index.js'
+import { FilterType } from '../../src/zigTsExports.js'
 // import { deserialize } from 'v8' super nice to use
 
 await test('include', async (t) => {
@@ -117,7 +118,18 @@ await test('include', async (t) => {
     type: 'user',
     range: { start: 0, end: 1e6 },
     props: {
-      '**': { include: {} },
+      '**': { include: {} }, // combining these has to work
+      friends: {
+        props: {
+          y: { include: {} },
+        },
+        filter: {
+          filterType: FilterType.propOnly,
+          props: {
+            y: { ops: [{ op: '=', val: 2 }] },
+          },
+        },
+      },
     },
   }
 
@@ -169,7 +181,7 @@ await test('include', async (t) => {
   )
   deepEqual(obj, resultToObject(ctx.readSchema, result, result.byteLength - 4))
 
-  console.dir(obj, { depth: 10 })
+  console.dir(obj[0], { depth: 10 })
 
   await wait(1000)
 
