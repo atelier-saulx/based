@@ -141,7 +141,6 @@ const walk = (
     ast.props['*'] ??= {}
     ast.props['*'].include ??= {}
   } else if (!ast.props) {
-    console.log('ADD FOR', ast)
     ast.props = { '*': { include: {} } }
   }
 
