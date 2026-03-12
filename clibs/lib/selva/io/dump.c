@@ -337,7 +337,6 @@ static void save_common_blocks(struct selva_io *io, struct SelvaDb *db, struct S
     sdb_arr_len_t len = 0;
 
     write_dump_magic(io, DUMP_MAGIC_COMMON_BLOCKS);
-    io->sdb_write(&te->type, sizeof(te->type), 1, io);
     selva_foreach_block(db, te, mask, count_blocks, &len);
     io->sdb_write(&len, sizeof(len), 1, io);
     selva_foreach_block(db, te, mask, save_block_info, io);
@@ -897,16 +896,6 @@ static int load_common_blocks(struct selva_io *io, struct SelvaTypeEntry *te, st
 
     if (!read_dump_magic(io, DUMP_MAGIC_COMMON_BLOCKS)) {
         selva_io_errlog(io, "Ivalid types magic");
-        return SELVA_EINVAL;
-    }
-
-    if (io->sdb_read(&type, sizeof(type), 1, io) != 1) {
-        selva_io_errlog(io, "%s: type", __func__);
-        return SELVA_EIO;
-    }
-    if (type != te->type) {
-        selva_io_errlog(io, "%s: Wrong dump found: (file) %u != (te) %u",
-                        __func__, type, te->type);
         return SELVA_EINVAL;
     }
 
