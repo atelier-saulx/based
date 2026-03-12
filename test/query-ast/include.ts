@@ -117,26 +117,11 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
   const ids: number[] = []
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 10; i++) {
     ids.push(i + 1)
     client.create('user', {
-      // big: syntheticData,
       y: i,
       derp: 'aaaaa',
-
-      // aliasId: `flap${i}`,
-      // name: `mr snurf ${i}`,
-      // localized: {
-      //   nl: 'giraffe NL',
-      // },
-      // derp: 'cc',
-      // y: i,
-      // x: !!(i % 2),
-      // enum: i % 2 ? 'great' : null,
-      // flap: 9999,
-      // cook: {
-      //   cookie: 1234,
-      // },
       friends: [
         { id: a, $level: rand(0, 200) },
         { id: b, $level: rand(0, 200) },
@@ -204,44 +189,44 @@ await test('include', async (t) => {
     props: {
       y: { include: {} },
       name: { include: {} },
-      // friends: {
-      //   props: {
-      //     y: { include: {} },
-      //     name: { include: {} },
-      //   },
-      //   edges: {
-      //     props: {
-      //       $level: { include: {} },
-      //     },
-      //   },
-      //   sort: { prop: '$level' },
-      //   order: 'asc',
-      //   range: { start: 0, end: 1e6 },
-      //   filter: {
-      //     filterType: FilterType.edgeAndProps,
-      //     edges: {
-      //       props: {
-      //         $level: {
-      //           ops: [{ op: '>', val: [0] }],
-      //         },
-      //       },
-      //     },
-      //     // props: {
-      //     //   enum: {
-      //     //     ops: [
-      //     //       { op: '=', val: 'ok' },
-      //     //       { op: '=', val: 'bad' },
-      //     //     ],
-      //     //   },
-      //     //   y: {
-      //     //     ops: [
-      //     //       { op: '=', val: 10 },
-      //     //       { op: '=', val: [15, 100, 200, 300] },
-      //     //     ],
-      //     //   },
-      //     // },
-      //   },
-      // },
+      friends: {
+        props: {
+          y: { include: {} },
+          name: { include: {} },
+        },
+        edges: {
+          props: {
+            $level: { include: {} },
+          },
+        },
+        sort: { prop: '$level' },
+        order: 'asc',
+        range: { start: 0, end: 1e6 },
+        filter: {
+          filterType: FilterType.edgeAndProps,
+          edges: {
+            props: {
+              $level: {
+                ops: [{ op: '>', val: [0] }],
+              },
+            },
+          },
+          props: {
+            enum: {
+              ops: [
+                { op: '=', val: 'ok' },
+                { op: '=', val: 'bad' },
+              ],
+            },
+            y: {
+              ops: [
+                { op: '=', val: 10 },
+                { op: '=', val: [15, 100, 200, 300] },
+              ],
+            },
+          },
+        },
+      },
       // localized: {
       //   // include: {
       //   //   meta: 'only', // few empty
