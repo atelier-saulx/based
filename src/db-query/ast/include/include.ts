@@ -64,7 +64,7 @@ const includeMainProps = (
 }
 
 const expandEdges = (astProp: QueryAst, prop: PropDef) => {
-  if (prop.edges) {
+  if (astProp.props?.['*']?.include && prop.edges) {
     if (!astProp.edges) {
       astProp.edges = {}
     }
