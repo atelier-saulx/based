@@ -41,7 +41,6 @@ export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
     iteratorType: QueryIteratorType.default,
     edgeTypeId: 0,
     edgeSize: 0,
-    edgeFilterSize: 0,
     size: 0,
   })
 
@@ -103,7 +102,6 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     iteratorType: QueryIteratorType.default,
     edgeTypeId,
     edgeSize: 0,
-    edgeFilterSize: 0,
     size: 0, // this is only used for [IDS] handle this differently
   })
 
@@ -111,36 +109,28 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     pushSortHeader(ctx.query, sort(ast, ctx, prop.ref!, prop))
   }
 
-  if (ast.filter && !ast.filter.filterType) {
-    const hasEdges =
-      ast.filter.edges && Object.keys(ast.filter.edges).length > 0
-    const hasProps =
-      (ast.filter.props && Object.keys(ast.filter.props).length > 0) ||
-      ast.filter.and
-    if (hasEdges && hasProps) {
-      ast.filter.filterType = FilterType.edgeAndProps
-    } else if (hasEdges) {
-      ast.filter.filterType = FilterType.edgeOnly
-    } else if (hasProps) {
-      ast.filter.filterType = FilterType.propOnly
-    }
-  }
+  // make nested fn
+  // if (ast.filter && !ast.filter.filterType) {
+  //   const hasEdges =
+  //     ast.filter.edges && Object.keys(ast.filter.edges).length > 0
+  //   const hasProps =
+  //     (ast.filter.props && Object.keys(ast.filter.props).length > 0) ||
+  //     ast.filter.and
+  //   if (hasEdges && hasProps) {
+  //     ast.filter.filterType = FilterType.edgeAndProps
+  //   } else if (hasEdges) {
+  //     ast.filter.filterType = FilterType.edgeOnly
+  //   } else if (hasProps) {
+  //     ast.filter.filterType = FilterType.propOnly
+  //   }
+  // }
 
-  if (
-    ast.filter &&
-    (ast.filter.filterType == FilterType.propOnly ||
-      ast.filter.filterType == FilterType.edgeAndProps)
-  ) {
-    let s = ctx.query.length
+  if (ast.filter && ast.filter.filterType == FilterType.propOnly) {
     const filterSize = filter(ast.filter, ctx, prop.ref!)
     props.filterSize(ctx.query.data, filterSize, headerIndex)
   }
 
-  if (
-    ast.filter &&
-    (ast.filter.filterType == FilterType.edgeOnly ||
-      ast.filter.filterType == FilterType.edgeAndProps)
-  ) {
+  if (ast.filter && ast.filter.filterType == FilterType.edgeOnly) {
     const edges = prop.edges
     if (!edges) {
       throw new Error('Edge filter but references do not have edges')
@@ -148,9 +138,12 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     if (!ast.filter.edges) {
       throw new Error('Edge filter type but no edges defined')
     }
-    let s = ctx.query.length
     const filterSize = filter(ast.filter.edges, ctx, prop.edges!)
-    props.edgeFilterSize(ctx.query.data, filterSize, headerIndex)
+    props.filterSize(ctx.query.data, filterSize, headerIndex)
+  }
+
+  if (ast.filter && ast.filter.filterType == FilterType.mixed) {
+    throw new Error('Edge filter mixed not supported yet')
   }
 
   const size = include(

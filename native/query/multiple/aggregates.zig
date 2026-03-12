@@ -48,7 +48,7 @@ pub fn aggregates(
             try Aggregates.finalizeResults(&aggCtx, q[i..], accumulatorProp, 0);
         },
         .aggregateFilter => {
-            const filter = try Filter.readFilter(ctx, &i, header.filterSize, q, typeEntry);
+            const filter = try Filter.readFilter(.propOnly, ctx, &i, header.filterSize, q, typeEntry, undefined);
             nodeCnt = try Aggregates.iterator(&aggCtx, &it, true, filter, q[i..], accumulatorProp);
             try Aggregates.finalizeResults(&aggCtx, q[i..], accumulatorProp, 0);
         },
@@ -59,7 +59,7 @@ pub fn aggregates(
             try GroupBy.finalizeGroupResults(&aggCtx, &groupByHashMap, q[i..]);
         },
         .groupByFilter => {
-            const filterBuf = try Filter.readFilter(ctx, &i, header.filterSize, q, typeEntry);
+            const filterBuf = try Filter.readFilter(.propOnly, ctx, &i, header.filterSize, q, typeEntry, undefined);
             var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
             defer groupByHashMap.deinit();
             nodeCnt = @intCast(GroupBy.iterator(&aggCtx, &groupByHashMap, &it, true, filterBuf, q[i..]));
@@ -72,7 +72,7 @@ pub fn aggregates(
             try Aggregates.finalizeResults(&aggCtx, q[i..], accumulatorProp, 0);
         },
         .aggregateEdgeFilter => {
-            const filterBuf = try Filter.readFilter(ctx, &i, header.filterSize, q, typeEntry);
+            const filterBuf = try Filter.readFilter(.propOnly, ctx, &i, header.filterSize, q, typeEntry, undefined);
             const fieldSchema = try Schema.getFieldSchema(typeEntry, header.edgePropId);
             aggCtx.edgeTypeEntry = try Node.getEdgeType(ctx.db, fieldSchema);
             nodeCnt = try Aggregates.iteratorEdge(&aggCtx, &it, true, filterBuf, q[i..], accumulatorProp, header.edgePropId);
@@ -87,7 +87,7 @@ pub fn aggregates(
             try GroupBy.finalizeGroupResults(&aggCtx, &groupByHashMap, q[i..]);
         },
         .groupByEdgeFilter => {
-            const filterBuf = try Filter.readFilter(ctx, &i, header.filterSize, q, typeEntry);
+            const filterBuf = try Filter.readFilter(.propOnly, ctx, &i, header.filterSize, q, typeEntry, undefined);
             var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
             defer groupByHashMap.deinit();
             const fieldSchema = try Schema.getFieldSchema(typeEntry, header.edgePropId);

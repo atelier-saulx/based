@@ -30,13 +30,13 @@ pub fn node(
     var nodeCnt: u32 = 0;
     var filter: []u8 = undefined;
     if (hasFilter) {
-        filter = try Filter.readFilter(ctx, i, header.filterSize, q, typeEntry);
+        filter = try Filter.readFilter(.propOnly, ctx, i, header.filterSize, q, typeEntry, undefined);
     }
     const nestedQuery = q[i.* .. i.* + header.includeSize];
     while (offset > 0) {
         const n = it.next() orelse return 0;
         if (hasFilter) {
-            if (try Filter.filter(n, ctx, filter)) {
+            if (try Filter.filter(.propOnly, n, ctx, filter, undefined)) {
                 offset -= 1;
             }
         } else {
@@ -45,7 +45,7 @@ pub fn node(
     }
     while (it.next()) |n| {
         if (hasFilter) {
-            if (!try Filter.filter(n, ctx, filter)) {
+            if (!try Filter.filter(.propOnly, n, ctx, filter, undefined)) {
                 continue;
             }
         }
@@ -61,7 +61,7 @@ pub fn node(
 }
 
 pub fn edge(
-    comptime filterStrat: t.FilterType,
+    comptime filterType: t.FilterType,
     comptime includeEdge: bool,
     ctx: *Query.QueryCtx,
     q: []u8,
@@ -72,18 +72,16 @@ pub fn edge(
 ) !u32 {
     var offset: u32 = header.offset;
     var nodeCnt: u32 = 0;
+    const edgeTypeEntry = try Node.getType(ctx.db, header.edgeTypeId);
 
-    var filter: []u8 = undefined;
-    var edgeFilter: []u8 = undefined;
-    if (filterStrat == .propOnly or filterStrat == .edgeAndProps) {
-        filter = try Filter.readFilter(ctx, i, header.filterSize, q, typeEntry);
-    }
-    if (filterStrat == .edgeOnly or filterStrat == .edgeAndProps) {
-        edgeFilter = try Filter.readFilter(ctx, i, header.edgeFilterSize, q, typeEntry);
-    }
+    const filter = switch (filterType) {
+        .edgeOnly => try Filter.readFilter(filterType, ctx, i, header.filterSize, q, edgeTypeEntry, undefined),
+        .propOnly => try Filter.readFilter(filterType, ctx, i, header.filterSize, q, typeEntry, undefined),
+        .mixed => try Filter.readFilter(filterType, ctx, i, header.filterSize, q, typeEntry, edgeTypeEntry),
+        .noFilter => undefined,
+    };
 
     const nestedQuery = q[i.* .. i.* + header.includeSize];
-    const edgeTypeEntry = try Node.getType(ctx.db, header.edgeTypeId);
     const edgeQuery = q[i.* + header.includeSize .. i.* + header.includeSize + header.edgeSize];
 
     while (offset > 0) {
@@ -92,16 +90,12 @@ pub fn edge(
     }
 
     while (it.nextRef()) |ref| {
-        if (filterStrat == .propOnly or filterStrat == .edgeAndProps) {
-            if (!try Filter.filter(ref.node, ctx, filter)) {
-                continue;
-            }
-        }
-
-        if (filterStrat == .edgeOnly or filterStrat == .edgeAndProps) {
-            if (!try Filter.filter(ref.edge, ctx, edgeFilter)) {
-                continue;
-            }
+        if (filterType == .mixed) {
+            if (!try Filter.filter(filterType, ref.node, ctx, filter, ref.edge)) continue;
+        } else if (filterType == .propOnly) {
+            if (!try Filter.filter(filterType, ref.node, ctx, filter, undefined)) continue;
+        } else if (filterType == .edgeOnly) {
+            if (!try Filter.filter(filterType, ref.edge, ctx, filter, undefined)) continue;
         }
 
         try ctx.thread.query.append(t.ReadOp.id);

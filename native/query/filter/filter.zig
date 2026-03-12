@@ -18,16 +18,18 @@ fn recursionErrorBoundary(
     ctx: *Query.QueryCtx,
     q: []u8,
 ) bool {
-    return cb(node, ctx, q) catch |err| {
+    return cb(.propOnly, node, ctx, q, undefined) catch |err| {
         std.debug.print("Filter: recursionErrorBoundary: Error {any} \n", .{err});
         return false;
     };
 }
 
 fn prepare(
+    comptime filterType: t.FilterType,
     q: []u8,
     ctx: *Query.QueryCtx,
     typeEntry: Node.Type,
+    edgeType: if (filterType == .mixed) Node.Type else void,
 ) !void {
     // add a number on query ctx dont run this if filter is set
     var i: usize = 0;
@@ -40,12 +42,17 @@ fn prepare(
             const totalSize = headerSize + condSize;
 
             q[i] = COND_ALIGN_BYTES - utils.alignLeft(t.FilterCondition, q[i + 1 .. i + totalSize]) + 1;
+
             c = utils.readPtr(t.FilterCondition, q, q[i] + i);
 
             if (c.op.compare != t.FilterOpCompare.nextOrIndex and
                 c.op.prop != t.PropType.id)
             {
-                c.fieldSchema = try Schema.getFieldSchema(typeEntry, c.prop);
+                if (filterType == .mixed and c.useEdge) {
+                    c.fieldSchema = try Schema.getFieldSchema(edgeType, c.prop);
+                } else {
+                    c.fieldSchema = try Schema.getFieldSchema(typeEntry, c.prop);
+                }
             }
 
             const nextI = q[i] + i + utils.sizeOf(t.FilterCondition);
@@ -66,7 +73,8 @@ fn prepare(
                 .selectRef => {
                     const select = utils.readPtr(t.FilterSelect, q, nextI + @alignOf(t.FilterSelect) - c.offset);
                     select.typeEntry = try Node.getType(ctx.db, select.typeId);
-                    try prepare(q[end .. end + select.size], ctx, select.typeEntry);
+                    // tmp
+                    try prepare(.propOnly, q[end .. end + select.size], ctx, select.typeEntry, undefined);
                     i = end + select.size;
                 },
                 // .nincLcase => {}
@@ -86,11 +94,13 @@ fn prepare(
 }
 
 pub fn readFilter(
+    comptime filterType: t.FilterType,
     ctx: *Query.QueryCtx,
     i: *usize,
     filterSize: u16, // Might need to make this u32
     q: []u8,
     typeEntry: Node.Type,
+    edgeType: if (filterType == .mixed) Node.Type else void,
 ) ![]u8 {
     const offset = i.*;
     const needPrep = utils.read(u32, q, offset) != ctx.thread.runId;
@@ -98,21 +108,23 @@ pub fn readFilter(
     const filterBuf = utils.sliceNext(filterSize - 4, q, i);
     if (needPrep) {
         utils.write(q, ctx.thread.runId, offset);
-        try prepare(filterBuf, ctx, typeEntry);
+        try prepare(filterType, filterBuf, ctx, typeEntry, edgeType);
     }
     return filterBuf;
 }
 
-pub inline fn filter(
+pub fn filter(
+    comptime filterType: t.FilterType,
     node: Node.Node,
     ctx: *Query.QueryCtx,
     q: []u8,
+    edge: if (filterType == .mixed) Node.Node else void,
 ) !bool {
     var i: usize = 0;
 
     var pass: bool = true;
     var v: []const u8 = undefined;
-    var prop: u8 = 255;
+    var prop: if (filterType == .propOnly) u8 else u16 = 255;
     var end: usize = q.len;
 
     while (i < end) {
@@ -121,8 +133,18 @@ pub inline fn filter(
         var nextIndex = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + c.size + i;
 
         if (prop != c.prop) {
-            prop = c.prop;
-            v = Fields.getRaw(node, c.fieldSchema);
+            if (filterType == .mixed) {
+                if (c.useEdge) {
+                    v = Fields.getRaw(edge, c.fieldSchema);
+                    prop = (c.prop << 1) | 1; // to make it different for edge
+                } else {
+                    v = Fields.getRaw(node, c.fieldSchema);
+                    prop = (c.prop << 1);
+                }
+            } else {
+                v = Fields.getRaw(node, c.fieldSchema);
+                prop = c.prop;
+            }
         }
 
         pass = switch (c.op.compare) {
@@ -131,16 +153,25 @@ pub inline fn filter(
                 break :blk true;
             },
             .selectAlias => blk: {
-                const typeEntry = Node.getType(ctx.db, node) catch {
-                    break :blk false;
-                };
-                v = Fields.getAliasByNode(typeEntry, node, c.fieldSchema.field) catch {
-                    break :blk false;
-                };
+                if (filterType == .mixed and c.useEdge) {
+                    const typeEntry = Node.getType(ctx.db, edge) catch {
+                        break :blk false;
+                    };
+                    v = Fields.getAliasByNode(typeEntry, edge, c.fieldSchema.field) catch {
+                        break :blk false;
+                    };
+                } else {
+                    const typeEntry = Node.getType(ctx.db, node) catch {
+                        break :blk false;
+                    };
+                    v = Fields.getAliasByNode(typeEntry, node, c.fieldSchema.field) catch {
+                        break :blk false;
+                    };
+                }
                 break :blk true;
             },
             .selectId => blk: {
-                v = Node.getNodeIdAsSlice(node);
+                v = Node.getNodeIdAsSlice(if (filterType == .mixed and c.useEdge) edge else node);
                 break :blk true;
             },
             .nextOrIndex => blk: {

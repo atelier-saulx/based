@@ -102,9 +102,9 @@ await test('include', async (t) => {
   let d = Date.now()
 
   const rand = fastPrng()
-  const ids: number[] = []
-  for (let i = 0; i < 10; i++) {
-    ids.push(i + 1)
+  // const ids: number[] = []
+  for (let i = 0; i < 500; i++) {
+    // ids.push(i + 1)
     client.create('user', {
       y: i,
       derp: 'aaaaa',
@@ -117,16 +117,36 @@ await test('include', async (t) => {
   const ast: QueryAst = {
     type: 'user',
     range: { start: 0, end: 1e6 },
+    filter: {
+      // mixed can now be made have to handle in filter
+      // we can also just pass null for edge and keep it rly simple
+      // also pass null edgeType
+      // filterType: FilterType.propOnly,
+      props: {
+        y: { ops: [{ op: '=', val: [2] }] },
+      },
+    },
     props: {
-      '**': { include: {} }, // combining these has to work
+      y: { include: {} },
+      // '*': { include: {} }, // combining these has to work
       friends: {
         props: {
           y: { include: {} },
         },
-        filter: {
-          // filterType: FilterType.propOnly,
+        edges: {
           props: {
-            y: { ops: [{ op: '=', val: 2 }] },
+            $level: { include: { meta: true } },
+          },
+        },
+        filter: {
+          // mixed can now be made have to handle in filter
+          // we can also just pass null for edge and keep it rly simple
+          // also pass null edgeType
+          filterType: FilterType.edgeOnly,
+          edges: {
+            props: {
+              $level: { ops: [{ op: 'includes', val: '1' }] },
+            },
           },
         },
       },
@@ -140,7 +160,6 @@ await test('include', async (t) => {
   console.log(deflateSync(ctx.query).byteLength, '/', ctx.query.byteLength)
 
   // debugBuffer(ctx.query)
-
   // debugBuffer(deflateSync(ctx.query).toString('base64'))
 
   const queries: any = []
@@ -152,7 +171,7 @@ await test('include', async (t) => {
 
   console.log('START PERF', Date.now() - d, 'ms')
   const sizes: Set<number> = new Set()
-  await perf.skip(
+  await perf(
     async () => {
       const q: any = []
       for (let i = 0; i < 5; i++) {
@@ -160,7 +179,6 @@ await test('include', async (t) => {
       }
       const x = await Promise.all(q)
       x.forEach((v) => sizes.add(v.byteLength))
-      // console.log(x)
     },
     'filter speed (5 cores) 25M / scan',
     {
@@ -173,15 +191,19 @@ await test('include', async (t) => {
   const readSchemaBuf = serializeReadSchema(ctx.readSchema)
 
   const result = await server.getQueryBuf(ctx.query)
-  console.log(result.byteLength)
   const obj = resultToObject(
     deSerializeSchema(readSchemaBuf),
     result,
     result.byteLength - 4,
   )
-  deepEqual(obj, resultToObject(ctx.readSchema, result, result.byteLength - 4))
 
-  console.dir(obj[0], { depth: 10 })
+  console.log('BLA:')
+  console.dir(ctx.readSchema, { depth: 10 })
+  console.log('-------------------------------')
+  console.dir(deSerializeSchema(readSchemaBuf), { depth: 10 })
+  console.dir(obj, { depth: 10 })
+
+  deepEqual(obj, resultToObject(ctx.readSchema, result, result.byteLength - 4))
 
   await wait(1000)
 

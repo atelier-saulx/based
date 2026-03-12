@@ -46,8 +46,8 @@ pub fn ids(
         },
         .filterSort => {
             const sortHeader = utils.readNext(t.SortHeader, q, &i);
-            const filter = try Filter.readFilter(ctx, &i, header.filterSize, q, typeEntry);
-            var itSort = try Sort.fromIterator(false, false, ctx, typeEntry, &sortHeader, &it, .propOnly, filter, undefined);
+            const filter = try Filter.readFilter(.propOnly, ctx, &i, header.filterSize, q, typeEntry, undefined);
+            var itSort = try Sort.fromIterator(false, false, ctx, typeEntry, &sortHeader, &it, .propOnly, filter);
             nodeCnt = try Iterate.node(false, ctx, q, &itSort, &header, typeEntry, &i);
             itSort.deinit();
             // make filtered iterator
@@ -55,8 +55,8 @@ pub fn ids(
         .descFilterSort => {
             // std.debug.print(" FILTER SORT DESC \n", .{});
             const sortHeader = utils.readNext(t.SortHeader, q, &i);
-            const filter = try Filter.readFilter(ctx, &i, header.filterSize, q, typeEntry);
-            var itSort = try Sort.fromIterator(true, false, ctx, typeEntry, &sortHeader, &it, .propOnly, filter, undefined);
+            const filter = try Filter.readFilter(.propOnly, ctx, &i, header.filterSize, q, typeEntry, undefined);
+            var itSort = try Sort.fromIterator(true, false, ctx, typeEntry, &sortHeader, &it, .propOnly, filter);
             nodeCnt = try Iterate.node(false, ctx, q, &itSort, &header, typeEntry, &i);
             itSort.deinit();
             // derp
@@ -67,13 +67,13 @@ pub fn ids(
         },
         .sort => {
             const sortHeader = utils.readNext(t.SortHeader, q, &i);
-            var itSort = try Sort.fromIterator(false, false, ctx, typeEntry, &sortHeader, &it, .noFilter, undefined, undefined);
+            var itSort = try Sort.fromIterator(false, false, ctx, typeEntry, &sortHeader, &it, .noFilter, undefined);
             nodeCnt = try Iterate.node(false, ctx, q, &itSort, &header, typeEntry, &i);
             itSort.deinit();
         },
         .descSort => {
             const sortHeader = utils.readNext(t.SortHeader, q, &i);
-            var itSort = try Sort.fromIterator(true, false, ctx, typeEntry, &sortHeader, &it, .noFilter, undefined, undefined);
+            var itSort = try Sort.fromIterator(true, false, ctx, typeEntry, &sortHeader, &it, .noFilter, undefined);
             nodeCnt = try Iterate.node(false, ctx, q, &itSort, &header, typeEntry, &i);
             itSort.deinit();
         },

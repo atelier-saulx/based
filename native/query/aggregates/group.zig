@@ -32,7 +32,7 @@ pub fn iterator(
     if (@hasDecl(@TypeOf(it.*), "nextRef")) {
         while (it.nextRef()) |ref| {
             if (hasFilter) {
-                if (!try filter(ref.node, aggCtx.queryCtx, filterBuf)) {
+                if (!try filter(.propOnly, ref.node, aggCtx.queryCtx, filterBuf, undefined)) {
                     continue;
                 }
             }
@@ -45,7 +45,7 @@ pub fn iterator(
     } else {
         while (it.next()) |node| {
             if (hasFilter) {
-                if (!try filter(node, aggCtx.queryCtx, filterBuf)) {
+                if (!try filter(.propOnly, node, aggCtx.queryCtx, filterBuf, undefined)) {
                     continue;
                 }
             }
@@ -91,7 +91,7 @@ pub fn iteratorEdge(
     } else {
         while (it.next()) |node| {
             if (hasFilter) {
-                if (!try filter(node, aggCtx.queryCtx, filterBuf)) {
+                if (!try filter(.propOnly, node, aggCtx.queryCtx, filterBuf, undefined)) {
                     continue;
                 }
             }

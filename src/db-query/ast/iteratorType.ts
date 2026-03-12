@@ -10,8 +10,7 @@ export const getIteratorType = (
   header: QueryHeader,
   ast: QueryAst,
 ): QueryIteratorTypeEnum => {
-  const hasFilter: boolean =
-    header.filterSize != 0 || header.edgeFilterSize != 0
+  const hasFilter: boolean = header.filterSize != 0
   const hasSort = header.sort
   const isDesc = ast.order === 'desc'
 
@@ -37,7 +36,7 @@ export const getIteratorType = (
     }
   }
 
-  if (filterType === FilterType.edgeAndProps) {
+  if (filterType === FilterType.mixed) {
     if (hasSort) {
       return isDesc
         ? QueryIteratorType.descFilterSortEdgeAndProp

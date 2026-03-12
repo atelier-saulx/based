@@ -49,8 +49,8 @@ pub fn default(
     const typeEntry = try Node.getType(ctx.db, header.typeId);
     if (Node.getNode(typeEntry, header.id)) |node| {
         if (hasFilter) {
-            const filter = try Filter.readFilter(ctx, &i, header.filterSize, q, typeEntry);
-            if (!try Filter.filter(node, ctx, filter)) {
+            const filter = try Filter.readFilter(.propOnly, ctx, &i, header.filterSize, q, typeEntry, undefined);
+            if (!try Filter.filter(.propOnly, node, ctx, filter, undefined)) {
                 try ctx.thread.query.append(@as(u32, 0));
                 return;
             }
