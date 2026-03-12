@@ -1,5 +1,4 @@
 import { PropDef } from '../../../schema/defs/index.js'
-import { debugBuffer } from '../../../sdk.js'
 import { FilterOpCompare as Op } from '../../../zigTsExports.js'
 import { FilterOpts, Operator } from '../ast.js'
 import { createCondition } from './condition.js'
@@ -61,7 +60,6 @@ export const fixedComparison = (
       prop.write(condition, j >= val.length ? val[0] : val[j], i)
       i += prop.size
     }
-    debugBuffer(condition, 0, 0, 'eqBatchSmall ' + VECTOR_BYTES)
     return condition
   }
 

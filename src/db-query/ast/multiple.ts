@@ -114,11 +114,8 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
       ast.filter.filterType == FilterType.edgeAndProps)
   ) {
     let s = ctx.query.length
-    console.log('-----------------------------------------')
     const filterSize = filter(ast.filter, ctx, prop.ref!)
     props.filterSize(ctx.query.data, filterSize, headerIndex)
-    debugBuffer(ctx.query.data, s, s + filterSize, 'FILTER')
-    console.log('-----------------------------------------')
   }
 
   if (
@@ -136,7 +133,6 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     let s = ctx.query.length
     const filterSize = filter(ast.filter.edges, ctx, prop.edges!)
     props.edgeFilterSize(ctx.query.data, filterSize, headerIndex)
-    debugBuffer(ctx.query.data, s, s + filterSize, 'EDGE FILTER')
   }
 
   const size = include(
