@@ -3,7 +3,7 @@ import test from './shared/test.js'
 import { start as startMulti } from './shared/multi.js'
 import assert from 'node:assert'
 import { perf } from './shared/assert.js'
-import {testDb} from './shared/index.js'
+import { testDb } from './shared/index.js'
 
 const N = 1e7 // Nodes
 const N2 = 1e3 // nr filter queries

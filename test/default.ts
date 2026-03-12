@@ -103,7 +103,7 @@ await test('edges', async (t) => {
     ],
   })
 
-  await clint.update('user', userId, {
+  await client.update('user', userId, {
     friends: {
       update: [{ id: 1, $nice: false }],
     },
