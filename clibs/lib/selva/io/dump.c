@@ -278,11 +278,9 @@ static void save_expire(struct selva_io *io, struct SelvaTypeEntry *te)
         token = SVector_Foreach(&it);
         do {
             struct SelvaDbExpireToken *dbToken = containerof(token, typeof(*dbToken), token);
-            node_type_t type = dbToken->type;
             node_id_t node_id = dbToken->node_id;
             int64_t expire = dbToken->token.expire;
 
-            io->sdb_write(&type, sizeof(type), 1, io);
             io->sdb_write(&node_id, sizeof(node_id), 1, io);
             io->sdb_write(&expire, sizeof(expire), 1, io);
         } while ((token = token->next));
@@ -805,7 +803,7 @@ static int load_type(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEn
 }
 
 __attribute__((warn_unused_result))
-static int load_expire(struct selva_io *io, struct SelvaDb *db)
+static int load_expire(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
     sdb_arr_len_t count;
 
@@ -817,15 +815,13 @@ static int load_expire(struct selva_io *io, struct SelvaDb *db)
     io->sdb_read(&count, sizeof(count), 1, io);
 
     for (sdb_arr_len_t i = 0; i < count; i++) {
-        node_type_t type;
         node_id_t node_id;
         int64_t expire;
 
-        io->sdb_read(&type, sizeof(type), 1, io);
         io->sdb_read(&node_id, sizeof(node_id), 1, io);
         io->sdb_read(&expire, sizeof(expire), 1, io);
 
-        selva_expire_node(db, type, node_id, expire, SELVA_EXPIRE_NODE_STRATEGY_IGNORE);
+        selva_expire_node(db, te->type, node_id, expire, SELVA_EXPIRE_NODE_STRATEGY_IGNORE);
     }
 
     return 0;
@@ -930,7 +926,7 @@ int selva_dump_load_common(struct SelvaDb *db, struct SelvaTypeEntry *te, struct
 
     db->sdb_version = io.sdb_version;
 
-    err = err ?: load_expire(&io, db);
+    err = err ?: load_expire(&io, db, te);
     err = err ?: load_aliases(&io, te);
     err = err ?: load_common_max_id(&io, com);
     err = err ?: load_common_blocks(&io, te, com);
