@@ -124,7 +124,7 @@ await test('include', async (t) => {
           y: { include: {} },
         },
         filter: {
-          filterType: FilterType.propOnly,
+          // filterType: FilterType.propOnly,
           props: {
             y: { ops: [{ op: '=', val: 2 }] },
           },
