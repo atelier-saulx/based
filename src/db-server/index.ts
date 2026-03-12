@@ -12,6 +12,9 @@ import { getTypeDefs } from '../schema/defs/getTypeDefs.js'
 import { join } from 'node:path'
 import hashObjectIgnoreKeyOrder from '../hash/hashObjectIgnoreKeyOrder.js'
 import deepEqual from '../utils/deepEqual.js'
+import { DbClient, DbClientClass } from '../db-client/index.js'
+import { astToQueryCtx } from '../db-query/ast/toCtx.js'
+import { AutoSizedUint8Array } from '../utils/AutoSizedUint8Array.js'
 
 type DbServerOpts = {
   path: string
@@ -51,42 +54,69 @@ export class DbServerWrapper extends DbShared {
     if (schema.hash === this.ctx.schema.hash) {
       return schema.hash
     }
-    console.log('migration time!', schema.hash, this.ctx.schema.hash)
+    // TODO block modifies now!
+    const prevSchema = this.ctx.schema
     const path = this.ctx.fileSystemPath
-
     const typeDefs1 = getTypeDefs(this.ctx.schema)
     const typeDefs2 = getTypeDefs(schema)
-
     const tmpPath = join(path, 'tmp')
-    const newCtx = new DbServer({ path: tmpPath })
+    await this.ctx.save()
     const files = await readdir(path)
+    const filesRecord: Record<number, string[]> = {}
+    const types: string[] = []
+    for (const file of files) {
+      const split = file.split('_')
+      const typeId = Number(split[0])
+      if (typeId) {
+        filesRecord[typeId] ??= []
+        filesRecord[typeId].push(file)
+      }
+    }
+
     await rm(tmpPath, { recursive: true, force: true })
     await mkdir(tmpPath, { recursive: true })
     await Promise.all(
-      typeDefs2.values().map((def) => {
+      typeDefs2.values().map(async (def) => {
         const prevDef = typeDefs1.get(def.name)
-        if (prevDef && deepEqual(def.schema, prevDef.schema)) {
-          console.log('compatible schema:', def.name, def.schema)
-          return Promise.all(
-            files.map((file) => {
-              const split = file.split('_')
-              if (Number(split[0]) === prevDef.id) {
-                split[0] = String(def.id)
-                return rename(join(path, file), join(tmpPath, split.join('_')))
-              }
-            }),
-          )
-        } else {
-          console.log(
-            'incompatible schema:',
-            def.name,
-            JSON.stringify(def.schema, null, 2),
-            JSON.stringify(prevDef?.schema, null, 2),
-          )
+        if (prevDef) {
+          if (deepEqual(def.schema, prevDef.schema)) {
+            console.log('compatible schema:', def.name)
+            if (prevDef.id in filesRecord) {
+              return Promise.all(
+                filesRecord[prevDef.id].map((file) => {
+                  const split = file.split('_')
+                  if (Number(split[0]) === prevDef.id) {
+                    split[0] = String(def.id)
+                    return rename(
+                      join(path, file),
+                      join(tmpPath, split.join('_')),
+                    )
+                  }
+                }),
+              )
+            }
+          }
         }
+        console.log('incompatible schema:', def.name)
+        types.push(def.name)
       }),
     )
+    const newCtx = new DbServer({ path: tmpPath })
     realStart(newCtx, schema)
+
+    // ------------ migration start
+    // await Promise.all(
+    //   types.map((type) => {
+    //     const queryCtx = astToQueryCtx(
+    //       prevSchema,
+    //       { type, props: { '*': { include: {} } } },
+    //       new AutoSizedUint8Array(),
+    //     )
+    //   }),
+    // )
+
+    // ------------ migration end
+
     this.ctx.stop(true)
     this.ctx = newCtx
     this.emit('schema', schema)

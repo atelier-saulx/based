@@ -62,26 +62,20 @@ await test('modify binary on edge', async (t) => {
   })
 
   const query = db.query('holder', id1).include('toThing.$edgeBlob')
-  console.dir(query.ast, { depth: null })
   const res1 = await query.get()
-
   deepEqual(res1?.toThing?.$edgeBlob, b1)
 
-  console.log('--------------------------------')
-
-  // const b2 = new Uint8Array([4, 5, 6, 7])
-  // await db.update('holder', id1, {
-  //   toThing: {
-  //     id: targetId,
-  //     $edgeBlob: b2,
-  //   },
-  // })
-
-  console.dir(await db.query('holder', id1).include('toThing.$edgeBlob').ast, {
-    depth: 10,
+  const b2 = new Uint8Array([4, 5, 6, 7])
+  await db.update('holder', id1, {
+    toThing: {
+      id: targetId,
+      $edgeBlob: b2,
+    },
   })
 
   const res2 = await db.query('holder', id1).include('toThing.$edgeBlob').get()
-  console.log('NOOOOOOOOOOOOOOOO')
-  // deepEqual(res2?.toThing?.$edgeBlob, b2)
+
+  deepEqual(res2?.toThing?.$edgeBlob, b2)
+
+  await wait(1e3)
 })

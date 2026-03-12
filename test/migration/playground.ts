@@ -30,12 +30,22 @@ await test('migration playground', async (t) => {
           },
         },
       },
+      c: {
+        age: 'number',
+      },
     },
   })
-  const a = client.create('a', { aName: 'a name', bRefs: [] })
-  client.create('b', { bName: 'b name', aRefs: [a] })
+  let i = 1000_000
+  while (i--) {
+    const a = client.create('a', { aName: 'a name', bRefs: [] })
+    client.create('b', { bName: 'b name', aRefs: [a] })
+  }
+
   await client.drain()
-  console.log('b1:', await client.query('b').include('*', '**').get())
+  console.log('before:', {
+    a: await client.query('a').include('*', '**').get(),
+    b: await client.query('b').include('*', '**').get(),
+  })
 
   await client.setSchema({
     types: {
@@ -62,8 +72,15 @@ await test('migration playground', async (t) => {
           },
         },
       },
+      c: {
+        age: 'uint8',
+      },
     },
   })
 
   console.log('wut')
+  console.log('after:', {
+    a: await client.query('a').include('*', '**').get(),
+    b: await client.query('b').include('*', '**').get(),
+  })
 })
