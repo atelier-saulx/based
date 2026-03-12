@@ -63,6 +63,19 @@ const includeMainProps = (
   }
 }
 
+const expandEdges = (astProp: QueryAst, prop: PropDef) => {
+  if (prop.edges) {
+    if (!astProp.edges) {
+      astProp.edges = {}
+    }
+    for (const edge of prop.edges?.props.values()) {
+      if (!getByPath(astProp.edges, edge.path)) {
+        setByPath(astProp.edges, edge.path, { include: {} })
+      }
+    }
+  }
+}
+
 const walkProp = (
   astProp: QueryAst,
   ctx: Ctx,
@@ -75,8 +88,10 @@ const walkProp = (
   const include = astProp.include
   if (isPropDef(prop)) {
     if (prop.type === PropType.references) {
+      expandEdges(astProp, prop)
       references(astProp, ctx, prop)
     } else if (prop.type === PropType.reference) {
+      expandEdges(astProp, prop)
       reference(astProp, ctx, prop)
     } else if (
       prop.type === PropType.jsonLocalized ||
@@ -141,16 +156,6 @@ const walk = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
     } else if (field === '**') {
       for (const [field, prop] of typeDef.tree.props) {
         if ('ref' in prop) {
-          if (prop.edges) {
-            if (!astProp.edges) {
-              astProp.edges = {}
-            }
-            for (const edge of prop.edges?.props.values()) {
-              if (!getByPath(astProp.edges, edge.path)) {
-                setByPath(astProp.edges, edge.path, { include: {} })
-              }
-            }
-          }
           walkProp(astProp, ctx, typeDef, walkCtx, field)
         }
       }

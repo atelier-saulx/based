@@ -160,6 +160,11 @@ await test('include', async (t) => {
     props: {
       // '*': { include: {} },
       '**': { include: {} },
+      // friends: {
+      //   props: {
+      //     '*': { include: {} },
+      //   },
+      // },
 
       // y: { include: {} },
       // name: { include: {} },
