@@ -9,9 +9,9 @@ await test('type specific dumps', async (t) => {
     migration:
     - block all modifies
     - diff schema
-    - load new db without changed types
     - make new schema (fill typeId gaps)
-    - migrate changed/new types
+    - load new db without changed types
+    - insert changed/new types
   */
   const server = await testDbServer(t, { noBackup: true })
   const schema = {

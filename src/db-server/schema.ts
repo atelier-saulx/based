@@ -77,19 +77,6 @@ export const makeNativeSchema = (schema: SchemaOut): Uint8Array => {
       }
     }
 
-    // const mainStart = buf.reserve(mainLen)
-    // // TODO This would be the correct thing to do but `prop.write()` writes to
-    // // the backing ArrayBuffer ignoring our start offset and thus corrupts the
-    // // schema.
-    // //const mainBuf = buf.subarray(mainStart, mainStart + mainLen)
-    // const mainBuf = new Uint8Array(mainLen)
-    // for (const prop of typeDef.main) {
-    //   if ('default' in prop.schema && prop.schema.default) {
-    //     prop.write(mainBuf, prop.schema.default, prop.start)
-    //   }
-    // }
-    // buf.set(mainBuf, mainStart)
-
     // handle separate
     for (const prop of typeDef.separate) {
       prop.pushSelvaSchema(buf)
