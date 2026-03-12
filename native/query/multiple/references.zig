@@ -84,7 +84,6 @@ pub fn references(
     const typeEntry = try Node.getType(ctx.db, header.typeId);
     var nodeCnt: u32 = 0;
 
-    // std.debug.print("iteratorType: {any} \n", .{header.iteratorType});
     switch (header.iteratorType) {
         // --------- default -------------
         .default => {

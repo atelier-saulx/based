@@ -15,18 +15,37 @@ pub const BridgeResponse = enum(u32) {
 
 pub const OpType = enum(u8) {
     // Query
+    // id = 0,
+    // ids = 1,
+    // default = 2,
+    // alias = 3,
+    // aggregates = 4,
+    // aggregatesCount = 5,
+    // aliasFilter = 8,
+    // idFilter = 9,
+    // referenceEdge = 10,
+    // ---------------------
     id = 0,
     ids = 1,
     default = 2,
     alias = 3,
+    // ---------------------
     aggregates = 4,
     aggregatesCount = 5,
-    aliasFilter = 8,
-    idFilter = 9,
+    // ---------------------
+    references = 6,
+    referencesEdge = 7,
+    referencesEdgeInclude = 8,
+    // ---------------------
+    reference = 9,
     referenceEdge = 10,
+    // ---------------------
+    aliasFilter = 11,
+    idFilter = 12,
+    // ---------------------
 
-    subscribe = 11,
-    unsubscribe = 14,
+    subscribe = 20,
+    unsubscribe = 21,
 
     blockHash = 42,
     blockStatuses = 43,
@@ -667,8 +686,8 @@ pub const QueryType = enum(u8) {
     reference = 9,
     referenceEdge = 10,
     // ---------------------
-    aliasFilter = 200,
-    idFilter = 201,
+    aliasFilter = 11,
+    idFilter = 12,
 };
 
 pub const IncludeOp = enum(u8) {

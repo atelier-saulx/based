@@ -91,7 +91,7 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
   const limit = (ast.range?.end || 100) - rangeStart
 
   const headerIndex = pushQueryHeader(ctx.query, {
-    op: edgeTypeId ? QueryType.referenceEdge : QueryType.references,
+    op: edgeTypeId ? QueryType.referencesEdge : QueryType.references,
     prop: prop.id,
     includeSize: 0,
     typeId: prop.ref!.id,
