@@ -513,8 +513,7 @@ export class Query<
   }
 
   range(start: number, end?: number): this {
-    const limit = end ? end - start : 1000
-    this.ast.range = { start, end: limit }
+    this.ast.range = { start, end: end ?? start + 1000 }
     return this as any
   }
 
