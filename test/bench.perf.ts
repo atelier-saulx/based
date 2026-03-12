@@ -1,9 +1,9 @@
-import { BasedDb } from '../src/index.js'
 import { Sema } from 'async-sema'
 import test from './shared/test.js'
 import { start as startMulti } from './shared/multi.js'
 import assert from 'node:assert'
 import { perf } from './shared/assert.js'
+import {testDb} from './shared/index.js'
 
 const N = 1e7 // Nodes
 const N2 = 1e3 // nr filter queries
@@ -25,14 +25,7 @@ const toxpsNum = (n, t) => n / (t / 1000)
 const toxps = (n, t) => (n / (t / 1000)).toFixed(2)
 
 await test('test embedded', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db.server))
-
-  await db.setSchema(schema)
-
+  const db = await testDb(t, schema)
   const ctime = await perf(async () => {
     let i = N
     while (i--) {
