@@ -287,6 +287,7 @@ await test('hll', async (t) => {
           //@ts-ignore
           {
             id: 1,
+            $undeftokens: 0,
           },
         ],
       },
