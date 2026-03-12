@@ -727,7 +727,6 @@ static node_id_t load_node(struct selva_io *io, struct SelvaDb *db, struct Selva
     }
 
     auto node = res.node;
-    assert(node && node->type == te->type);
     err = load_node_fields(io, db, te, node);
     if (err) {
         return 0;
