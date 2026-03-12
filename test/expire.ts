@@ -3,7 +3,7 @@ import { equal } from './shared/assert.js'
 import { deepEqual } from '../src/utils/index.js'
 import test from './shared/test.js'
 import { setTimeout } from 'node:timers/promises'
-import {testDbClient} from './shared/index.js'
+import { testDbClient } from './shared/index.js'
 
 await test('expire', async (t) => {
   const db = new DbServer({

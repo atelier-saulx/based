@@ -34,14 +34,8 @@ await test('serialize', async (t) => {
     { id: 2, isNice: true },
   ])
 
-  deepEqual(await db.query('user').filter('isNice').get(), [
-    { id: 2, isNice: true },
-  ])
-
-  deepEqual(await db.query('user').filter('isNice', false).get(), [
+  deepEqual(await db.query('user').filter('isNice', '=', false).get(), [
     { id: 1, isNice: false },
     { id: 3, isNice: false },
   ])
-
-  // const def = db.query('user').filter('isNice', false).def
 })

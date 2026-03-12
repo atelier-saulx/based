@@ -1,4 +1,3 @@
-import { BasedDb } from '../src/index.js'
 import { deepEqual } from './shared/assert.js'
 import { italy } from './shared/examples.js'
 import { testDb } from './shared/index.js'
@@ -45,10 +44,11 @@ await test('string', async (t) => {
     role: 'root',
     resume: italy,
   })
-  const { name, role, resume } = await db
-    .query('user', one)
-    .include(['name', 'role', 'resume'], { raw: true })
-    .get()
+  const { name, role, resume } =
+    (await db
+      .query('user', one)
+      .include(['name', 'role', 'resume'], { raw: true })
+      .get()) ?? {}
 
   await db.create('user', {
     name,
