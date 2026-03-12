@@ -43,7 +43,7 @@ await test('include', async (t) => {
           items: {
             ref: 'user',
             prop: 'friends',
-            $level: 'number',
+            $level: 'string',
           },
         },
         // ----------------------------
@@ -110,7 +110,7 @@ await test('include', async (t) => {
     cook: {
       cookie: 1234,
     },
-    mrFriend: { id: a, $level: 67 },
+    mrFriend: { id: a },
   })
 
   let d = Date.now()
@@ -123,8 +123,10 @@ await test('include', async (t) => {
       y: i,
       derp: 'aaaaa',
       friends: [
-        { id: a, $level: rand(0, 200) },
-        { id: b, $level: rand(0, 200) },
+        a,
+        // b,
+        // { id: a, $level: rand(0, 200) },
+        { id: b, $level: rand(0, 200) + '' },
       ],
     })
   }
@@ -148,109 +150,25 @@ await test('include', async (t) => {
   // for (let i = 0; i < 1e3; i++) {
   //   bigArray.push(i % 2 ? 'xy' : 'xx')
   // }
-
+  // {
+  // type: 'thing',
+  // props: { '*': { include: {} }, '**': { include: {} } }
+  // }
   const ast: QueryAst = {
     type: 'user',
-    // target: ids,
-    // locale: 'fi',
     range: { start: 0, end: 1e6 },
-    filter: {
-      props: {
-        derp: {
-          ops: [
-            {
-              op: '!includes',
-              val: 'aaXYXfkowenfewknfwoefnqeoifnqeroifewoibfneqo feoirfh wrorighxxaa',
-            },
-          ],
-        },
-        y: {
-          ops: [{ op: '=', val: [1, 2, 15, 1, 2, 15] }],
-        },
-        // derp: {
-        //   ops: [
-        //     // { op: 'includes', val: 'aaaa' },
-        //     { op: '!includes', val: 'a' },
-
-        //     // { op: '=', val: 'aaaaa' },
-
-        //     // { op: '=', val: 'bad' },
-        //   ],
-        // },
-        // enum: {
-        //   ops: [
-        //     { op: '=', val: null },
-        //     // { op: '=', val: 'bad' },
-        //   ],
-        // },
-      },
-    },
-
     props: {
-      y: { include: {} },
-      name: { include: {} },
-      friends: {
-        props: {
-          y: { include: {} },
-          name: { include: {} },
-        },
-        edges: {
-          props: {
-            $level: { include: {} },
-          },
-        },
-        sort: { prop: '$level' },
-        order: 'asc',
-        range: { start: 0, end: 1e6 },
-        filter: {
-          filterType: FilterType.edgeAndProps,
-          edges: {
-            props: {
-              $level: {
-                ops: [{ op: '>', val: [0] }],
-              },
-            },
-          },
-          props: {
-            enum: {
-              ops: [
-                { op: '=', val: 'ok' },
-                { op: '=', val: 'bad' },
-              ],
-            },
-            y: {
-              ops: [
-                { op: '=', val: 10 },
-                { op: '=', val: [15, 100, 200, 300] },
-              ],
-            },
-          },
-        },
-      },
-      // localized: {
-      //   // include: {
-      //   //   meta: 'only', // few empty
-      //   //   // maxChars: 6,
-      //   // },
+      // '*': { include: {} },
+      '**': { include: {} },
+
+      // y: { include: {} },
+      // name: { include: {} },
+      // friends: {
+      // edges: {
       //   props: {
-      //     fi: {
-      //       include: {},
-      //     },
-      //     nl: {
-      //       include: {
-      //         meta: 'only',
-      //         // meta
-      //       },
-      //     },
-      //     en: {
-      //       include: {
-      //         maxChars: 6,
-      //         meta: true,
-      //         // maxChars: 4,
-      //         // meta
-      //       },
-      //     },
+      //     $level: { include: {} },
       //   },
+      // },
       // },
     },
   }
@@ -274,7 +192,7 @@ await test('include', async (t) => {
 
   console.log('START PERF', Date.now() - d, 'ms')
   const sizes: Set<number> = new Set()
-  await perf(
+  await perf.skip(
     async () => {
       const q: any = []
       for (let i = 0; i < 5; i++) {

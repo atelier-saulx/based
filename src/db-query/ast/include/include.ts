@@ -4,6 +4,7 @@ import {
   TypeDef,
   isPropDef,
 } from '../../../schema/defs/index.js'
+import { getByPath, setByPath } from '../../../utils/path.js'
 import {
   IncludeOp,
   LangCode,
@@ -140,6 +141,16 @@ const walk = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
     } else if (field === '**') {
       for (const [field, prop] of typeDef.tree.props) {
         if ('ref' in prop) {
+          if (prop.edges) {
+            if (!astProp.edges) {
+              astProp.edges = {}
+            }
+            for (const edge of prop.edges?.props.values()) {
+              if (!getByPath(astProp.edges, edge.path)) {
+                setByPath(astProp.edges, edge.path, { include: {} })
+              }
+            }
+          }
           walkProp(astProp, ctx, typeDef, walkCtx, field)
         }
       }

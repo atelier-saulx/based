@@ -1,5 +1,6 @@
 import { ReadSchemaEnum } from '../../protocol/index.js'
 import { PropDef, type TypeDef } from '../../schema/defs/index.js'
+import { debugBuffer } from '../../sdk.js'
 import {
   pushQueryHeaderSingleReference,
   QueryType,
@@ -37,6 +38,8 @@ export const defaultSingle = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
     throw new Error('ast.target not supported (yet)')
   }
 
+  const startIndex = ctx.query.length
+
   const headerIndex = pushQueryHeaderSingle(ctx.query, {
     op: aliasProp ? QueryType.alias : QueryType.id,
     includeSize: 0,
@@ -57,9 +60,11 @@ export const defaultSingle = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
     )
   }
 
+  const myNestedInclude = include(ast, ctx, typeDef)
+
   writeQueryHeaderSingleProps.includeSize(
     ctx.query.data,
-    include(ast, ctx, typeDef),
+    myNestedInclude,
     headerIndex,
   )
 }

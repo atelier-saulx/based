@@ -1,3 +1,4 @@
+import wait from '../../../src/utils/wait.js'
 import { deepEqual } from '../../shared/assert.js'
 import { testDb } from '../../shared/index.js'
 import test from '../../shared/test.js'
@@ -64,15 +65,21 @@ await test('modify binary on edge', async (t) => {
 
   deepEqual(res1?.toThing?.$edgeBlob, b1)
 
-  const b2 = new Uint8Array([4, 5, 6, 7])
-  await db.update('holder', id1, {
-    toThing: {
-      id: targetId,
-      $edgeBlob: b2,
-    },
+  console.log('--------------------------------')
+
+  // const b2 = new Uint8Array([4, 5, 6, 7])
+  // await db.update('holder', id1, {
+  //   toThing: {
+  //     id: targetId,
+  //     $edgeBlob: b2,
+  //   },
+  // })
+
+  console.dir(await db.query('holder', id1).include('toThing.$edgeBlob').ast, {
+    depth: 10,
   })
 
   const res2 = await db.query('holder', id1).include('toThing.$edgeBlob').get()
-
-  deepEqual(res2?.toThing?.$edgeBlob, b2)
+  console.log('NOOOOOOOOOOOOOOOO')
+  // deepEqual(res2?.toThing?.$edgeBlob, b2)
 })

@@ -371,6 +371,8 @@ await test('large block gap', async (t) => {
   client.create('b', {
     y: 10,
   })
+
+  // TODO make this work unsafe
   for (let i = 268435456; i < 268468224; i++) {
     client.create(
       'b',

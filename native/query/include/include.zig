@@ -56,8 +56,10 @@ pub fn include(
     typeEntry: Node.Type,
 ) !void {
     var i: usize = 0;
+
     while (i < q.len) {
         const op: t.IncludeOp = @enumFromInt(q[i]);
+
         switch (op) {
             .reference => {
                 recursionErrorBoundarySingleRef(Single.reference, node, ctx, q, typeEntry, &i);
