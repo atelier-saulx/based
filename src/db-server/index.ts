@@ -8,11 +8,7 @@ import { writeSchemaFile } from './schema.js'
 import { save, SaveOpts } from './blocks.js'
 
 import { OpType, OpTypeEnum } from '../zigTsExports.js'
-import {
-  MAX_ID,
-  type SchemaMigrateFns,
-  type SchemaOut,
-} from '../schema/index.js'
+import { MAX_ID, type SchemaOut } from '../schema/index.js'
 import { readUint32, writeUint32 } from '../utils/uint8.js'
 
 export class DbServer extends DbShared {
@@ -21,9 +17,9 @@ export class DbServer extends DbShared {
   migrating!: number
   saveInProgress: boolean = false
   fileSystemPath: string
-  activeReaders = 0 // processing queries or other DB reads
-  modifyQueue: Map<Function, Uint8Array> = new Map()
-  queryQueue: Map<Function, Uint8Array> = new Map()
+  // activeReaders = 0 // processing queries or other DB reads
+  // modifyQueue: Map<Function, Uint8Array> = new Map()
+  // queryQueue: Map<Function, Uint8Array> = new Map()
   stopped!: boolean // = true does not work
   saveIntervalInSeconds?: number
   saveInterval?: NodeJS.Timeout

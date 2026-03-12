@@ -12,6 +12,7 @@ import type { PropDef, TypeDef } from '../index.js'
 
 let writeBuf: AutoSizedUint8Array
 let validateBuf: AutoSizedUint8Array
+
 export class BasePropDef implements PropDef {
   constructor(schema: SchemaProp<true>, path: string[], typeDef: TypeDef) {
     this.schema = schema
