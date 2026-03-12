@@ -19,23 +19,29 @@ await test('type specific dumps', async (t) => {
       a: {
         aName: 'string',
         bRefs: {
-          ref: 'b',
-          prop: 'aRefs',
+          items: {
+            ref: 'b',
+            prop: 'aRefs',
+          },
         },
       },
       b: {
         bName: 'string',
         aRefs: {
-          ref: 'a',
-          prop: 'bRefs',
+          items: {
+            ref: 'a',
+            prop: 'bRefs',
+          },
         },
       },
     },
   } as const
   const client = await testDbClient(server, schema)
-  client.create('a', { aName: 'a name' })
-  client.create('b', { bName: 'b name' })
+  const a = client.create('a', { aName: 'a name', bRefs: [] })
+  client.create('b', { bName: 'b name', aRefs: [a] })
   await client.drain()
+  console.log('a1:', await client.query('a').include('*', '**').get())
+  console.log('b1:', await client.query('b').include('*', '**').get())
   await server.save()
   const files = await readdir(t.tmp)
   for (const file of files) {
@@ -44,9 +50,9 @@ await test('type specific dumps', async (t) => {
       await rm(join(t.tmp, file))
     }
   }
-  const server2 = new DbServer({ path: t.tmp })
-  const client2 = await testDbClient(server, schema)
+  const server2 = await testDbServer(t, { noBackup: true, noClean: true })
+  const client2 = await testDbClient(server2, schema)
   console.log(files)
-  console.log(await client2.query('a').include('*', '**').get())
-  console.log(await client2.query('b').include('*', '**').get())
+  console.log('a2:', await client2.query('a').include('*', '**').get())
+  console.log('b2:', await client2.query('b').include('*', '**').get())
 })

@@ -61,7 +61,9 @@ await test('modify binary on edge', async (t) => {
     },
   })
 
-  const res1 = await db.query('holder', id1).include('toThing.$edgeBlob').get()
+  const query = db.query('holder', id1).include('toThing.$edgeBlob')
+  console.dir(query.ast, { depth: null })
+  const res1 = await query.get()
 
   deepEqual(res1?.toThing?.$edgeBlob, b1)
 

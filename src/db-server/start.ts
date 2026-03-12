@@ -121,17 +121,14 @@ export async function realStart(db: DbServer, schema: SchemaOut) {
 export async function start(db: DbServer, opts?: StartOpts) {
   const path = db.fileSystemPath
   const noop = () => {}
-
   if (opts?.clean) {
     await rm(path, { recursive: true, force: true }).catch(noop)
   }
-
   await mkdir(path, { recursive: true }).catch(noop)
 
   try {
-    const schema = new Uint8Array(
-      (await readFile(join(path, SCHEMA_FILE))).buffer,
-    )
+    const schemaFile = await readFile(join(path, SCHEMA_FILE))
+    const schema = new Uint8Array(schemaFile.buffer)
     realStart(db, deSerialize(schema))
   } catch (e) {
     if (e.code !== 'ENOENT') {
