@@ -1,8 +1,8 @@
-import { errors } from '../../src/db-client/_modify/error.js'
-import { BasedDb } from '../../src/index.js'
+import { DbServer } from '../../src/sdk.js'
 import { throws, equal, isSorted } from '../shared/assert.js'
 import test from '../shared/test.js'
 import { randomString, wait } from '../../src/utils/index.js'
+import {testDbClient} from '../shared/index.js'
 
 const randomPrice = () => Math.round((Math.random() * 100 + 5) * 100) / 100
 const randomStock = () => Math.floor(Math.random() * 500)
@@ -11,14 +11,13 @@ const getRandom = (nr: number) => {
 }
 
 const catchNotExists = (err: Error) => {
-  if (err instanceof errors.NotExists) return
+  //if (err instanceof errors.NotExists) return
   throw err
 }
 
 await test('E-commerce Simulation', async (t) => {
-  const db = new BasedDb({
+  const db = new DbServer({
     path: t.tmp,
-    maxModifySize: 50000,
   })
 
   const simulationDuration = 5e3
@@ -34,9 +33,9 @@ await test('E-commerce Simulation', async (t) => {
     clearInterval(intervalId)
   })
 
-  t.after(async () => t.backup(db.server))
+  t.after(async () => t.backup(db))
 
-  const client = await db.setSchema({
+  const client = await testDbClient(db, {
     locales: { en: {}, de: {} }, // Add locales for text fields
     types: {
       user: {
@@ -65,7 +64,7 @@ await test('E-commerce Simulation', async (t) => {
       category: {
         props: {
           name: { type: 'string', maxBytes: 50 },
-          description: { type: 'text' },
+          description: { type: 'string', localized: true },
           products: {
             items: {
               ref: 'product',
@@ -77,7 +76,7 @@ await test('E-commerce Simulation', async (t) => {
       product: {
         props: {
           name: { type: 'string', maxBytes: 100 },
-          description: { type: 'text' },
+          description: { type: 'string', localized: true },
           price: { type: 'number', min: 0.01, max: 10000, step: 0.01 },
           stock: { type: 'uint32', min: 0, max: 100000 },
           tags: { type: 'cardinality' },
@@ -107,7 +106,7 @@ await test('E-commerce Simulation', async (t) => {
           user: { ref: 'user', prop: 'reviews' },
           product: { ref: 'product', prop: 'reviews' },
           rating: { type: 'uint8', min: 1, max: 5 },
-          comment: { type: 'text' },
+          comment: { type: 'string', localized: true },
           createdAt: { type: 'timestamp', on: 'create' },
         },
       },
@@ -249,7 +248,7 @@ await test('E-commerce Simulation', async (t) => {
         // Update Product (Price/Stock)
         const productId = getRandom(productIds)
         if (productId) {
-          await db
+          await client
             .update('product', productId, {
               price: randomPrice(),
               stock: { increment: Math.random() > 0.5 ? 1 : -1 }, // Increment or decrement stock
@@ -261,7 +260,7 @@ await test('E-commerce Simulation', async (t) => {
         const userId = getRandom(userIds)
         const productId = getRandom(productIds)
         if (userId && productId) {
-          await db
+          await client
             .update('user', userId, {
               lastLogin: Date.now(),
               viewedProducts: {
@@ -297,7 +296,7 @@ await test('E-commerce Simulation', async (t) => {
         // Update Category Description
         const catId = getRandom(categoryIds)
         if (catId) {
-          await db
+          await client
             .update('category', catId, {
               description: { de: `Aktualisiert ${randomString(10)}` },
             })
@@ -343,7 +342,7 @@ await test('E-commerce Simulation', async (t) => {
         // Get products in a category, sorted by price
         const categoryId = getRandom(categoryIds)
         if (categoryId) {
-          await db
+          await client
             .query('product')
             .filter('category', '=', categoryId)
             .sort('price', Math.random() > 0.5 ? 'asc' : 'desc')
@@ -356,7 +355,7 @@ await test('E-commerce Simulation', async (t) => {
         const userId = getRandom(userIds)
         if (userId) {
           // console.log({ userId })
-          await db
+          await client
             .query('user', userId)
             .include(
               'name',
@@ -392,7 +391,7 @@ await test('E-commerce Simulation', async (t) => {
           searchTerm = randomString(4)
         }
         if (searchTerm) {
-          await db
+          await client
             .query('product')
             .search(searchTerm, 'name', 'description')
             .include('name', 'price')
