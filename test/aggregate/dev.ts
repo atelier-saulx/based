@@ -1,61 +1,77 @@
-import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepEqual, equal } from '../shared/assert.js'
 import { testDb } from '../shared/index.js'
 import { fastPrng } from '../../src/utils/fastPrng.js'
+import { SchemaNumber } from '@based/schema'
 
-// await test('kev', async (t) => {
-//   const db = new BasedDb({
-//     path: t.tmp,
-//     maxModifySize: 1e6,
-//   })
+export const optionalNumber = ({
+  description,
+}: Pick<SchemaNumber, 'description' | 'min' | 'max'> = {}): SchemaNumber => ({
+  type: 'number',
+  default: -Infinity,
 
-//   await db.start({ clean: true })
-//   t.after(() => db.stop())
+  ...(description !== undefined && { description }),
+  hooks: {
+    create(value: any, _payload: Record<string, any>): any {
+      if (value === null || value === undefined) return -Infinity
+      return Number(value)
+    },
+    update(value: any, _payload: Record<string, any>): any {
+      if (value === null || value === undefined) return -Infinity
+      return Number(value)
+    },
+    read(value: any, _result: Record<string, any>): any {
+      return value === -Infinity ? undefined : value
+    },
+  },
+})
 
-//   await db.setSchema({
-//     types: {
-//       trip: {
-//         driver: 'string',
-//         distance: 'int32',
-//         rate: 'int8',
-//       },
-//     },
-//   })
+await test('khb', async (t) => {
+  const db = await testDb(t, {
+    types: {
+      measurement: {
+        props: {
+          //@ts-ignore
+          label: 'string',
+          //@ts-ignore
+          value: optionalNumber(),
+        },
+      },
+      container: {
+        props: {
+          measurement: {
+            ref: 'measurement',
+            prop: 'containers',
+          },
+        },
+      },
+    },
+  })
 
-//   db.create('trip', { driver: 'lala', distance: 10, rate: 5 })
-//   db.create('trip', { driver: 'lala', distance: 20, rate: 10 })
-//   db.create('trip', { driver: 'lele', distance: 40, rate: 10 })
+  // 'does not apply read hooks on nested ref with select callback (Based.io bug)
+  const mId = await db.create('measurement', { label: 'test' })
+  const cId = await db.create('container', { measurement: mId })
 
-//   // console.log((await db.query('trip').include('distance').get()).debug())
-//   //   console.log(
-//   //     (
-//   //       await db.query('trip').harmonicMean('distance').avg('distance').get()
-//   //     ).debug(),
-//   //   )
+  const direct = await db.query('measurement', mId).get()
 
-//   //   console.log((await db.query('trip').sum('distance', 'rate').get()).debug())
-//   console.log(
-//     (await db.query('trip').filter('distance', '>', 10).get()).debug(),
-//   )
-//   console.log(
-//     (
-//       await db.query('trip').sum('distance').filter('distance', '>', 10).get()
-//     ).debug(),
-//   )
-//   console.log(
-//     (
-//       await db
-//         .query('trip')
-//         .sum('distance')
-//         .filter('rate', '>', 8)
-//         .groupBy('driver')
-//         .get()
-//     ).debug(),
-//   )
+  console.dir(direct, { depth: null })
 
-//   await db.stop()
-// })
+  //   deepEqual(
+  //     direct?.value,
+  //     undefined,
+  //     'Direct query applies read hook correctly',
+  //   )
+
+  const container = await db
+    .query('container', cId)
+    .include((select: any) =>
+      select('measurement').include('id', 'label', 'value'),
+    )
+    .get()
+
+  console.dir(container, { depth: null })
+  //   console.dir(container?.measurement?.value, { depth: null }) // this returns -Infinity but undefined is expected
+})
 
 // await test('references', async (t) => {
 //   const db = new BasedDb({

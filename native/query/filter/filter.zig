@@ -148,6 +148,7 @@ pub fn filter(
         }
 
         pass = switch (c.op.compare) {
+            // make .selectCardinality
             .selectAlias => blk: {
                 if (filterType == .mixed and c.useEdge) {
                     const typeEntry = Node.getType(ctx.db, edge) catch {

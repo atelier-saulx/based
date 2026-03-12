@@ -1,20 +1,11 @@
-import { wait } from '../src/utils/index.js'
-import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 import { Worker } from 'node:worker_threads'
+import { testDb } from './shared/index.js'
 
 await test.skip('instantModify', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => db.destroy())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: {
       en: {},
       it: { fallback: ['en'] },

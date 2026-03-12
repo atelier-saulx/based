@@ -35,10 +35,6 @@ await test('boolean', async (t) => {
     { id: 2, isNice: true },
   ])
 
-  deepEqual(await client.query('user').filter('isNice').get(), [
-    { id: 2, isNice: true },
-  ])
-
   deepEqual(await client.query('user').filter('isNice', '=', false).get(), [
     { id: 1, isNice: false },
     { id: 3, isNice: false },

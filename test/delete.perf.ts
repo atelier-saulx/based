@@ -1,16 +1,10 @@
-import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, perf } from './shared/assert.js'
 import assert from 'node:assert'
+import { testDb } from './shared/index.js'
 
 await test('delete performance', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db.server))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {

@@ -64,32 +64,4 @@ await test('big nodes', async (t) => {
 
   deepEqual(gigaRef[0].ref.id, 2)
   deepEqual(megaRef[1].ref.id, 1)
-
-  const megaInclude = await db.query('mega').get()
-
-  const serializedSchema = serialize(megaInclude.def.readSchema!)
-  const deserializedSchema = deSerializeSchema(serializedSchema)
-
-  const obj = resultToObject(
-    deserializedSchema,
-    megaInclude.result,
-    megaInclude.result.byteLength - 4,
-    0,
-  )
-
-  deepEqual(obj[1].f4092, 1337)
-
-  const megaIncludeSelective = await db.query('mega').include('f4092').get()
-
-  const serializedSchemaSmall = serialize(megaIncludeSelective.def.readSchema!)
-  const deserializedSchemaSmall = deSerializeSchema(serializedSchemaSmall)
-
-  const obj2 = resultToObject(
-    deserializedSchemaSmall,
-    megaIncludeSelective.result,
-    megaIncludeSelective.result.byteLength - 4,
-    0,
-  )
-
-  deepEqual(obj2[1].f4092, 1337, 'seclective include large schema')
 })

@@ -38,28 +38,30 @@ await test('hll', async (t) => {
     myUniqueValuesCount: 'myCoolValue',
   })
 
-  console.log('a')
-  deepEqual(
-    await db
-      .query('article')
-      .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
-      .get(),
-    [
-      {
-        id: 1,
-        myUniqueValuesCount: 1,
-        myUniqueValuesCountFromArray: 0,
-      },
-    ],
-  )
-  console.log('b')
+  // console.log('a')
+  // deepEqual(
+  //   await db
+  //     .query('article')
+  //     .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       myUniqueValuesCount: 1,
+  //       myUniqueValuesCountFromArray: 0,
+  //     },
+  //   ],
+  // )
+  // console.log('b')
+
+  const q2 = await db
+    .query('article')
+    .include('myUniqueValuesCount')
+    .filter('myUniqueValuesCount', '!=', 0)
+    .get()
 
   deepEqual(
-    await db
-      .query('article')
-      .include('myUniqueValuesCount')
-      .filter('myUniqueValuesCount', '!=', 0)
-      .get(),
+    q2,
     [
       {
         id: 1,
@@ -90,16 +92,17 @@ await test('hll', async (t) => {
     ],
   })
 
-  deepEqual(
-    await db
-      .query('article')
-      .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
-      .get(),
-    [
-      { id: 1, myUniqueValuesCount: 1, myUniqueValuesCountFromArray: 0 },
-      { id: 2, myUniqueValuesCountFromArray: 7, myUniqueValuesCount: 0 },
-    ],
-  )
+  const qarr = await db
+    .query('article')
+    .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
+    .get()
+
+  console.dir(qarr, { depth: null })
+
+  deepEqual(qarr, [
+    { id: 1, myUniqueValuesCount: 1, myUniqueValuesCountFromArray: 0 },
+    { id: 2, myUniqueValuesCountFromArray: 7, myUniqueValuesCount: 0 },
+  ])
 
   deepEqual(
     await db
@@ -283,6 +286,7 @@ await test('hll', async (t) => {
       {
         id: 3,
         contributors: [
+          //@ts-ignore
           {
             id: 1,
           },

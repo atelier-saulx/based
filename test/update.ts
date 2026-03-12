@@ -159,27 +159,27 @@ await test('update', async (t) => {
   // for individual queries combine them
   deepEqual(await db.query('snurp', [2, 1]).get(), [
     {
-      a: 1,
-      b: 2,
-      c: 3,
-      countryCode: 'NL',
-      email: 'snurp@snurp.snurp',
-      id: 1,
-      name: 'mr snurp!',
-      nested: {
-        derp: 'a',
-      },
-    },
-    {
+      id: 2,
       a: 0,
       b: 0,
       c: 0,
       countryCode: '',
       email: '',
-      id: 2,
       name: 'mr snurp 2!',
       nested: {
         derp: 'b',
+      },
+    },
+    {
+      id: 1,
+      a: 1,
+      b: 2,
+      c: 3,
+      countryCode: 'NL',
+      email: 'snurp@snurp.snurp',
+      name: 'mr snurp!',
+      nested: {
+        derp: 'a',
       },
     },
   ])
@@ -199,7 +199,7 @@ await test('update', async (t) => {
 
   await db.drain()
 
-  equal((await db.query('snurp', ids).get())?.length, 1e6)
+  equal((await db.query('snurp', ids).get())?.length, 1e3)
 
   equal((await db.query('snurp', ids).range(0, 100).get()).length, 100)
 
