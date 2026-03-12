@@ -1,10 +1,11 @@
 import { DbServer } from '../../dist/index.js'
-import { BasedDb, DbClient, getDefaultHooks } from '../../src/index.js'
+import { DbClient, getDefaultHooks } from '../../src/index.js'
 import { equal } from '../shared/assert.js'
 import test from '../shared/test.js'
 
 await test('alias upsert', async (t) => {
   const server = new DbServer({ path: t.tmp })
+  t.after(() => server.destroy())
   const schema = {
     types: {
       user: {
