@@ -1,15 +1,16 @@
-import { BasedDb, DbClient, getDefaultHooks } from '../src/index.js'
+import { DbClient, DbServer, getDefaultHooks } from '../src/index.js'
 import { equal } from './shared/assert.js'
 import { deepEqual } from '../src/utils/index.js'
 import test from './shared/test.js'
 import { setTimeout } from 'node:timers/promises'
+import { testDbClient } from './shared/index.js'
 
 await test('expire', async (t) => {
-  const db = new BasedDb({
+  const db = new DbServer({
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db.server))
+  t.after(() => t.backup(db))
 
   const schema = {
     types: {
@@ -33,7 +34,7 @@ await test('expire', async (t) => {
       },
     },
   } as const
-  const client = await db.setSchema(schema)
+  const client = await testDbClient(db, schema)
 
   const user1 = await client.create('user', {})
   const token1 = await client.create('token', {
@@ -54,13 +55,13 @@ await test('expire', async (t) => {
 
   await db.save()
   equal((await client.query('token').get()).length, 1, '1 token before save')
-  const db2 = new BasedDb({
+  const db2 = new DbServer({
     path: t.tmp,
   })
   t.after(() => db2.destroy(), true)
   await db2.start()
   const client2 = new DbClient<typeof schema>({
-    hooks: getDefaultHooks(db2.server),
+    hooks: getDefaultHooks(db2),
   })
 
   equal((await client2.query('token').get()).length, 1, '1 token after load')
@@ -69,13 +70,13 @@ await test('expire', async (t) => {
 })
 
 await test('refresh', async (t) => {
-  const db = new BasedDb({
+  const db = new DbServer({
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db.server))
+  t.after(() => t.backup(db))
 
-  const client = await db.setSchema({
+  const client = await testDbClient(db, {
     types: {
       user: {
         props: {
@@ -89,7 +90,7 @@ await test('refresh', async (t) => {
     },
   })
 
-  const id1 = await db.create('user', {
+  const id1 = await client.create('user', {
     name: 'dude',
   })
   client.update('user', id1, { deleteBy: Date.now() + 1e3 })

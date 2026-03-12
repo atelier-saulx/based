@@ -284,7 +284,6 @@ await test('simple', async (t) => {
   )
 })
 
-
 await test('sort', async (t) => {
   const db = await testDb(t, {
     locales: {

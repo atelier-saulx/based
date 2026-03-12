@@ -18,7 +18,7 @@ await test('simple', async (t) => {
   })
 
   db.create('user', {
-    file: new Uint32Array([1, 2, 3, 4]),
+    file: new Uint8Array(new Uint32Array([1, 2, 3, 4]).buffer),
   })
 
   await db.drain()
@@ -48,7 +48,7 @@ await test('simple', async (t) => {
     file: italyBytes,
   })
 
-  equal((await db.query('user', id2).get()).file.length, italyBytes.byteLength)
+  equal((await db.query('user', id2).get())?.file.length, italyBytes.byteLength)
 })
 
 await test('binary and crc32', async (t) => {
