@@ -17,6 +17,7 @@ import { getIteratorType } from './iteratorType.js'
 import { readPropDef, readSchema } from './readSchema.js'
 import { isAggregateAst, pushAggregatesQuery } from './aggregates.js'
 import { sort } from './sort.js'
+import { debugBuffer } from '../../sdk.js'
 
 export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
   const rangeStart = ast.range?.start || 0
@@ -112,8 +113,12 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     (ast.filter.filterType == FilterType.propOnly ||
       ast.filter.filterType == FilterType.edgeAndProps)
   ) {
+    let s = ctx.query.length
+    console.log('-----------------------------------------')
     const filterSize = filter(ast.filter, ctx, prop.ref!)
     props.filterSize(ctx.query.data, filterSize, headerIndex)
+    debugBuffer(ctx.query.data, s, s + filterSize, 'FILTER')
+    console.log('-----------------------------------------')
   }
 
   if (
@@ -128,8 +133,10 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     if (!ast.filter.edges) {
       throw new Error('Edge filter type but no edges defined')
     }
+    let s = ctx.query.length
     const filterSize = filter(ast.filter.edges, ctx, prop.edges!)
     props.edgeFilterSize(ctx.query.data, filterSize, headerIndex)
+    debugBuffer(ctx.query.data, s, s + filterSize, 'EDGE FILTER')
   }
 
   const size = include(

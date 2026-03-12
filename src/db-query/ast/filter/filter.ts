@@ -182,7 +182,7 @@ const filterInternal = (
         },
         FilterOpCompare.nextOrIndex,
       )
-      // can be better just pass
+      // Fixme: Can be better just pass
       writeUint64(
         condition,
         MAX_INDEX + Math.floor(Math.random() * 1e9),
@@ -269,7 +269,8 @@ export const filter = (
   edgeType?: TypeDef,
   prevOr?: Uint8Array,
 ) => {
-  ctx.query.pushUint32(67)
+  // Adds a run id this makes sure filters dont get prepared more then once per poll cycle
+  ctx.query.pushUint32(0)
   const len = filterInternal(
     ast,
     ctx,

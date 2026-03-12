@@ -47,7 +47,7 @@ await test('include', async (t) => {
           },
         },
         // ----------------------------
-        derp: { type: 'string', maxBytes: 2 },
+        derp: { type: 'string', maxBytes: 64 },
         x: 'boolean',
         flap: 'uint32',
         enum: ['ok', 'bad', 'great'],
@@ -84,6 +84,7 @@ await test('include', async (t) => {
       nl: 'derpi yuz NL',
     },
     aliasId: 'jim',
+    derp: 'aaaaa',
     // enum: 'ok',
     // derp: 'aa',
     // big: 'mr jim',
@@ -97,10 +98,10 @@ await test('include', async (t) => {
 
   const b = await client.create('user', {
     name: 'mr snurf b',
-    derp: 'bb',
     localized: {
       en: 'MR B ENG',
     },
+    derp: 'aaaaa',
     aliasId: 'snurf',
     y: 15,
     x: true,
@@ -116,11 +117,13 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
   const ids: number[] = []
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 1e6; i++) {
     ids.push(i + 1)
     client.create('user', {
       // big: syntheticData,
       y: i,
+      derp: 'aaaaa',
+
       // aliasId: `flap${i}`,
       // name: `mr snurf ${i}`,
       // localized: {
@@ -168,44 +171,77 @@ await test('include', async (t) => {
     range: { start: 0, end: 1e6 },
     filter: {
       props: {
-        y: {
-          ops: [{ op: '=', val: [1, 2, 15] }],
+        derp: {
+          ops: [
+            {
+              op: '!includes',
+              val: 'aaXYXfkowenfewknfwoefnqeoifnqeroifewoibfneqo feoirfh wrorighxxaa',
+            },
+          ],
         },
+        y: {
+          ops: [{ op: '=', val: [1, 2, 15, 1, 2, 15] }],
+        },
+        // derp: {
+        //   ops: [
+        //     // { op: 'includes', val: 'aaaa' },
+        //     { op: '!includes', val: 'a' },
+
+        //     // { op: '=', val: 'aaaaa' },
+
+        //     // { op: '=', val: 'bad' },
+        //   ],
+        // },
+        // enum: {
+        //   ops: [
+        //     { op: '=', val: null },
+        //     // { op: '=', val: 'bad' },
+        //   ],
+        // },
       },
     },
 
     props: {
       y: { include: {} },
       name: { include: {} },
-      friends: {
-        props: {
-          y: { include: {} },
-          name: { include: {} },
-        },
-        edges: {
-          props: {
-            $level: { include: {} },
-          },
-        },
-        sort: { prop: '$level' },
-        order: 'asc',
-        range: { start: 0, end: 1e6 },
-        filter: {
-          filterType: FilterType.edgeOnly,
-          edges: {
-            props: {
-              $level: {
-                ops: [{ op: '>', val: [0] }],
-              },
-            },
-          },
-          // props: {
-          //   y: {
-          //     ops: [{ op: '=', val: [100, 200, 300] }],
-          //   },
-          // },
-        },
-      },
+      // friends: {
+      //   props: {
+      //     y: { include: {} },
+      //     name: { include: {} },
+      //   },
+      //   edges: {
+      //     props: {
+      //       $level: { include: {} },
+      //     },
+      //   },
+      //   sort: { prop: '$level' },
+      //   order: 'asc',
+      //   range: { start: 0, end: 1e6 },
+      //   filter: {
+      //     filterType: FilterType.edgeAndProps,
+      //     edges: {
+      //       props: {
+      //         $level: {
+      //           ops: [{ op: '>', val: [0] }],
+      //         },
+      //       },
+      //     },
+      //     // props: {
+      //     //   enum: {
+      //     //     ops: [
+      //     //       { op: '=', val: 'ok' },
+      //     //       { op: '=', val: 'bad' },
+      //     //     ],
+      //     //   },
+      //     //   y: {
+      //     //     ops: [
+      //     //       { op: '=', val: 10 },
+      //     //       { op: '=', val: [15, 100, 200, 300] },
+      //     //     ],
+      //     //   },
+      //     // },
+      //   },
+      // },
       // localized: {
       //   // include: {
       //   //   meta: 'only', // few empty
@@ -253,7 +289,7 @@ await test('include', async (t) => {
 
   console.log('START PERF', Date.now() - d, 'ms')
   const sizes: Set<number> = new Set()
-  await perf.skip(
+  await perf(
     async () => {
       const q: any = []
       for (let i = 0; i < 5; i++) {

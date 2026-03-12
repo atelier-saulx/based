@@ -22,16 +22,16 @@ inline fn referencesSort(
     ctx: *Query.QueryCtx,
     q: []u8,
     from: Node.Node,
-    fromType: Selva.Type,
+    fromType: Node.Type,
     i: *usize,
     header: *const t.QueryHeader,
     typeEntry: Node.Type,
 ) !Sort.SortIterator(desc, edge) {
     const sortHeader = utils.readNext(t.SortHeader, q, i);
-    var refs = try References.iterator(desc, edge, ctx.db, from, header.prop, fromType);
-    const filter = if (filterType == .propOnly or filterType == .edgeAndProps) try Filter.readFilter(ctx, i, header.filterSize, q, typeEntry) else undefined;
     const edgeType = if (filterType == .edgeOnly or filterType == .edgeAndProps) try Node.getType(ctx.db, header.edgeTypeId) else undefined;
+    const filter = if (filterType == .propOnly or filterType == .edgeAndProps) try Filter.readFilter(ctx, i, header.filterSize, q, typeEntry) else undefined;
     const edgeFilter = if (filterType == .edgeOnly or filterType == .edgeAndProps) try Filter.readFilter(ctx, i, header.edgeFilterSize, q, edgeType) else undefined;
+    var refs = try References.iterator(desc, edge, ctx.db, from, header.prop, fromType);
     return try Sort.fromIterator(
         desc,
         edge,
@@ -70,7 +70,7 @@ pub fn references(
     ctx: *Query.QueryCtx,
     q: []u8,
     from: Node.Node,
-    fromType: Selva.Type,
+    fromType: Node.Type,
     i: *usize,
 ) !void {
     const hasEdge = edge != .noEdge;
@@ -84,7 +84,7 @@ pub fn references(
     const typeEntry = try Node.getType(ctx.db, header.typeId);
     var nodeCnt: u32 = 0;
 
-    // std.debug.print("iteratorType: {any} \n", .{header.iteratorType});
+    std.debug.print("iteratorType: {any} \n", .{header.iteratorType});
     switch (header.iteratorType) {
         // --------- default -------------
         .default => {
@@ -156,6 +156,7 @@ pub fn references(
         },
         .filterSortEdgeAndProp => {
             var it = try referencesSort(false, true, .edgeAndProps, ctx, q, from, fromType, i, &header, typeEntry);
+            // ----  X
             nodeCnt = try iterate(.noFilter, edge, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },

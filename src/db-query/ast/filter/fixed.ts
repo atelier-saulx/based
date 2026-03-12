@@ -1,4 +1,5 @@
 import { PropDef } from '../../../schema/defs/index.js'
+import { debugBuffer } from '../../../sdk.js'
 import { FilterOpCompare as Op } from '../../../zigTsExports.js'
 import { FilterOpts, Operator } from '../ast.js'
 import { createCondition } from './condition.js'
@@ -29,7 +30,12 @@ export const fixedComparison = (
     const size = val.length * prop.size
     const empty = VECTOR_BYTES - (size % VECTOR_BYTES)
     const rest = empty / prop.size
-    const { condition, offset } = createCondition(prop, op, size + empty)
+    const { condition, offset } = createCondition(
+      prop,
+      op,
+      size + empty,
+      VECTOR_BYTES,
+    )
     let i = offset
     for (const v of val) {
       prop.write(condition, v, i)
@@ -44,12 +50,18 @@ export const fixedComparison = (
 
   if (op === Op.eqBatchSmall || op === Op.neqBatchSmall) {
     const vectorLen = VECTOR_BYTES / prop.size
-    const { condition, offset } = createCondition(prop, op, VECTOR_BYTES)
+    const { condition, offset } = createCondition(
+      prop,
+      op,
+      VECTOR_BYTES,
+      VECTOR_BYTES,
+    )
     let i = offset
     for (let j = 0; j < vectorLen; j++) {
       prop.write(condition, j >= val.length ? val[0] : val[j], i)
       i += prop.size
     }
+    debugBuffer(condition, 0, 0, 'eqBatchSmall ' + VECTOR_BYTES)
     return condition
   }
 
