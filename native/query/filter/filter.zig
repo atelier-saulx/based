@@ -122,7 +122,15 @@ pub inline fn filter(
 
         if (prop != c.prop) {
             prop = c.prop;
-            v = Fields.getRaw(node, c.fieldSchema);
+            if (c.op.prop == .cardinality) {
+                if (Fields.getCardinality(node, c.fieldSchema)) |cardRaw| {
+                    v = cardRaw;
+                } else {
+                    v = &.{ 0, 0, 0, 0 };
+                }
+            } else {
+                v = Fields.getRaw(node, c.fieldSchema);
+            }
         }
 
         pass = switch (c.op.compare) {
