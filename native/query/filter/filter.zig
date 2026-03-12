@@ -122,18 +122,14 @@ pub inline fn filter(
 
         if (prop != c.prop) {
             prop = c.prop;
-            if (c.op.prop == .cardinality) {
-                if (Fields.getCardinality(node, c.fieldSchema)) |cardRaw| {
-                    v = cardRaw;
-                } else {
-                    v = &.{ 0, 0, 0, 0 };
-                }
-            } else {
-                v = Fields.getRaw(node, c.fieldSchema);
-            }
+            v = Fields.getRaw(node, c.fieldSchema);
         }
 
         pass = switch (c.op.compare) {
+            .selectCardinality => blk: {
+                v = Fields.getCardinality(node, c.fieldSchema) orelse &.{ 0, 0, 0, 0 };
+                break :blk true;
+            },
             .selectAlias => blk: {
                 const typeEntry = Node.getType(ctx.db, node) catch {
                     break :blk false;
@@ -177,7 +173,7 @@ pub inline fn filter(
             .gt,
             => |op| blk: {
                 break :blk switch (c.op.prop) {
-                    .id, .uint32, .int32 => Fixed.compare(u32, op, q, v, index, c),
+                    .id, .uint32, .int32, .cardinality => Fixed.compare(u32, op, q, v, index, c),
                     .uint16, .int16 => Fixed.compare(u16, op, q, v, index, c),
                     .number => Fixed.compare(f64, op, q, v, index, c),
                     .timestamp => Fixed.compare(u64, op, q, v, index, c),
