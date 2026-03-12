@@ -36,7 +36,7 @@ export const createCondition = (
         len: propSize,
         offset: 255, // Means value is not aligned
         size: size + propSize,
-        hasEdge: false,
+        useEdge: false,
       },
       FilterConditionAlignOf + 1,
     ) + propSize

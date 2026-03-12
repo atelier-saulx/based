@@ -771,7 +771,6 @@ pub const QueryHeader = packed struct {
     filterSize: u16,
     searchSize: u16,
     edgeSize: u16,
-    edgeFilterSize: u16,
     includeSize: u32, // cannot be more then 16kb? might be good enough (youri increased to 32)
     iteratorType: QueryIteratorType,
     size: u32,
@@ -948,7 +947,7 @@ pub const FilterCondition = packed struct {
     size: u32,
     prop: u8,
     start: u16,
-    hasEdge: bool,
+    useEdge: bool,
     len: u7, // maybe just make this u7?
     lang: LangCode,
     fieldSchema: Schema.FieldSchema,
@@ -968,7 +967,7 @@ pub const FilterType = enum(u8) {
     noFilter = 0,
     propOnly = 1,
     edgeOnly = 2,
-    edgeAndProps = 3,
+    mixed = 3,
 };
 
 pub const SelvaSchemaHeader = packed struct {

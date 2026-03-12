@@ -2922,14 +2922,13 @@ export type QueryHeader = {
   filterSize: number
   searchSize: number
   edgeSize: number
-  edgeFilterSize: number
   includeSize: number
   iteratorType: QueryIteratorTypeEnum
   size: number
   sort: boolean
 }
 
-export const QueryHeaderByteSize = 32
+export const QueryHeaderByteSize = 30
 
 export const QueryHeaderAlignOf = 16
 
@@ -2955,8 +2954,6 @@ export const writeQueryHeader = (
   writeUint16(buf, Number(header.searchSize), offset)
   offset += 2
   writeUint16(buf, Number(header.edgeSize), offset)
-  offset += 2
-  writeUint16(buf, Number(header.edgeFilterSize), offset)
   offset += 2
   writeUint32(buf, Number(header.includeSize), offset)
   offset += 4
@@ -2999,20 +2996,17 @@ export const writeQueryHeaderProps = {
   edgeSize: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, Number(value), offset + 18)
   },
-  edgeFilterSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, Number(value), offset + 20)
-  },
   includeSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint32(buf, Number(value), offset + 22)
+    writeUint32(buf, Number(value), offset + 20)
   },
   iteratorType: (buf: Uint8Array, value: QueryIteratorTypeEnum, offset: number) => {
-    buf[offset + 26] = Number(value)
+    buf[offset + 24] = Number(value)
   },
   size: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint32(buf, Number(value), offset + 27)
+    writeUint32(buf, Number(value), offset + 25)
   },
   sort: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 31] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+    buf[offset + 29] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
 }
 
@@ -3030,11 +3024,10 @@ export const readQueryHeader = (
     filterSize: readUint16(buf, offset + 14),
     searchSize: readUint16(buf, offset + 16),
     edgeSize: readUint16(buf, offset + 18),
-    edgeFilterSize: readUint16(buf, offset + 20),
-    includeSize: readUint32(buf, offset + 22),
-    iteratorType: (buf[offset + 26]) as QueryIteratorTypeEnum,
-    size: readUint32(buf, offset + 27),
-    sort: (((buf[offset + 31] >>> 0) & 1)) === 1,
+    includeSize: readUint32(buf, offset + 20),
+    iteratorType: (buf[offset + 24]) as QueryIteratorTypeEnum,
+    size: readUint32(buf, offset + 25),
+    sort: (((buf[offset + 29] >>> 0) & 1)) === 1,
   }
   return value
 }
@@ -3049,11 +3042,10 @@ export const readQueryHeaderProps = {
     filterSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 14),
     searchSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 16),
     edgeSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 18),
-    edgeFilterSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 20),
-    includeSize: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 22),
-    iteratorType: (buf: Uint8Array, offset: number) => (buf[offset + 26]) as QueryIteratorTypeEnum,
-    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 27),
-    sort: (buf: Uint8Array, offset: number) => (((buf[offset + 31] >>> 0) & 1)) === 1,
+    includeSize: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 20),
+    iteratorType: (buf: Uint8Array, offset: number) => (buf[offset + 24]) as QueryIteratorTypeEnum,
+    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 25),
+    sort: (buf: Uint8Array, offset: number) => (((buf[offset + 29] >>> 0) & 1)) === 1,
 }
 
 export const createQueryHeader = (header: QueryHeader): Uint8Array => {
@@ -3076,7 +3068,6 @@ export const pushQueryHeader = (
   buf.pushUint16(Number(header.filterSize))
   buf.pushUint16(Number(header.searchSize))
   buf.pushUint16(Number(header.edgeSize))
-  buf.pushUint16(Number(header.edgeFilterSize))
   buf.pushUint32(Number(header.includeSize))
   buf.pushUint8(Number(header.iteratorType))
   buf.pushUint32(Number(header.size))
@@ -4196,7 +4187,7 @@ export type FilterCondition = {
   size: number
   prop: number
   start: number
-  hasEdge: boolean
+  useEdge: boolean
   len: number
   lang: LangCodeEnum
   fieldSchema: number
@@ -4221,7 +4212,7 @@ export const writeFilterCondition = (
   writeUint16(buf, Number(header.start), offset)
   offset += 2
   buf[offset] = 0
-  buf[offset] |= (((header.hasEdge ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= (((header.useEdge ? 1 : 0) >>> 0) & 1) << 0
   buf[offset] |= ((header.len >>> 0) & 127) << 1
   offset += 1
   buf[offset] = Number(header.lang)
@@ -4246,7 +4237,7 @@ export const writeFilterConditionProps = {
   start: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, Number(value), offset + 7)
   },
-  hasEdge: (buf: Uint8Array, value: boolean, offset: number) => {
+  useEdge: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 9] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
   len: (buf: Uint8Array, value: number, offset: number) => {
@@ -4272,7 +4263,7 @@ export const readFilterCondition = (
     size: readUint32(buf, offset + 2),
     prop: buf[offset + 6],
     start: readUint16(buf, offset + 7),
-    hasEdge: (((buf[offset + 9] >>> 0) & 1)) === 1,
+    useEdge: (((buf[offset + 9] >>> 0) & 1)) === 1,
     len: ((buf[offset + 9] >>> 1) & 127),
     lang: (buf[offset + 10]) as LangCodeEnum,
     fieldSchema: readUint64(buf, offset + 11),
@@ -4286,7 +4277,7 @@ export const readFilterConditionProps = {
     size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 2),
     prop: (buf: Uint8Array, offset: number) => buf[offset + 6],
     start: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 7),
-    hasEdge: (buf: Uint8Array, offset: number) => (((buf[offset + 9] >>> 0) & 1)) === 1,
+    useEdge: (buf: Uint8Array, offset: number) => (((buf[offset + 9] >>> 0) & 1)) === 1,
     len: (buf: Uint8Array, offset: number) => ((buf[offset + 9] >>> 1) & 127),
     lang: (buf: Uint8Array, offset: number) => (buf[offset + 10]) as LangCodeEnum,
     fieldSchema: (buf: Uint8Array, offset: number) => readUint64(buf, offset + 11),
@@ -4309,7 +4300,7 @@ export const pushFilterCondition = (
   buf.pushUint8(Number(header.prop))
   buf.pushUint16(Number(header.start))
   buf.pushUint8(0)
-  buf.view[buf.length - 1] |= (((header.hasEdge ? 1 : 0) >>> 0) & 1) << 0
+  buf.view[buf.length - 1] |= (((header.useEdge ? 1 : 0) >>> 0) & 1) << 0
   buf.view[buf.length - 1] |= ((header.len >>> 0) & 127) << 1
   buf.pushUint8(Number(header.lang))
   buf.pushUint64(header.fieldSchema)
@@ -4392,21 +4383,21 @@ export const FilterType = {
   noFilter: 0,
   propOnly: 1,
   edgeOnly: 2,
-  edgeAndProps: 3,
+  mixed: 3,
 } as const
 
 export const FilterTypeInverse = {
   0: 'noFilter',
   1: 'propOnly',
   2: 'edgeOnly',
-  3: 'edgeAndProps',
+  3: 'mixed',
 } as const
 
 /**
   noFilter, 
   propOnly, 
   edgeOnly, 
-  edgeAndProps 
+  mixed 
  */
 export type FilterTypeEnum = (typeof FilterType)[keyof typeof FilterType]
 

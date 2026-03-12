@@ -106,7 +106,6 @@ export const astToQueryCtx = (
   }
 
   // can use same buf for sub
-  console.log(query.view.slice())
   return {
     query: query.view.slice(),
     readSchema: ctx.readSchema,
