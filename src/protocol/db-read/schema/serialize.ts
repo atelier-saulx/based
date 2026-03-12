@@ -149,6 +149,7 @@ const serializeProp = (
   let options = 0
   if ('meta' in prop) {
     options |= PROPERTY_BIT_MAP.meta
+    blocks.push(new Uint8Array([prop.meta as number]))
   }
   if ('enum' in prop) {
     options |= PROPERTY_BIT_MAP.enum
@@ -158,12 +159,6 @@ const serializeProp = (
     options |= PROPERTY_BIT_MAP.vectorBaseType
     // Size 8
     blocks.push(new Uint8Array([prop.vectorBaseType! - 1]))
-  }
-  if ('cardinalityMode' in prop) {
-    blocks.push(new Uint8Array([prop.cardinalityMode!]))
-  }
-  if ('cardinalityPrecision' in prop) {
-    blocks.push(new Uint8Array([prop.cardinalityPrecision!]))
   }
   if ('len' in prop) {
     options |= PROPERTY_BIT_MAP.len

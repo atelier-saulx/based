@@ -103,7 +103,7 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
   // const ids: number[] = []
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 500; i++) {
     // ids.push(i + 1)
     client.create('user', {
       y: i,

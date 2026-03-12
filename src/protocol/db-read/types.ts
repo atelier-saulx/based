@@ -53,8 +53,6 @@ export type ReadProp = {
   locales?: {
     [code: string]: { name: string; meta?: ReadMeta; readBy: number }
   }
-  cardinalityMode?: number
-  cardinalityPrecision?: number
 }
 
 export type ReadAggregateSchema = {
