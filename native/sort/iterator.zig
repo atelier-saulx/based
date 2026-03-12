@@ -105,8 +105,6 @@ inline fn createIterator(
 
 fn fillSortIndex(
     sortIndex: *SortIndexMeta,
-    // dbCtx: *DbCtx,
-    // thread: *Thread.Thread,
     ctx: *Query.QueryCtx,
     header: *const t.SortHeader,
     typeEntry: Node.Type,
@@ -114,33 +112,43 @@ fn fillSortIndex(
     comptime defrag: bool,
     comptime isLocked: bool,
     comptime isEdge: bool,
-    comptime hasFilter: bool, // add filter ON edge OR AND
-    filter: if (hasFilter) []u8 else void,
+    comptime filterType: t.FilterType,
+    filter: if (filterType == .propOnly or filterType == .edgeAndProps) []u8 else void,
+    edgeFilter: if (filterType == .edgeOnly or filterType == .edgeAndProps) []u8 else void,
 ) !void {
     if (isLocked) {
         ctx.db.threads.mutex.unlock();
     }
-
     if (isEdge) {
         if (header.edgeType != 0) {
             const edgeType = try Node.getType(ctx.db, header.edgeType);
             const fieldSchema = try Schema.getFieldSchema(edgeType, header.prop);
             while (it.nextRef()) |ref| {
-                if (hasFilter) {
+                if (filterType == .propOnly or filterType == .edgeAndProps) {
                     if (!try Filter.filter(ref.node, ctx, filter)) {
                         continue;
                     }
                 }
+                if (filterType == .edgeOnly or filterType == .edgeAndProps) {
+                    if (!try Filter.filter(ref.edge, ctx, edgeFilter)) {
+                        continue;
+                    }
+                }
                 const data = switch (header.propType) {
-                    .stringLocalized, .jsonLocalized => Fields.getText(typeEntry, ref.edge, fieldSchema, header.propType, header.lang),
-                    else => Fields.get(typeEntry, ref.edge, fieldSchema, header.propType),
+                    .stringLocalized, .jsonLocalized => Fields.getText(edgeType, ref.edge, fieldSchema, header.propType, header.lang),
+                    else => Fields.get(edgeType, ref.edge, fieldSchema, header.propType),
                 };
                 Sort.insert(ctx.thread.decompressor, sortIndex, data, &ref);
             }
         } else if (header.propType == .id) {
             while (it.nextRef()) |ref| {
-                if (hasFilter) {
+                if (filterType == .propOnly or filterType == .edgeAndProps) {
                     if (!try Filter.filter(ref.node, ctx, filter)) {
+                        continue;
+                    }
+                }
+                if (filterType == .edgeOnly or filterType == .edgeAndProps) {
+                    if (!try Filter.filter(ref.edge, ctx, edgeFilter)) {
                         continue;
                     }
                 }
@@ -154,8 +162,13 @@ fn fillSortIndex(
         } else {
             const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
             while (it.nextRef()) |ref| {
-                if (hasFilter) {
+                if (filterType == .propOnly or filterType == .edgeAndProps) {
                     if (!try Filter.filter(ref.node, ctx, filter)) {
+                        continue;
+                    }
+                }
+                if (filterType == .edgeOnly or filterType == .edgeAndProps) {
+                    if (!try Filter.filter(ref.edge, ctx, edgeFilter)) {
                         continue;
                     }
                 }
@@ -169,7 +182,7 @@ fn fillSortIndex(
     } else {
         if (header.propType == .id) {
             while (it.next()) |node| {
-                if (hasFilter) {
+                if (filterType == .propOnly or filterType == .edgeAndProps) {
                     if (!try Filter.filter(node, ctx, filter)) {
                         continue;
                     }
@@ -184,7 +197,7 @@ fn fillSortIndex(
         } else {
             const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
             while (it.next()) |node| {
-                if (hasFilter) {
+                if (filterType == .propOnly or filterType == .edgeAndProps) {
                     if (!try Filter.filter(node, ctx, filter)) {
                         continue;
                     }
@@ -197,15 +210,12 @@ fn fillSortIndex(
             }
         }
     }
-
     if (defrag) {
         _ = selva.selva_sort_defrag(sortIndex.index);
     }
-
     if (isLocked) {
         ctx.db.threads.mutex.lock();
     }
-
     sortIndex.isCreated = true;
 }
 
@@ -247,10 +257,10 @@ pub inline fn fromIterator(
     typeEntry: Node.Type,
     header: *const t.SortHeader,
     it: anytype,
-    comptime hasFilter: bool,
-    filter: if (hasFilter) []u8 else void,
+    comptime filterType: t.FilterType,
+    filter: if (filterType == .propOnly or filterType == .edgeAndProps) []u8 else void,
+    edgeFilter: if (filterType == .edgeOnly or filterType == .edgeAndProps) []u8 else void,
 ) !SortIterator(desc, isEdge) {
-    // maybe pass this outside
     var sortIndex: SortIndexMeta = .{
         .len = header.len,
         .start = header.start,
@@ -261,10 +271,6 @@ pub inline fn fromIterator(
         .isCreated = false,
         .decay = Decay.init(),
     };
-
-    // use filter here
-    // make comptime filter as option
-
     try fillSortIndex(
         &sortIndex,
         ctx,
@@ -274,10 +280,10 @@ pub inline fn fromIterator(
         false,
         false,
         isEdge,
-        hasFilter,
+        filterType,
         filter,
+        edgeFilter,
     );
-
     return createIterator(desc, isEdge, &sortIndex);
 }
 
@@ -313,7 +319,8 @@ pub fn iterator(
             true,
             true,
             false,
-            false,
+            .noFilter,
+            undefined,
             undefined,
         );
         ctx.db.threads.sortDone.broadcast();

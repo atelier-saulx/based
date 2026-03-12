@@ -8,10 +8,9 @@ const t = @import("../../types.zig");
 const Instruction = @import("instruction.zig");
 
 pub fn eqBatch(T: type, q: []u8, v: []const u8, i: usize, c: *t.FilterCondition) bool {
-    const size = utils.sizeOf(T);
-    const vectorLen = 16 / size;
+    const vectorLen = 16 / utils.sizeOf(T);
     const value = utils.readPtr(T, v, c.start).*;
-    const values = utils.toSlice(T, q[i + size - c.offset .. i + c.size + @alignOf(T) - c.offset]);
+    const values = utils.toSlice(T, q[i + 16 - c.offset .. i + c.size - c.offset]);
     const len = values.len;
     var j: usize = 0;
     while (j < len - vectorLen) : (j += vectorLen) {
@@ -24,10 +23,10 @@ pub fn eqBatch(T: type, q: []u8, v: []const u8, i: usize, c: *t.FilterCondition)
 }
 
 pub fn eqBatchSmall(T: type, q: []u8, v: []const u8, i: usize, c: *t.FilterCondition) bool {
-    const size = utils.sizeOf(T);
-    const vectorLen = 16 / size;
+    // 16 will bne simdLen ofc when its configruable
+    const vectorLen = 16 / utils.sizeOf(T);
     const value = utils.readPtr(T, v, c.start).*;
-    const values = utils.toSlice(T, q[i + size - c.offset .. i + c.size + @alignOf(T) - c.offset]);
+    const values = utils.toSlice(T, q[i + 16 - c.offset .. i + c.size - c.offset]);
     const vec: @Vector(vectorLen, T) = values[0..][0..vectorLen].*;
     return (std.simd.countElementsWithValue(vec, value) != 0);
 }

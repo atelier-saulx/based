@@ -1,7 +1,7 @@
 import { ReadLocales, ReadSchema } from '../../protocol/index.js'
 import { LangName } from '../../schema/schema/locales.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
-import { LangCode, LangCodeEnum } from '../../zigTsExports.js'
+import { LangCodeEnum, FilterTypeEnum } from '../../zigTsExports.js'
 import type { IntervalString } from './aggregates.js'
 
 export type FilterOpts = {
@@ -41,15 +41,6 @@ export type FilterLeaf = FilterAst & {
   select?: { start: number; end: number }
 }
 
-export const EdgeStrategy = {
-  noEdge: 0,
-  edgeOnly: 1,
-  mixed: 2,
-  edgeAndProps: 3,
-} as const
-
-export type EdgeStrategyEnum = (typeof EdgeStrategy)[keyof typeof EdgeStrategy]
-
 export type FilterAst = {
   props?: {
     [key: string]: FilterLeaf
@@ -57,13 +48,9 @@ export type FilterAst = {
   or?: FilterAst
   and?: FilterAst
   edges?: FilterAst
-  edgeStrategy?: EdgeStrategyEnum
-
-  // this is a bit difficult combining OR filters with edges combined
-  // this would require and extra check for the type of node how to do?
+  filterType?: FilterTypeEnum
+  // MIXED not supported yet
 }
-
-// enum
 
 export type Include = {
   meta?: true | false | 'only'

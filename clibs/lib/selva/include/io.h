@@ -43,6 +43,7 @@
  * - Removed schema from common.sdb
  * - Fix colvec default
  * - Remove support for SELVA_FIELD_TYPE_ALIASES
+ * - Split common.sdb per type
  */
 #define SELVA_SDB_VERSION 8
 

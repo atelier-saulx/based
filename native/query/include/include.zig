@@ -22,7 +22,7 @@ inline fn get(typeEntry: Node.Type, node: Node.Node, header: anytype) ![]u8 {
     );
 }
 
-pub fn recursionErrorBoundary(
+pub fn recursionErrorBoundarySingleRef(
     cb: anytype,
     node: Node.Node,
     ctx: *Query.QueryCtx,
@@ -31,7 +31,21 @@ pub fn recursionErrorBoundary(
     index: *usize,
 ) void {
     cb(ctx, q, node, typeEntry, index) catch |err| {
-        std.debug.print("Include: recursionErrorBoundary: Error {any} \n", .{err});
+        std.debug.print("Include Reference: recursionErrorBoundary: Error {any} \n", .{err});
+    };
+}
+
+pub fn recursionErrorBoundaryRefs(
+    cb: anytype,
+    comptime edge: Multiple.EdgeType,
+    node: Node.Node,
+    ctx: *Query.QueryCtx,
+    q: []u8,
+    typeEntry: Node.Type,
+    index: *usize,
+) void {
+    cb(edge, ctx, q, node, typeEntry, index) catch |err| {
+        std.debug.print("Include References: recursionErrorBoundary: Error {any} \n", .{err});
     };
 }
 
@@ -44,16 +58,21 @@ pub fn include(
     var i: usize = 0;
     while (i < q.len) {
         const op: t.IncludeOp = @enumFromInt(q[i]);
-        // std.debug.print("includeop: {any} - {any}\n", .{ op, q });
         switch (op) {
             .reference => {
-                recursionErrorBoundary(Single.reference, node, ctx, q, typeEntry, &i);
+                recursionErrorBoundarySingleRef(Single.reference, node, ctx, q, typeEntry, &i);
             },
             .referenceEdge => {
-                recursionErrorBoundary(Single.referenceEdge, node, ctx, q, typeEntry, &i);
+                recursionErrorBoundarySingleRef(Single.referenceEdge, node, ctx, q, typeEntry, &i);
             },
             .references => {
-                recursionErrorBoundary(Multiple.references, node, ctx, q, typeEntry, &i);
+                recursionErrorBoundaryRefs(Multiple.references, .noEdge, node, ctx, q, typeEntry, &i);
+            },
+            .referencesEdge => {
+                recursionErrorBoundaryRefs(Multiple.references, .edge, node, ctx, q, typeEntry, &i);
+            },
+            .referencesEdgeInclude => {
+                recursionErrorBoundaryRefs(Multiple.references, .includeEdge, node, ctx, q, typeEntry, &i);
             },
             .partial => {
                 const header = utils.readNext(t.IncludePartialHeader, q, &i);

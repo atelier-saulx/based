@@ -39,5 +39,6 @@ export const createCondition = (
       },
       FilterConditionAlignOf + 1,
     ) + propSize
+
   return { condition: conditionBuffer, offset }
 }

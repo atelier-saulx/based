@@ -8,7 +8,6 @@ await test('shorthands', async () => {
       types: {
         hello: {
           props: {
-            myText: 'text',
             myString: 'string',
             myNumber: 'number',
             myEnum: [1, 2, 3],
@@ -22,7 +21,6 @@ await test('shorthands', async () => {
       types: {
         hello: {
           props: {
-            myText: { type: 'text' },
             myString: { type: 'string' },
             myNumber: { type: 'number' },
             myEnum: { type: 'enum', enum: [1, 2, 3] },
@@ -37,7 +35,6 @@ await test('shorthands', async () => {
       locales: { en: {} },
       types: {
         article: {
-          header: 'text',
           body: 'string',
           views: 'number',
         },
@@ -49,9 +46,6 @@ await test('shorthands', async () => {
       types: {
         article: {
           props: {
-            header: {
-              type: 'text',
-            },
             body: {
               type: 'string',
             },
@@ -69,7 +63,6 @@ await test('shorthands', async () => {
       locales: { en: {} },
       types: {
         article: {
-          header: 'text',
           body: 'string',
           views: 'number',
         },
@@ -81,9 +74,6 @@ await test('shorthands', async () => {
       types: {
         article: {
           props: {
-            header: {
-              type: 'text',
-            },
             body: {
               type: 'string',
             },
