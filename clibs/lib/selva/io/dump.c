@@ -41,7 +41,7 @@
 #define DUMP_MAGIC_ALIASES      4019181209 /* common.sdb */
 #define DUMP_MAGIC_COMMON_MAX_ID 2974848157 /* common.sdb */
 #define DUMP_MAGIC_COMMON_BLOCKS 2734165127 /* common.sdb */
-#define DUMP_MAGIC_TYPES        3550908863 /* [block].sdb */
+#define DUMP_MAGIC_TYPE         3550908863 /* [block].sdb */
 #define DUMP_MAGIC_NODE         3323984057
 #define DUMP_MAGIC_FIELDS       3126175483
 #if USE_DUMP_MAGIC_FIELD_BEGIN
@@ -447,8 +447,7 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
         goto fail;
     }
 
-    write_dump_magic(&io, DUMP_MAGIC_TYPES);
-    io.sdb_write(&te->type, sizeof(te->type), 1, &io);
+    write_dump_magic(&io, DUMP_MAGIC_TYPE);
 
     selva_hash_state_t *hash_state = selva_hash_create_state();
     selva_hash_state_t *tmp_hash_state = selva_hash_create_state();
@@ -794,16 +793,8 @@ static int load_type(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEn
 {
     int err;
 
-    if (!read_dump_magic(io, DUMP_MAGIC_TYPES)) {
+    if (!read_dump_magic(io, DUMP_MAGIC_TYPE)) {
         selva_io_errlog(io, "Ivalid types magic");
-        return SELVA_EINVAL;
-    }
-
-    node_type_t type;
-    io->sdb_read(&type, sizeof(type), 1, io);
-
-    if (te->type != type) {
-        selva_io_errlog(io, "Invalid type found: %d != %d", type, te->type);
         return SELVA_EINVAL;
     }
 
@@ -890,7 +881,6 @@ static int load_common_max_id(struct selva_io *io, struct selva_dump_common_data
 __attribute__((warn_unused_result))
 static int load_common_blocks(struct selva_io *io, struct SelvaTypeEntry *te, struct selva_dump_common_data *com)
 {
-    node_type_t type;
     sdb_arr_len_t len;
 
     if (!read_dump_magic(io, DUMP_MAGIC_COMMON_BLOCKS)) {
