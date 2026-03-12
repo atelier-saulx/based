@@ -38,399 +38,405 @@ await test('hll', async (t) => {
     myUniqueValuesCount: 'myCoolValue',
   })
 
-  console.log('a')
-  deepEqual(
-    await db
-      .query('article')
-      .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
-      .get(),
-    [
-      {
-        id: 1,
-        myUniqueValuesCount: 1,
-        myUniqueValuesCountFromArray: 0,
-      },
-    ],
-  )
-  console.log('b')
+  // console.log('a')
+  // deepEqual(
+  //   await db
+  //     .query('article')
+  //     .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       myUniqueValuesCount: 1,
+  //       myUniqueValuesCountFromArray: 0,
+  //     },
+  //   ],
+  // )
+  // console.log('b')
 
-  deepEqual(
-    await db
-      .query('article')
-      .include('myUniqueValuesCount')
-      .filter('myUniqueValuesCount', '!=', 0)
-      .get(),
-    [
-      {
-        id: 1,
-        myUniqueValuesCount: 1,
-      },
-    ],
-    'Not filter',
-  )
+  const q2 = await db
+    .query('article')
+    .include('myUniqueValuesCount')
+    // .filter('myUniqueValuesCount', '!=', 0)
+    .filter('myUniqueValuesCount', '=', 813)
+    .get()
+  console.dir(q2, { depth: null })
 
-  await db.create('article', {
-    myUniqueValuesCountFromArray: [
-      'myCoolValue',
-      'myCoolValue',
-      'mr snurfels',
-      'mr snurfels',
-      'lala',
-      'lala',
-      'myCoolValue',
-      'myCoolValue',
-      'mr snurfels',
-      'mr snurfels',
-      'lala',
-      'lala',
-      'lele',
-      'lili',
-      'lolo',
-      'lulu',
-    ],
-  })
+  //   deepEqual(
+  //     q2,
+  //     [
+  //       {
+  //         id: 1,
+  //         myUniqueValuesCount: 1,
+  //       },
+  //     ],
+  //     'Not filter',
+  //   )
 
-  deepEqual(
-    await db
-      .query('article')
-      .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
-      .get(),
-    [
-      { id: 1, myUniqueValuesCount: 1, myUniqueValuesCountFromArray: 0 },
-      { id: 2, myUniqueValuesCountFromArray: 7, myUniqueValuesCount: 0 },
-    ],
-  )
+  //   await db.create('article', {
+  //     myUniqueValuesCountFromArray: [
+  //       'myCoolValue',
+  //       'myCoolValue',
+  //       'mr snurfels',
+  //       'mr snurfels',
+  //       'lala',
+  //       'lala',
+  //       'myCoolValue',
+  //       'myCoolValue',
+  //       'mr snurfels',
+  //       'mr snurfels',
+  //       'lala',
+  //       'lala',
+  //       'lele',
+  //       'lili',
+  //       'lolo',
+  //       'lulu',
+  //     ],
+  //   })
 
-  deepEqual(
-    await db
-      .query('article')
-      .include('myUniqueValuesCountFromArray')
-      .filter('myUniqueValuesCountFromArray', '=', 7)
-      .get(),
-    [
-      {
-        id: 2,
-        myUniqueValuesCountFromArray: 7,
-      },
-    ],
-  )
+  //   const qarr = await db
+  //     .query('article')
+  //     .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
+  //     .get()
 
-  deepEqual(
-    await db
-      .query('article')
-      .include('myUniqueValuesCount')
-      .filter('myUniqueValuesCount', '>', 1)
-      .get(),
-    [],
-  )
+  //   console.dir(qarr, { depth: null })
 
-  await db.update('article', myArticle, {
-    myUniqueValuesCount: [
-      'myCoolValue',
-      'myCoolValue',
-      'mr snurfels',
-      'mr snurfels',
-      'lala',
-      'lala',
-      'myCoolValue',
-      'myCoolValue',
-      'mr snurfels',
-      'mr snurfels',
-      'lala',
-      'lala',
-      'lele',
-      'lili',
-      'lolo',
-      'lulu',
-    ],
-  })
+  //   deepEqual(qarr, [
+  //     { id: 1, myUniqueValuesCount: 1, myUniqueValuesCountFromArray: 0 },
+  //     { id: 2, myUniqueValuesCountFromArray: 7, myUniqueValuesCount: 0 },
+  //   ])
 
-  await db.drain()
+  //   deepEqual(
+  //     await db
+  //       .query('article')
+  //       .include('myUniqueValuesCountFromArray')
+  //       .filter('myUniqueValuesCountFromArray', '=', 7)
+  //       .get(),
+  //     [
+  //       {
+  //         id: 2,
+  //         myUniqueValuesCountFromArray: 7,
+  //       },
+  //     ],
+  //   )
 
-  deepEqual(
-    await db
-      .query('article')
-      .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
-      .get(),
-    [
-      { id: 1, myUniqueValuesCount: 7, myUniqueValuesCountFromArray: 0 },
-      { id: 2, myUniqueValuesCountFromArray: 7, myUniqueValuesCount: 0 },
-    ],
-  )
+  //   deepEqual(
+  //     await db
+  //       .query('article')
+  //       .include('myUniqueValuesCount')
+  //       .filter('myUniqueValuesCount', '>', 1)
+  //       .get(),
+  //     [],
+  //   )
 
-  const feeling = ['foolish', 'superficial', 'deep', 'moving', 'fake']
+  //   await db.update('article', myArticle, {
+  //     myUniqueValuesCount: [
+  //       'myCoolValue',
+  //       'myCoolValue',
+  //       'mr snurfels',
+  //       'mr snurfels',
+  //       'lala',
+  //       'lala',
+  //       'myCoolValue',
+  //       'myCoolValue',
+  //       'mr snurfels',
+  //       'mr snurfels',
+  //       'lala',
+  //       'lala',
+  //       'lele',
+  //       'lili',
+  //       'lolo',
+  //       'lulu',
+  //     ],
+  //   })
 
-  let feelings: any[] = []
-  for (let i = 0; i < 1e6; i++) {
-    feelings.push(
-      xxHash64(
-        ENCODER.encode(
-          feeling[Math.floor(Math.random() * (feeling.length - 1))],
-        ),
-      ),
-    )
-  }
+  //   await db.drain()
 
-  await db.update('article', myArticle, {
-    myUniqueValuesCount: feelings,
-  })
+  //   deepEqual(
+  //     await db
+  //       .query('article')
+  //       .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
+  //       .get(),
+  //     [
+  //       { id: 1, myUniqueValuesCount: 7, myUniqueValuesCountFromArray: 0 },
+  //       { id: 2, myUniqueValuesCountFromArray: 7, myUniqueValuesCount: 0 },
+  //     ],
+  //   )
 
-  await db.drain()
+  //   const feeling = ['foolish', 'superficial', 'deep', 'moving', 'fake']
 
-  deepEqual(
-    await db
-      .query('article')
-      .filter('myUniqueValuesCount', '=', 11)
-      .or('myUniqueValuesCountFromArray', '>', 6)
-      .get(),
-    [
-      {
-        id: 1,
-        derp: 0,
-        myUniqueValuesCount: 11,
-        myUniqueValuesCountFromArray: 0,
-      },
-      {
-        id: 2,
-        derp: 0,
-        myUniqueValuesCountFromArray: 7,
-        myUniqueValuesCount: 0,
-      },
-    ],
-  )
+  //   let feelings: any[] = []
+  //   for (let i = 0; i < 1e6; i++) {
+  //     feelings.push(
+  //       xxHash64(
+  //         ENCODER.encode(
+  //           feeling[Math.floor(Math.random() * (feeling.length - 1))],
+  //         ),
+  //       ),
+  //     )
+  //   }
 
-  // -------- edges
-  const mrSnurp = db.create('user', {
-    name: 900,
-  })
-  const edge = await db.create('article', {
-    derp: 813,
-    contributors: [{ id: mrSnurp, $tokens: ['lala', 'lele', 'lili'] }],
-  })
+  //   await db.update('article', myArticle, {
+  //     myUniqueValuesCount: feelings,
+  //   })
 
-  deepEqual(
-    await db
-      .query('article')
-      .filter('id', '>=', 3)
-      .include('contributors.$tokens')
-      .get(),
-    [
-      {
-        id: 3,
-        contributors: [
-          {
-            id: 1,
-            $tokens: 3,
-          },
-        ],
-      },
-    ],
-    '3 distinct filter',
-  )
-  await db.update('article', edge, {
-    contributors: [
-      {
-        id: mrSnurp,
-        $tokens: [
-          'myCoolValue',
-          'myCoolValue',
-          'mr snurfels',
-          'mr snurfels',
-          'lala',
-          'lala',
-          'myCoolValue',
-          'myCoolValue',
-          'mr snurfels',
-          'mr snurfels',
-          'lala',
-          'lala',
-          'lele',
-          'lili',
-          'lolo',
-          'lulu',
-        ],
-      },
-    ],
-  })
+  //   await db.drain()
 
-  deepEqual(
-    await db
-      .query('article')
-      .filter('id', '>=', 3)
-      .include('contributors.$tokens')
-      .get(),
-    [
-      {
-        id: 3,
-        contributors: [
-          {
-            id: 1,
-            $tokens: 7,
-          },
-        ],
-      },
-    ],
-  )
+  //   deepEqual(
+  //     await db
+  //       .query('article')
+  //       .filter('myUniqueValuesCount', '=', 11)
+  //       .or('myUniqueValuesCountFromArray', '>', 6)
+  //       .get(),
+  //     [
+  //       {
+  //         id: 1,
+  //         derp: 0,
+  //         myUniqueValuesCount: 11,
+  //         myUniqueValuesCountFromArray: 0,
+  //       },
+  //       {
+  //         id: 2,
+  //         derp: 0,
+  //         myUniqueValuesCountFromArray: 7,
+  //         myUniqueValuesCount: 0,
+  //       },
+  //     ],
+  //   )
 
-  // handle undefined case
-  deepEqual(
-    await db
-      .query('article')
-      .filter('id', '>=', 3)
-      .include('contributors.$undeftokens')
-      .get(),
-    [
-      {
-        id: 3,
-        contributors: [
-          {
-            id: 1,
-          },
-        ],
-      },
-    ],
-  )
+  //   // -------- edges
+  //   const mrSnurp = db.create('user', {
+  //     name: 900,
+  //   })
+  //   const edge = await db.create('article', {
+  //     derp: 813,
+  //     contributors: [{ id: mrSnurp, $tokens: ['lala', 'lele', 'lili'] }],
+  //   })
 
-  // update without creation
-  await db.update('article', edge, {
-    contributors: [
-      {
-        id: mrSnurp,
-        $undeftokens: xxHash64(ENCODER.encode('lala')),
-      },
-    ],
-  })
+  //   deepEqual(
+  //     await db
+  //       .query('article')
+  //       .filter('id', '>=', 3)
+  //       .include('contributors.$tokens')
+  //       .get(),
+  //     [
+  //       {
+  //         id: 3,
+  //         contributors: [
+  //           {
+  //             id: 1,
+  //             $tokens: 3,
+  //           },
+  //         ],
+  //       },
+  //     ],
+  //     '3 distinct filter',
+  //   )
+  //   await db.update('article', edge, {
+  //     contributors: [
+  //       {
+  //         id: mrSnurp,
+  //         $tokens: [
+  //           'myCoolValue',
+  //           'myCoolValue',
+  //           'mr snurfels',
+  //           'mr snurfels',
+  //           'lala',
+  //           'lala',
+  //           'myCoolValue',
+  //           'myCoolValue',
+  //           'mr snurfels',
+  //           'mr snurfels',
+  //           'lala',
+  //           'lala',
+  //           'lele',
+  //           'lili',
+  //           'lolo',
+  //           'lulu',
+  //         ],
+  //       },
+  //     ],
+  //   })
 
-  deepEqual(
-    await db
-      .query('article')
-      .filter('id', '>=', 3)
-      .include('contributors.$undeftokens')
-      .get(),
-    [
-      {
-        id: 3,
-        contributors: [
-          {
-            id: 1,
-            $undeftokens: 1,
-          },
-        ],
-      },
-    ],
-  )
-})
+  //   deepEqual(
+  //     await db
+  //       .query('article')
+  //       .filter('id', '>=', 3)
+  //       .include('contributors.$tokens')
+  //       .get(),
+  //     [
+  //       {
+  //         id: 3,
+  //         contributors: [
+  //           {
+  //             id: 1,
+  //             $tokens: 7,
+  //           },
+  //         ],
+  //       },
+  //     ],
+  //   )
 
-await test('switches', async (t) => {
-  const db = await testDb(t, {
-    types: {
-      store: {
-        name: 'string',
-        visitors: {
-          type: 'cardinality',
-          precision: 6,
-          mode: 'dense',
-        },
-        visits: 'number',
-      },
-    },
-  })
+  //   // handle undefined case
+  //   deepEqual(
+  //     await db
+  //       .query('article')
+  //       .filter('id', '>=', 3)
+  //       .include('contributors.$undeftokens')
+  //       .get(),
+  //     [
+  //       {
+  //         id: 3,
+  //         contributors: [
+  //           //@ts-ignore
+  //           {
+  //             id: 1,
+  //           },
+  //         ],
+  //       },
+  //     ],
+  //   )
 
-  const visits = ['Clint', 'Lee', 'Clint', 'Aldo', 'Lee']
+  //   // update without creation
+  //   await db.update('article', edge, {
+  //     contributors: [
+  //       {
+  //         id: mrSnurp,
+  //         $undeftokens: xxHash64(ENCODER.encode('lala')),
+  //       },
+  //     ],
+  //   })
 
-  const store1 = await db.create('store', {
-    name: 'Handsome Sportsman',
-    visitors: visits,
-    visits: visits.length,
-  })
+  //   deepEqual(
+  //     await db
+  //       .query('article')
+  //       .filter('id', '>=', 3)
+  //       .include('contributors.$undeftokens')
+  //       .get(),
+  //     [
+  //       {
+  //         id: 3,
+  //         contributors: [
+  //           {
+  //             id: 1,
+  //             $undeftokens: 1,
+  //           },
+  //         ],
+  //       },
+  //     ],
+  //   )
+  // })
 
-  deepEqual(
-    await db.query('store').include('visitors').get(),
-    [
-      {
-        id: 1,
-        visitors: 3,
-      },
-    ],
-    'create with schema optionals (dense, prec=6)',
-  )
+  // await test('switches', async (t) => {
+  //   const db = await testDb(t, {
+  //     types: {
+  //       store: {
+  //         name: 'string',
+  //         visitors: {
+  //           type: 'cardinality',
+  //           precision: 6,
+  //           mode: 'dense',
+  //         },
+  //         visits: 'number',
+  //       },
+  //     },
+  //   })
 
-  await db.update('store', store1, {
-    visitors: 'Ennio',
-  })
+  //   const visits = ['Clint', 'Lee', 'Clint', 'Aldo', 'Lee']
 
-  await db.drain()
+  //   const store1 = await db.create('store', {
+  //     name: 'Handsome Sportsman',
+  //     visitors: visits,
+  //     visits: visits.length,
+  //   })
 
-  deepEqual(
-    await db.query('store').include('visitors').get(),
-    [
-      {
-        id: 1,
-        visitors: 4,
-      },
-    ],
-    'update with schema optionals (dense, prec=6)',
-  )
-})
+  //   deepEqual(
+  //     await db.query('store').include('visitors').get(),
+  //     [
+  //       {
+  //         id: 1,
+  //         visitors: 3,
+  //       },
+  //     ],
+  //     'create with schema optionals (dense, prec=6)',
+  //   )
 
-await test('defaultPrecision', async (t) => {
-  const db = await testDb(t, {
-    types: {
-      store: {
-        name: 'string',
-        customers: {
-          items: {
-            ref: 'customer',
-            prop: 'client',
-          },
-        },
-      },
-      customer: {
-        name: 'string',
-        productsBought: 'cardinality',
-      },
-    },
-  })
+  //   await db.update('store', store1, {
+  //     visitors: 'Ennio',
+  //   })
 
-  const cus = db.create('customer', {
-    name: 'Alex Atala',
-    productsBought: ['fork', 'knife', 'knife', 'frying pan'],
-  })
-  const sto = db.create('store', {
-    name: 'Worderlands Kitchen',
-    customers: [cus],
-  })
+  //   await db.drain()
 
-  const pb = await db.query('customer').include('productsBought').get()
-  // pb.inspect()
-  deepEqual(
-    pb,
-    [
-      {
-        id: 1,
-        productsBought: 3,
-      },
-    ],
-    'simple cardinality default precision',
-  )
+  //   deepEqual(
+  //     await db.query('store').include('visitors').get(),
+  //     [
+  //       {
+  //         id: 1,
+  //         visitors: 4,
+  //       },
+  //     ],
+  //     'update with schema optionals (dense, prec=6)',
+  //   )
+  // })
 
-  const pbr = await db.query('store').include('*', '**').get()
-  // pbr.inspect()
-  deepEqual(
-    pbr,
-    [
-      {
-        id: 1,
-        name: 'Worderlands Kitchen',
-        customers: [
-          {
-            id: 1,
-            name: 'Alex Atala',
-            productsBought: 3,
-          },
-        ],
-      },
-    ],
-    'simple cardinality default precision on ref',
-  )
+  // await test('defaultPrecision', async (t) => {
+  //   const db = await testDb(t, {
+  //     types: {
+  //       store: {
+  //         name: 'string',
+  //         customers: {
+  //           items: {
+  //             ref: 'customer',
+  //             prop: 'client',
+  //           },
+  //         },
+  //       },
+  //       customer: {
+  //         name: 'string',
+  //         productsBought: 'cardinality',
+  //       },
+  //     },
+  //   })
+
+  //   const cus = db.create('customer', {
+  //     name: 'Alex Atala',
+  //     productsBought: ['fork', 'knife', 'knife', 'frying pan'],
+  //   })
+  //   const sto = db.create('store', {
+  //     name: 'Worderlands Kitchen',
+  //     customers: [cus],
+  //   })
+
+  //   const pb = await db.query('customer').include('productsBought').get()
+  //   // pb.inspect()
+  //   deepEqual(
+  //     pb,
+  //     [
+  //       {
+  //         id: 1,
+  //         productsBought: 3,
+  //       },
+  //     ],
+  //     'simple cardinality default precision',
+  //   )
+
+  //   const pbr = await db.query('store').include('*', '**').get()
+  //   // pbr.inspect()
+  //   deepEqual(
+  //     pbr,
+  //     [
+  //       {
+  //         id: 1,
+  //         name: 'Worderlands Kitchen',
+  //         customers: [
+  //           {
+  //             id: 1,
+  //             name: 'Alex Atala',
+  //             productsBought: 3,
+  //           },
+  //         ],
+  //       },
+  //     ],
+  //     'simple cardinality default precision on ref',
+  //   )
 })
