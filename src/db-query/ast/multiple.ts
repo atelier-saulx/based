@@ -17,10 +17,11 @@ import { getIteratorType } from './iteratorType.js'
 import { readPropDef, readSchema } from './readSchema.js'
 import { isAggregateAst, pushAggregatesQuery } from './aggregates.js'
 import { sort } from './sort.js'
-import { debugBuffer } from '../../sdk.js'
 
 export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
   const rangeStart = ast.range?.start || 0
+
+  const limit = (ast.range?.end || 1000) - rangeStart
 
   if (isAggregateAst(ast, typeDef)) {
     pushAggregatesQuery(ast, ctx, typeDef)
@@ -33,7 +34,7 @@ export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
     includeSize: 0,
     typeId: typeDef.id,
     offset: rangeStart,
-    limit: (ast.range?.end || 1000) + rangeStart,
+    limit,
     sort: !!ast.sort,
     filterSize: 0,
     // Lets remove all this from the header and make specific ones
