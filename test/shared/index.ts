@@ -60,7 +60,7 @@ export const testDbClient = async <const S extends SchemaIn>(
   if (schema) {
     await client.setSchema(schema)
   }
-  return client as unknown as DbClient<ResolveSchema<S>>
+  return client as DbClient<ResolveSchema<S>>
 }
 
 export const testDbServer = async <const S extends SchemaIn>(

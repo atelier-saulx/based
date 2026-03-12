@@ -1,51 +1,70 @@
-import { testDbClient, testDbServer } from '../shared/index.js'
-import { DbServer } from '../../src/sdk.js'
+import { testDbClient } from '../shared/index.js'
+import { type SchemaIn } from '../../src/sdk.js'
 import test from '../shared/test.js'
-import { join } from 'node:path'
-import { mkdir, readdir } from 'node:fs/promises'
+import { DbServerWrapper } from '../../src/db-server/index.js'
 
 await test('migration playground', async (t) => {
-  const server = await testDbServer(t, { noBackup: true })
-  const schema = {
+  const server = new DbServerWrapper({ path: t.tmp })
+  // const server = await testDbServer(t, { noBackup: true })
+  await server.start({ clean: true })
+  t.after(() => server.destroy())
+  const client = await testDbClient(server as any, {
     types: {
       a: {
         aName: 'string',
         bRefs: {
-          ref: 'b',
-          prop: 'aRefs',
+          items: {
+            ref: 'b',
+            prop: 'aRefs',
+            $rank: 'number',
+          },
         },
       },
       b: {
         bName: 'string',
         aRefs: {
-          ref: 'a',
-          prop: 'bRefs',
+          items: {
+            ref: 'a',
+            prop: 'bRefs',
+            $rank: 'number',
+          },
         },
       },
     },
-  } as const
-  const client = await testDbClient(server, schema)
-  client.create('a', { aName: 'a name' })
-  client.create('b', { bName: 'b name' })
+  })
+  const a = client.create('a', { aName: 'a name', bRefs: [] })
+  client.create('b', { bName: 'b name', aRefs: [a] })
   await client.drain()
-  const migrationDir = join(t.tmp, 'migration')
-  await mkdir(migrationDir).catch(() => {})
-  const server2 = new DbServer({ path: migrationDir })
-  const client2 = await testDbClient(server, {
-    // @ts-ignore
-    types: Object.assign(schema.types, {
-      c: {
-        bName: 'string',
-        aRefs: {
-          ref: 'a',
-          prop: 'bRefs',
+  console.log('a1:', await client.query('a').include('*', '**').get())
+  console.log('b1:', await client.query('b').include('*', '**').get())
+
+  await client.setSchema({
+    types: {
+      a: {
+        aName: 'string',
+        bRefs: {
+          items: {
+            ref: 'b',
+            prop: 'aRefs',
+            $rank: 'number',
+          },
         },
       },
-    }),
+      aNew: {
+        name: 'string',
+      },
+      b: {
+        bName: 'string',
+        aRefs: {
+          items: {
+            ref: 'a',
+            prop: 'bRefs',
+            $rank: 'number',
+          },
+        },
+      },
+    },
   })
-  client2.create('c', { cName: 'c name' })
-  await client.drain()
-  const files = await readdir(migrationDir)
 
-  console.log({ files })
+  console.log('wut')
 })

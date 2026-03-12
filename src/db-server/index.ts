@@ -1,8 +1,6 @@
 import native from '../native.js'
-import { rm } from 'node:fs/promises'
+import { cp, mkdir, readdir, rename, rm } from 'node:fs/promises'
 import { realStart, start, StartOpts } from './start.js'
-import { migrate } from './migrate/index.js'
-import { debugServer } from '../utils/debug.js'
 import { DbShared } from '../shared/DbBase.js'
 import { writeSchemaFile } from './schema.js'
 import { save, SaveOpts } from './blocks.js'
@@ -10,6 +8,106 @@ import { save, SaveOpts } from './blocks.js'
 import { OpType, OpTypeEnum } from '../zigTsExports.js'
 import { MAX_ID, type SchemaOut } from '../schema/index.js'
 import { readUint32, writeUint32 } from '../utils/uint8.js'
+import { getTypeDefs } from '../schema/defs/getTypeDefs.js'
+import { join } from 'node:path'
+import hashObjectIgnoreKeyOrder from '../hash/hashObjectIgnoreKeyOrder.js'
+import deepEqual from '../utils/deepEqual.js'
+
+type DbServerOpts = {
+  path: string
+  saveIntervalInSeconds?: number
+}
+
+// this will become db server
+export class DbServerWrapper extends DbShared {
+  constructor(opts: DbServerOpts) {
+    super()
+    this.ctx = new DbServer(opts)
+  }
+  ctx: DbServer
+  start(opts?: StartOpts) {
+    return this.ctx.start(opts)
+  }
+  save(opts?: SaveOpts) {
+    return this.ctx.save(opts)
+  }
+  getQueryBuf(buf: Uint8Array) {
+    return this.ctx.getQueryBuf(buf)
+  }
+  subscribe(buf: Uint8Array, onData: (d: Uint8Array) => void) {
+    return this.ctx.subscribe(buf, onData)
+  }
+  unsubscribe(op: OpTypeEnum, id: number, onData: (d: Uint8Array) => void) {
+    return this.ctx.unsubscribe(op, id, onData)
+  }
+  modify(buf: Uint8Array) {
+    return this.ctx.modify(buf)
+  }
+  async setSchema(schema: SchemaOut) {
+    console.log('set schema!', JSON.stringify(schema, null, 2))
+    if (!this.ctx.schema) {
+      return this.ctx.setSchema(schema)
+    }
+    if (schema.hash === this.ctx.schema.hash) {
+      return schema.hash
+    }
+    console.log('migration time!', schema.hash, this.ctx.schema.hash)
+    const path = this.ctx.fileSystemPath
+
+    const typeDefs1 = getTypeDefs(this.ctx.schema)
+    const typeDefs2 = getTypeDefs(schema)
+
+    const tmpPath = join(path, 'tmp')
+    const newCtx = new DbServer({ path: tmpPath })
+    const files = await readdir(path)
+    await rm(tmpPath, { recursive: true, force: true })
+    await mkdir(tmpPath, { recursive: true })
+    await Promise.all(
+      typeDefs2.values().map((def) => {
+        const prevDef = typeDefs1.get(def.name)
+        if (prevDef && deepEqual(def.schema, prevDef.schema)) {
+          console.log('compatible schema:', def.name, def.schema)
+          return Promise.all(
+            files.map((file) => {
+              const split = file.split('_')
+              if (Number(split[0]) === prevDef.id) {
+                split[0] = String(def.id)
+                return rename(join(path, file), join(tmpPath, split.join('_')))
+              }
+            }),
+          )
+        } else {
+          console.log(
+            'incompatible schema:',
+            def.name,
+            JSON.stringify(def.schema, null, 2),
+            JSON.stringify(prevDef?.schema, null, 2),
+          )
+        }
+      }),
+    )
+    console.log('power hour')
+    realStart(newCtx, schema)
+    console.log('yas')
+    return schema.hash
+  }
+  override on() {
+    return this.ctx.on.apply(this.ctx, arguments)
+  }
+  override off() {
+    return this.ctx.off.apply(this.ctx, arguments)
+  }
+  stop(noSave?: boolean) {
+    return this.ctx.stop(noSave)
+  }
+  destroy() {
+    return this.ctx.destroy()
+  }
+  // tmp
+  keepRefAliveTillThisPoint(x) {
+    return this.ctx.keepRefAliveTillThisPoint(x)
+  }
+}
 
 export class DbServer extends DbShared {
   dbCtxExternal: any // pointer to zig dbCtx
@@ -31,15 +129,7 @@ export class DbServer extends DbShared {
     this.forceRefCnt = x.byteLength
   }
 
-  constructor({
-    path,
-    debug,
-    saveIntervalInSeconds,
-  }: {
-    path: string
-    debug?: boolean
-    saveIntervalInSeconds?: number
-  }) {
+  constructor({ path, saveIntervalInSeconds }: DbServerOpts) {
     super()
     this.fileSystemPath = path
     this.saveIntervalInSeconds = saveIntervalInSeconds
@@ -52,10 +142,6 @@ export class DbServer extends DbShared {
     // Add all op type maps
     for (const key in OpType) {
       this.opListeners.set(OpType[key], new Map())
-    }
-
-    if (debug) {
-      debugServer(this)
     }
   }
 
@@ -153,6 +239,7 @@ export class DbServer extends DbShared {
     id: number,
     onData: (d: Uint8Array) => void,
   ): void {
+    // TODO!!
     this.removeOpListener(op, id, onData)
   }
 
@@ -214,6 +301,7 @@ export class DbServer extends DbShared {
       // await migrate(this, this.schema, schema, transformFns)
       return this.schema.hash
     }
+    console.log('do it!')
     if (this.dbCtxExternal) throw new Error('Db is already running')
     realStart(this, schema)
     await writeSchemaFile(this, schema)
@@ -233,9 +321,7 @@ export class DbServer extends DbShared {
     }
 
     try {
-      if (!noSave) {
-        await save(this)
-      }
+      if (!noSave) await save(this)
       native.stop(this.dbCtxExternal)
       this.dbCtxExternal = null
     } catch (e) {
