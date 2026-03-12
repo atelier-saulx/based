@@ -24,7 +24,7 @@ await test('update', async (t) => {
           numberMax: { type: 'number', max: 20, min: 10 },
           derp: ['a', 'b', 'derp'],
           cardinality: 'cardinality',
-          text: 'text',
+          text: { type: 'string', localized: true },
           friend: { ref: 'user', prop: 'friend' },
           countryCode: { type: 'string', maxBytes: 2 },
           connections: {
@@ -512,7 +512,7 @@ await test('query', async (t) => {
         unique: 'cardinality',
         status: ['a', 'b', 'c'],
         title: 'string',
-        body: 'text',
+        body: { type: 'string', localized: true },
       },
       user: {
         props: {
@@ -521,7 +521,7 @@ await test('query', async (t) => {
           isOn: 'boolean',
           drip,
           friend: { ref: 'user', prop: 'friend' },
-          description: 'text',
+          description: { type: 'string', localized: true },
           countryCode: { type: 'string', maxBytes: 2 },
           blap: { type: 'vector', size: 5, baseType: 'float32' },
           connections: {
@@ -879,7 +879,7 @@ await test('set text without locale', async (t) => {
     types: {
       country: {
         name: 'string',
-        cool: 'text',
+        cool: { type: 'string', localized: true },
       },
     },
   })
