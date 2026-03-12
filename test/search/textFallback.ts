@@ -67,14 +67,15 @@ await test('textFallback', async (t) => {
       .query('project')
       .locale('nl')
       .include('title')
-      .filter('title', 'includes', 'English')
+      .search('English', 'title')
       .get(),
     [
       {
         id: 4,
         title: 'English house!',
+        $searchScore: 0,
       },
     ],
-    'Filter /w fallback',
+    'Search',
   )
 })
