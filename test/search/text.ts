@@ -1,6 +1,6 @@
 import test from '../shared/test.js'
 import { testDb } from '../shared/index.js'
-import { join } from 'path'
+import { deepEqual } from '../shared/assert.js'
 
 await test('text search', async (t) => {
   const db = await testDb(t, {
