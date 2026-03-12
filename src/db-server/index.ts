@@ -86,15 +86,18 @@ export class DbServerWrapper extends DbShared {
         }
       }),
     )
-    console.log('power hour')
     realStart(newCtx, schema)
-    console.log('yas')
+    this.ctx.stop(true)
+    this.ctx = newCtx
+    this.emit('schema', schema)
     return schema.hash
   }
   override on() {
+    super.on.apply(this, arguments)
     return this.ctx.on.apply(this.ctx, arguments)
   }
   override off() {
+    super.off.apply(this, arguments)
     return this.ctx.off.apply(this.ctx, arguments)
   }
   stop(noSave?: boolean) {

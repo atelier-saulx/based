@@ -16,7 +16,7 @@ await test('migration playground', async (t) => {
           items: {
             ref: 'b',
             prop: 'aRefs',
-            $rank: 'number',
+            // $rank: 'number',
           },
         },
       },
@@ -26,7 +26,7 @@ await test('migration playground', async (t) => {
           items: {
             ref: 'a',
             prop: 'bRefs',
-            $rank: 'number',
+            // $rank: 'number',
           },
         },
       },
@@ -35,7 +35,6 @@ await test('migration playground', async (t) => {
   const a = client.create('a', { aName: 'a name', bRefs: [] })
   client.create('b', { bName: 'b name', aRefs: [a] })
   await client.drain()
-  console.log('a1:', await client.query('a').include('*', '**').get())
   console.log('b1:', await client.query('b').include('*', '**').get())
 
   await client.setSchema({
@@ -46,7 +45,7 @@ await test('migration playground', async (t) => {
           items: {
             ref: 'b',
             prop: 'aRefs',
-            $rank: 'number',
+            // $rank: 'number',
           },
         },
       },
@@ -59,7 +58,7 @@ await test('migration playground', async (t) => {
           items: {
             ref: 'a',
             prop: 'bRefs',
-            $rank: 'number',
+            // $rank: 'number',
           },
         },
       },

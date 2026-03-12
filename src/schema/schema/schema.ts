@@ -14,6 +14,7 @@ import { postParseRefs } from './reference.js'
 import hash from '../../hash/hash.js'
 import { parseLocales, type SchemaLocales } from './locales.js'
 import { type SchemaHooks } from './hooks.js'
+import hashObjectIgnoreKeyOrder from '../../hash/hashObjectIgnoreKeyOrder.js'
 export type SchemaTypes<strict = false> = Record<string, SchemaType<strict>>
 export type SchemaMigrateFn = (
   node: Record<string, any>,
@@ -325,9 +326,8 @@ export const parseSchema = <const S extends SchemaIn>(
       }
     }
 
-    // TODO we can remove hash from here after we finish new schema defs (internal schema)
-    result.hash = hash(result)
-
+    // TODO perhaps we just remove this completely (use diff)
+    result.hash = hashObjectIgnoreKeyOrder(result)
     return result as unknown as ResolveSchema<S>
   } catch (e) {
     if (tracking) {
