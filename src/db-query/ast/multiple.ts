@@ -8,8 +8,9 @@ import {
   QueryIteratorType,
   readQueryHeader,
   pushSortHeader,
+  FilterType,
 } from '../../zigTsExports.js'
-import { Ctx, EdgeStrategy, QueryAst } from './ast.js'
+import { Ctx, QueryAst } from './ast.js'
 import { filter } from './filter/filter.js'
 import { include } from './include/include.js'
 import { getIteratorType } from './iteratorType.js'
@@ -83,9 +84,10 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     return ctx.query.length - prevLength
   }
 
+  const edgeTypeId = prop.edges?.id ?? 0
   const rangeStart = ast.range?.start || 0
   const headerIndex = pushQueryHeader(ctx.query, {
-    op: QueryType.references,
+    op: edgeTypeId ? QueryType.referenceEdge : QueryType.references,
     prop: prop.id,
     includeSize: 0,
     typeId: prop.ref!.id,
@@ -95,7 +97,7 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     filterSize: 0,
     searchSize: 0,
     iteratorType: QueryIteratorType.default,
-    edgeTypeId: prop.edges?.id ?? 0,
+    edgeTypeId,
     edgeSize: 0,
     edgeFilterSize: 0,
     size: 0, // this is only used for [IDS] handle this differently
@@ -107,8 +109,8 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
 
   if (
     ast.filter &&
-    (ast.filter.edgeStrategy == EdgeStrategy.noEdge ||
-      ast.filter.edgeStrategy == EdgeStrategy.edgeAndProps)
+    (ast.filter.filterType == FilterType.propOnly ||
+      ast.filter.filterType == FilterType.edgeAndProps)
   ) {
     const filterSize = filter(ast.filter, ctx, prop.ref!)
     props.filterSize(ctx.query.data, filterSize, headerIndex)
@@ -116,15 +118,16 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
 
   if (
     ast.filter &&
-    (ast.filter.edgeStrategy == EdgeStrategy.edgeOnly ||
-      ast.filter.edgeStrategy == EdgeStrategy.edgeAndProps) &&
-    ast.filter.edges
+    (ast.filter.filterType == FilterType.edgeOnly ||
+      ast.filter.filterType == FilterType.edgeAndProps)
   ) {
     const edges = prop.edges
     if (!edges) {
-      throw new Error('Ref does not have edges (for filter)')
+      throw new Error('Edge filter but references do not have edges')
     }
-    props.edgeTypeId(ctx.query.data, edges.id, headerIndex)
+    if (!ast.filter.edges) {
+      throw new Error('Edge filter type but no edges defined')
+    }
     const filterSize = filter(ast.filter.edges, ctx, prop.edges!)
     props.edgeFilterSize(ctx.query.data, filterSize, headerIndex)
   }
@@ -146,7 +149,7 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
       throw new Error('Ref does not have edges')
     }
     schema.edges = readSchema(ReadSchemaEnum.edge)
-    props.edgeTypeId(ctx.query.data, edges.id, headerIndex)
+    props.op(ctx.query.data, QueryType.referencesEdgeInclude, headerIndex)
     const size = include(
       ast.edges,
       {

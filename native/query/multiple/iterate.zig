@@ -18,7 +18,7 @@ const writeAs = utils.writeAs;
 const read = utils.read;
 
 pub fn node(
-    comptime It: t.QueryIteratorType,
+    comptime hasFilter: bool,
     ctx: *Query.QueryCtx,
     q: []u8,
     it: anytype,
@@ -29,13 +29,13 @@ pub fn node(
     var offset: u32 = header.offset;
     var nodeCnt: u32 = 0;
     var filter: []u8 = undefined;
-    if (It == t.QueryIteratorType.filter) {
+    if (hasFilter) {
         filter = try Filter.readFilter(ctx, i, header.filterSize, q, typeEntry);
     }
     const nestedQuery = q[i.* .. i.* + header.includeSize];
     while (offset > 0) {
         const n = it.next() orelse return 0;
-        if (It == t.QueryIteratorType.filter) {
+        if (hasFilter) {
             if (try Filter.filter(n, ctx, filter)) {
                 offset -= 1;
             }
@@ -44,7 +44,7 @@ pub fn node(
         }
     }
     while (it.next()) |n| {
-        if (It == t.QueryIteratorType.filter) {
+        if (hasFilter) {
             if (!try Filter.filter(n, ctx, filter)) {
                 continue;
             }
@@ -61,7 +61,8 @@ pub fn node(
 }
 
 pub fn edge(
-    comptime It: t.QueryIteratorType,
+    comptime filterStrat: t.FilterType,
+    comptime includeEdge: bool,
     ctx: *Query.QueryCtx,
     q: []u8,
     it: anytype,
@@ -74,19 +75,10 @@ pub fn edge(
 
     var filter: []u8 = undefined;
     var edgeFilter: []u8 = undefined;
-
-    if (It == t.QueryIteratorType.filter or
-        It == t.QueryIteratorType.edgeFilterAndFilterOnEdge or
-        It == t.QueryIteratorType.edgeIncludeFilterAndFilterOnEdge)
-    {
+    if (filterStrat == .propOnly or filterStrat == .edgeAndProps) {
         filter = try Filter.readFilter(ctx, i, header.filterSize, q, typeEntry);
     }
-
-    if (It == t.QueryIteratorType.edgeIncludeFilterOnEdge or
-        It == t.QueryIteratorType.edgeFilterOnEdge or
-        It == t.QueryIteratorType.edgeFilterAndFilterOnEdge or
-        It == t.QueryIteratorType.edgeIncludeFilterAndFilterOnEdge)
-    {
+    if (filterStrat == .edgeOnly or filterStrat == .edgeAndProps) {
         edgeFilter = try Filter.readFilter(ctx, i, header.edgeFilterSize, q, typeEntry);
     }
 
@@ -100,19 +92,13 @@ pub fn edge(
     }
 
     while (it.nextRef()) |ref| {
-        if (It == t.QueryIteratorType.filter or
-            It == t.QueryIteratorType.edgeFilterAndFilterOnEdge or
-            It == t.QueryIteratorType.edgeIncludeFilterAndFilterOnEdge)
-        {
+        if (filterStrat == .propOnly or filterStrat == .edgeAndProps) {
             if (!try Filter.filter(ref.node, ctx, filter)) {
                 continue;
             }
         }
 
-        if (It == t.QueryIteratorType.edgeIncludeFilterOnEdge or
-            It == t.QueryIteratorType.edgeFilterOnEdge or
-            It == t.QueryIteratorType.edgeFilterAndFilterOnEdge)
-        {
+        if (filterStrat == .edgeOnly or filterStrat == .edgeAndProps) {
             if (!try Filter.filter(ref.edge, ctx, edgeFilter)) {
                 continue;
             }
@@ -122,9 +108,7 @@ pub fn edge(
         try ctx.thread.query.append(Node.getNodeId(ref.node));
         try Include.include(ref.node, ctx, nestedQuery, typeEntry);
 
-        if (It != t.QueryIteratorType.edgeFilterOnEdge and
-            It != t.QueryIteratorType.edgeFilterAndFilterOnEdge)
-        {
+        if (includeEdge) {
             try ctx.thread.query.append(t.ReadOp.edge);
             const edgesByteSizeIndex = try ctx.thread.query.reserve(4);
             const edgeStartIndex = ctx.thread.query.index;

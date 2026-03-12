@@ -574,51 +574,62 @@ pub const QUERY_ITERATOR_AGGREGATES = 140;
 
 pub const QueryIteratorType = enum(u8) {
     default = 0,
-    sort = 1,
-    filter = 2,
-    filterSort = 3,
-    desc = 4,
-    descSort = 5,
-    descFilter = 6,
+    desc = 1,
+    sort = 2,
+    descSort = 3,
+
+    filter = 4,
+    descFilter = 5,
+    filterSort = 6,
     descFilterSort = 7,
+
+    filterEdge = 8,
+    descFilterEdge = 9,
+    filterSortEdge = 10,
+    descFilterSortEdge = 11,
+
+    filterEdgeAndProp = 12,
+    descFilterEdgeAndProp = 13,
+    filterSortEdgeAndProp = 14,
+    descFilterSortEdgeAndProp = 15,
     // edge
-    edge = 20,
-    edgeSort = 21,
-    edgeFilter = 22,
-    edgeFilterSort = 23,
-    edgeDesc = 24,
-    edgeDescSort = 25,
-    edgeDescFilter = 26,
-    edgeDescFilterSort = 27,
+    // edge = 20,
+    // edgeSort = 21,
+    // edgeFilter = 22,
+    // edgeFilterSort = 23,
+    // edgeDesc = 24,
+    // edgeDescSort = 25,
+    // edgeDescFilter = 26,
+    // edgeDescFilterSort = 27,
     // edge include
-    edgeInclude = 30,
-    edgeIncludeSort = 31,
-    edgeIncludeFilter = 32,
-    edgeIncludeFilterSort = 33,
-    edgeIncludeDesc = 34,
-    edgeIncludeDescSort = 35,
-    edgeIncludeDescFilter = 36,
-    edgeIncludeDescFilterSort = 37,
+    // edgeInclude = 30,
+    // edgeIncludeSort = 31,
+    // edgeIncludeFilter = 32,
+    // edgeIncludeFilterSort = 33,
+    // edgeIncludeDesc = 34,
+    // edgeIncludeDescSort = 35,
+    // edgeIncludeDescFilter = 36,
+    // edgeIncludeDescFilterSort = 37,
 
-    edgeIncludeFilterOnEdge = 40,
-    edgeIncludeFilterOnEdgeDesc = 41,
-    edgeIncludeFilterOnEdgeSort = 42,
-    edgeIncludeFilterOnEdgeSortDesc = 43,
+    // edgeIncludeFilterOnEdge = 40,
+    // edgeIncludeFilterOnEdgeDesc = 41,
+    // edgeIncludeFilterOnEdgeSort = 42,
+    // edgeIncludeFilterOnEdgeSortDesc = 43,
 
-    edgeFilterOnEdge = 60,
-    edgeFilterOnEdgeDesc = 61,
-    edgeFilterOnEdgeSort = 62,
-    edgeFilterOnEdgeSortDesc = 63,
+    // edgeFilterOnEdge = 60,
+    // edgeFilterOnEdgeDesc = 61,
+    // edgeFilterOnEdgeSort = 62,
+    // edgeFilterOnEdgeSortDesc = 63,
 
-    edgeIncludeFilterAndFilterOnEdge = 70,
-    edgeIncludeFilterAndFilterOnEdgeDesc = 71,
-    edgeIncludeFilterAndFilterOnEdgeSort = 72,
-    edgeIncludeFilterAndFilterOnEdgeSortDesc = 73,
+    // edgeIncludeFilterAndFilterOnEdge = 70,
+    // edgeIncludeFilterAndFilterOnEdgeDesc = 71,
+    // edgeIncludeFilterAndFilterOnEdgeSort = 72,
+    // edgeIncludeFilterAndFilterOnEdgeSortDesc = 73,
 
-    edgeFilterAndFilterOnEdge = 80,
-    edgeFilterAndFilterOnEdgeDesc = 81,
-    edgeFilterAndFilterOnEdgeSort = 82,
-    edgeFilterAndFilterOnEdgeSortDesc = 83,
+    // edgeFilterAndFilterOnEdge = 80,
+    // edgeFilterAndFilterOnEdgeDesc = 81,
+    // edgeFilterAndFilterOnEdgeSort = 82,
+    // edgeFilterAndFilterOnEdgeSortDesc = 83,
 
     // default search
     search = 120,
@@ -645,20 +656,31 @@ pub const QueryType = enum(u8) {
     ids = 1,
     default = 2,
     alias = 3,
+    // ---------------------
     aggregates = 4,
     aggregatesCount = 5,
+    // ---------------------
     references = 6,
-    reference = 7,
-    aliasFilter = 8,
-    idFilter = 9,
+    referencesEdge = 7,
+    referencesEdgeInclude = 8,
+    // ---------------------
+    reference = 9,
     referenceEdge = 10,
+    // ---------------------
+    aliasFilter = 200,
+    idFilter = 201,
 };
 
 pub const IncludeOp = enum(u8) {
+    // ---------------------
     aggregates = 4,
     aggregatesCount = 5,
+    // ---------------------
     references = 6,
-    reference = 7,
+    referencesEdge = 7,
+    referencesEdgeInclude = 8,
+    // ---------------------
+    reference = 9,
     referenceEdge = 10,
     // ---------------------
     default = 127,
@@ -913,15 +935,20 @@ pub const FilterCondition = packed struct {
     offset: u8,
 };
 
-// only for nested
 pub const FilterSelect = packed struct {
     size: u32,
     typeEntry: Node.Type,
     typeId: TypeId,
-
     // this is basicly another condition seperate from the ref thing itself
     // edgeTypeId: TypeId,
     // you want EDGE INDEX as well
+};
+
+pub const FilterType = enum(u8) {
+    noFilter = 0,
+    propOnly = 1,
+    edgeOnly = 2,
+    edgeAndProps = 3,
 };
 
 pub const SelvaSchemaHeader = packed struct {

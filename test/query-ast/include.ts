@@ -1,4 +1,4 @@
-import { EdgeStrategy, QueryAst } from '../../src/db-query/ast/ast.js'
+import { QueryAst } from '../../src/db-query/ast/ast.js'
 import { astToQueryCtx } from '../../src/db-query/ast/toCtx.js'
 import { resultToObject } from '../../src/protocol/index.js'
 import { debugBuffer, type SchemaIn } from '../../src/sdk.js'
@@ -11,6 +11,7 @@ import { deflateSync } from 'zlib'
 import { fastPrng } from '../../src/utils/fastPrng.js'
 import { testDbClient, testDbServer } from '../shared/index.js'
 import { alias } from '../../src/schema/defs/props/alias.js'
+import { FilterType } from '../../src/zigTsExports.js'
 
 await test('include', async (t) => {
   const server = await testDbServer(t, { noBackup: true })
@@ -115,10 +116,10 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
   const ids: number[] = []
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 3; i++) {
     ids.push(i + 1)
     client.create('user', {
-      big: syntheticData,
+      // big: syntheticData,
       y: i,
       // aliasId: `flap${i}`,
       // name: `mr snurf ${i}`,
@@ -165,42 +166,44 @@ await test('include', async (t) => {
     // target: ids,
     // locale: 'fi',
     range: { start: 0, end: 1e6 },
-    // filter: {
-    //   props: {
-    //     y: {
-    //       ops: [{ op: '=', val: [1, 2, 15] }],
-    //     },
-    //   },
-    // },
-    // sort: { prop: 'y' },
-    // order: 'desc',
+    filter: {
+      props: {
+        y: {
+          ops: [{ op: '=', val: [1, 2, 15] }],
+        },
+      },
+    },
+
     props: {
       y: { include: {} },
       name: { include: {} },
       friends: {
-        include: {},
-        sort: { prop: 'y' },
-        filter: {
-          edgeStrategy: EdgeStrategy.noEdge,
+        props: {
+          y: { include: {} },
+          name: { include: {} },
+        },
+        edges: {
           props: {
-            y: {
-              ops: [{ op: '=', val: [100, 200, 300] }],
-            },
-            // id: {
-            //   ops: [{ op: '=', val: [1, 2] }],
-            // },
-            // aliasId: {
-            //   ops: [{ op: '=', val: 'jim' }],
-            // },
-            // localized: {
-            //   // ops: [{ op: '=', val: 'derpi yuz NL' }],
-            //   props: {
-            //     nl: {
-            //       ops: [{ op: '=', val: 'derpi yuz NL' }],
-            //     },
-            //   },
-            // },
+            $level: { include: {} },
           },
+        },
+        sort: { prop: '$level' },
+        order: 'asc',
+        range: { start: 0, end: 1e6 },
+        filter: {
+          filterType: FilterType.edgeOnly,
+          edges: {
+            props: {
+              $level: {
+                ops: [{ op: '>', val: [0] }],
+              },
+            },
+          },
+          // props: {
+          //   y: {
+          //     ops: [{ op: '=', val: [100, 200, 300] }],
+          //   },
+          // },
         },
       },
       // localized: {
@@ -250,17 +253,17 @@ await test('include', async (t) => {
 
   console.log('START PERF', Date.now() - d, 'ms')
   const sizes: Set<number> = new Set()
-  await perf(
+  await perf.skip(
     async () => {
       const q: any = []
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 5; i++) {
         q.push(server.getQueryBuf(queries[i]))
       }
       const x = await Promise.all(q)
       x.forEach((v) => sizes.add(v.byteLength))
       // console.log(x)
     },
-    'filter speed',
+    'filter speed (5 cores) 25M / scan',
     {
       repeat: 10,
     },
@@ -274,7 +277,7 @@ await test('include', async (t) => {
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
-  // console.dir(obj, { depth: 10 })
+  console.dir(obj, { depth: 10 })
 
   await wait(1000)
 
