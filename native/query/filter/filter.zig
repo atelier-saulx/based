@@ -107,6 +107,11 @@ pub inline fn filter(
     node: Node.Node,
     ctx: *Query.QueryCtx,
     q: []u8,
+    // comptime hasEdges
+    // edge
+
+    // then we can make a mixed checker in the filter creator
+    // if edge it just add it in the bool
 ) !bool {
     var i: usize = 0;
 
@@ -121,6 +126,7 @@ pub inline fn filter(
         var nextIndex = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + c.size + i;
 
         if (prop != c.prop) {
+            // if has edge we can just get it here and it works
             prop = c.prop;
             v = Fields.getRaw(node, c.fieldSchema);
         }

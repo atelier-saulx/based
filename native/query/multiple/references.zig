@@ -144,6 +144,7 @@ pub fn references(
             nodeCnt = try iterate(.noFilter, edge, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
+        // call this mixed and just handle it differently
         // --------- filter: edgeAndProp -------------
         .filterEdgeAndProp => {
             var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);

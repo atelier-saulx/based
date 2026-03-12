@@ -948,7 +948,8 @@ pub const FilterCondition = packed struct {
     size: u32,
     prop: u8,
     start: u16,
-    len: u8,
+    hasEdge: bool,
+    len: u7, // maybe just make this u7?
     lang: LangCode,
     fieldSchema: Schema.FieldSchema,
     offset: u8,
