@@ -53,10 +53,7 @@ await test('isomorphic types have equal hashes', async (t) => {
     checksum(await client.query('story').get()),
   )
   assert(
-    native.equals(
-      await getBlockHash(db, 1, 1),
-      await getBlockHash(db, 2, 1),
-    ),
+    native.equals(await getBlockHash(db, 1, 1), await getBlockHash(db, 2, 1)),
   )
 })
 

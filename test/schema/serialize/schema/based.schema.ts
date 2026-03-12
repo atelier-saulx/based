@@ -107,39 +107,66 @@ export default {
       props: {
         restOfTheWorld: {
           type: 'object',
-          props: { title: { type: 'string', localized: true }, description: { type: 'string', localized: true } },
+          props: {
+            title: { type: 'string', localized: true },
+            description: { type: 'string', localized: true },
+          },
         },
         sanMarino: {
           type: 'object',
-          props: { title: { type: 'string', localized: true }, description: { type: 'string', localized: true } },
+          props: {
+            title: { type: 'string', localized: true },
+            description: { type: 'string', localized: true },
+          },
         },
         notAllowedSemi1: {
           type: 'object',
-          props: { title: { type: 'string', localized: true }, description: { type: 'string', localized: true } },
+          props: {
+            title: { type: 'string', localized: true },
+            description: { type: 'string', localized: true },
+          },
         },
         notAllowedSemi2: {
           type: 'object',
-          props: { title: { type: 'string', localized: true }, description: { type: 'string', localized: true } },
+          props: {
+            title: { type: 'string', localized: true },
+            description: { type: 'string', localized: true },
+          },
         },
         online: {
           type: 'object',
-          props: { title: { type: 'string', localized: true }, description: { type: 'string', localized: true } },
+          props: {
+            title: { type: 'string', localized: true },
+            description: { type: 'string', localized: true },
+          },
         },
         parentCode: {
           type: 'object',
-          props: { title: { type: 'string', localized: true }, description: { type: 'string', localized: true } },
+          props: {
+            title: { type: 'string', localized: true },
+            description: { type: 'string', localized: true },
+          },
         },
         phone: {
           type: 'object',
-          props: { title: { type: 'string', localized: true }, description: { type: 'string', localized: true } },
+          props: {
+            title: { type: 'string', localized: true },
+            description: { type: 'string', localized: true },
+          },
         },
         overseasCode: {
           type: 'object',
-          props: { title: { type: 'string', localized: true }, description: { type: 'string', localized: true } },
+          props: {
+            title: { type: 'string', localized: true },
+            description: { type: 'string', localized: true },
+          },
         },
         noCode: {
           type: 'object',
-          props: { title: { type: 'string', localized: true }, description: { type: 'string', localized: true } },
+          props: {
+            title: { type: 'string', localized: true },
+            description: { type: 'string', localized: true },
+          },
         },
       },
     },

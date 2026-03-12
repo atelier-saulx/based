@@ -24,7 +24,9 @@ function makeMaxSchema() {
   return locs
 }
 
-function makeTextProps(): { [index: string]: { type: 'string', localized: true } } {
+function makeTextProps(): {
+  [index: string]: { type: 'string'; localized: true }
+} {
   const textProps = {}
 
   const prop = { type: 'string', localized: true }

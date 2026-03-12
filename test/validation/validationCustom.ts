@@ -1,5 +1,5 @@
 import { throws } from '../shared/assert.js'
-import {testDb} from '../shared/index.js'
+import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 
 await test('custom', async (t) => {

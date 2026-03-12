@@ -2,7 +2,7 @@ import { DbServer } from '../../src/sdk.js'
 import { throws, equal, isSorted } from '../shared/assert.js'
 import test from '../shared/test.js'
 import { randomString, wait } from '../../src/utils/index.js'
-import {testDbClient} from '../shared/index.js'
+import { testDbClient } from '../shared/index.js'
 
 const randomPrice = () => Math.round((Math.random() * 100 + 5) * 100) / 100
 const randomStock = () => Math.floor(Math.random() * 500)
