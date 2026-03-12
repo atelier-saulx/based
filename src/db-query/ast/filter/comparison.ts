@@ -9,6 +9,7 @@ import { createCondition } from './condition.js'
 import { fixedComparison } from './fixed.js'
 import { isFixedLenString } from './operatorToEnum.js'
 import { variableComparison } from './variable.js'
+import { writeUint32 } from '../../../utils/uint8.js'
 
 export const comparison = (
   ctx: Ctx,
@@ -35,6 +36,21 @@ export const comparison = (
       ctx.query.set(condition, ctx.query.length)
     }
     return fixedComparison(prop, op, val, opts)
+  }
+
+  if (prop.type === PropType.cardinality) {
+    return fixedComparison(
+      {
+        ...prop,
+        size: 4,
+        write: (buf, val, offset) => {
+          writeUint32(buf, val, offset)
+        },
+      } as unknown as PropDef,
+      op,
+      val,
+      opts,
+    )
   }
 
   if (prop.type === PropType.alias) {
