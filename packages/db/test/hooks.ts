@@ -2,6 +2,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal, notEqual, throws } from './shared/assert.js'
 import { wait } from '@based/utils'
+import { SchemaNumber } from '@based/schema'
 
 await test('hooks - undefined values', async (t) => {
   const db = new BasedDb({
@@ -681,4 +682,79 @@ await test('upsert calls create and/or update hooks', async (t) => {
   equal(results2[0].updatedString != 0, true)
   equal(results1[0].createdString, results2[0].createdString)
   notEqual(results1[0].updatedString, results2[0].updatedString)
+})
+
+export const optionalNumber = ({
+  description,
+}: Pick<SchemaNumber, 'description' | 'min' | 'max'> = {}): SchemaNumber => ({
+  type: 'number',
+  default: -Infinity,
+
+  ...(description !== undefined && { description }),
+  hooks: {
+    create(value: any, _payload: Record<string, any>): any {
+      if (value === null || value === undefined) return -Infinity
+      return Number(value)
+    },
+    update(value: any, _payload: Record<string, any>): any {
+      if (value === null || value === undefined) return -Infinity
+      return Number(value)
+    },
+    read(value: any, _result: Record<string, any>): any {
+      return value === -Infinity ? undefined : value
+    },
+  },
+})
+
+await test('Read hooks on branched queries', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+    maxModifySize: 1e6,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      measurement: {
+        props: {
+          label: 'string',
+          value: optionalNumber(),
+        },
+      },
+      container: {
+        props: {
+          measurement: {
+            ref: 'measurement',
+            prop: 'containers',
+          },
+        },
+      },
+    },
+  })
+
+  const mId = await db.create('measurement', { label: 'test' })
+  const cId = await db.create('container', { measurement: mId })
+
+  const direct = await db.query('measurement', mId).get().toObject()
+  deepEqual(
+    direct?.value,
+    undefined,
+    'Direct query applies read hook correctly',
+  )
+
+  const container = await db
+    .query('container', cId)
+    .include((select: any) =>
+      select('measurement').include('id', 'label', 'value'),
+    )
+    .get()
+    .toObject()
+
+  equal(
+    container?.measurement?.value,
+    undefined,
+    'READ hook must make it undefined, not -Infinity',
+  )
 })

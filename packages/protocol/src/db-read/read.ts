@@ -68,7 +68,14 @@ const reference: ReadInstruction = (q, result, i, item) => {
     i += 4
     const refItem: Item = { id }
     readProps(ref.schema, result, i, size + i - 5, refItem)
-    addProp(ref.prop, refItem, item)
+    if (ref.schema.hook) {
+      const res = ref.schema.hook(refItem)
+      if (res! == null) {
+        addProp(ref.prop, res || refItem, item)
+      } else {
+        addProp(ref.prop, refItem, item)
+      }
+    }
     i += size - 5
   }
   return i
