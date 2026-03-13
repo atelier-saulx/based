@@ -142,7 +142,7 @@ await test('include', async (t) => {
           // mixed can now be made have to handle in filter
           // we can also just pass null for edge and keep it rly simple
           // also pass null edgeType
-          filterType: FilterType.edgeOnly,
+          filterType: FilterType.edgeFilter,
           edges: {
             props: {
               $level: { ops: [{ op: 'includes', val: '1' }] },

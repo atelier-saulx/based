@@ -24,7 +24,7 @@ export const getIteratorType = (
 
   const filterType = ast.filter?.filterType
 
-  if (filterType === FilterType.edgeOnly) {
+  if (filterType === FilterType.edgeFilter) {
     if (hasSort) {
       return isDesc
         ? QueryIteratorType.descFilterSortEdge
@@ -33,18 +33,6 @@ export const getIteratorType = (
       return isDesc
         ? QueryIteratorType.descFilterEdge
         : QueryIteratorType.filterEdge
-    }
-  }
-
-  if (filterType === FilterType.mixed) {
-    if (hasSort) {
-      return isDesc
-        ? QueryIteratorType.descFilterSortEdgeAndProp
-        : QueryIteratorType.filterSortEdgeAndProp
-    } else {
-      return isDesc
-        ? QueryIteratorType.descFilterEdgeAndProp
-        : QueryIteratorType.filterEdgeAndProp
     }
   }
 

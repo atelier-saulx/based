@@ -265,7 +265,9 @@ export const filter = (
   ctx: Ctx,
   typeDef: TypeDef,
   filterIndex: number = 0,
+  // fix this
   lastProp: number = PropType.id,
+  // fix this
   edgeType?: TypeDef,
   prevOr?: Uint8Array,
 ) => {

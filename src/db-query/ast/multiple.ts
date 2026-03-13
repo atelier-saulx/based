@@ -125,25 +125,23 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
   //   }
   // }
 
-  if (ast.filter && ast.filter.filterType == FilterType.propOnly) {
+  if (ast.filter && ast.filter.filterType == FilterType.propFilter) {
     const filterSize = filter(ast.filter, ctx, prop.ref!)
     props.filterSize(ctx.query.data, filterSize, headerIndex)
-  }
-
-  if (ast.filter && ast.filter.filterType == FilterType.edgeOnly) {
+  } else if (ast.filter && ast.filter.filterType == FilterType.edgeFilter) {
     const edges = prop.edges
     if (!edges) {
       throw new Error('Edge filter but references do not have edges')
     }
-    if (!ast.filter.edges) {
-      throw new Error('Edge filter type but no edges defined')
-    }
-    const filterSize = filter(ast.filter.edges, ctx, prop.edges!)
+    const filterSize = filter(
+      ast.filter,
+      ctx,
+      prop.ref!,
+      undefined,
+      undefined,
+      prop.edges,
+    )
     props.filterSize(ctx.query.data, filterSize, headerIndex)
-  }
-
-  if (ast.filter && ast.filter.filterType == FilterType.mixed) {
-    throw new Error('Edge filter mixed not supported yet')
   }
 
   const size = include(
