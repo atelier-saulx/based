@@ -72,9 +72,9 @@ const reference: ReadInstruction = (q, result, i, item) => {
       const res = ref.schema.hook(refItem)
       if (res! == null) {
         addProp(ref.prop, res || refItem, item)
-      } else {
-        addProp(ref.prop, refItem, item)
       }
+    } else {
+      addProp(ref.prop, refItem, item)
     }
     i += size - 5
   }
