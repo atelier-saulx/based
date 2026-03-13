@@ -4,7 +4,6 @@ const Query = @import("../common.zig");
 const Include = @import("../include/include.zig");
 const Filter = @import("../filter/filter.zig");
 const Node = @import("../../selva/node.zig");
-const References = @import("../../selva/references.zig");
 const Selva = @import("../../selva/selva.zig");
 const Thread = @import("../../thread/thread.zig");
 const Schema = @import("../../selva/schema.zig");
@@ -18,7 +17,7 @@ const writeAs = utils.writeAs;
 const read = utils.read;
 
 pub fn node(
-    comptime hasFilter: bool,
+    comptime hasFilter: t.Filter,
     ctx: *Query.QueryCtx,
     q: []u8,
     it: anytype,
@@ -29,14 +28,14 @@ pub fn node(
     var offset: u32 = header.offset;
     var nodeCnt: u32 = 0;
     var filter: []u8 = undefined;
-    if (hasFilter) {
-        filter = try Filter.readFilter(.propOnly, ctx, i, header.filterSize, q, typeEntry, undefined);
+    if (hasFilter == .filter) {
+        filter = try Filter.readFilter(.noEdge, ctx, i, header.filterSize, q, typeEntry, undefined);
     }
     const nestedQuery = q[i.* .. i.* + header.includeSize];
     while (offset > 0) {
         const n = it.next() orelse return 0;
-        if (hasFilter) {
-            if (try Filter.filter(.propOnly, n, ctx, filter, undefined)) {
+        if (hasFilter == .filter) {
+            if (try Filter.filter(.noEdge, n, ctx, filter)) {
                 offset -= 1;
             }
         } else {
@@ -44,10 +43,8 @@ pub fn node(
         }
     }
     while (it.next()) |n| {
-        if (hasFilter) {
-            if (!try Filter.filter(.propOnly, n, ctx, filter, undefined)) {
-                continue;
-            }
+        if (hasFilter == .filter and !try Filter.filter(.noEdge, n, ctx, filter)) {
+            continue;
         }
         try ctx.thread.query.append(t.ReadOp.id);
         try ctx.thread.query.append(Node.getNodeId(n));
@@ -62,7 +59,7 @@ pub fn node(
 
 pub fn edge(
     comptime filterType: t.FilterType,
-    comptime includeEdge: bool,
+    comptime edgeIncludeType: t.EdgeType,
     ctx: *Query.QueryCtx,
     q: []u8,
     it: anytype,
@@ -72,14 +69,17 @@ pub fn edge(
 ) !u32 {
     var offset: u32 = header.offset;
     var nodeCnt: u32 = 0;
-    const edgeTypeEntry = try Node.getType(ctx.db, header.edgeTypeId);
+    const edgeType = try Node.getType(ctx.db, header.edgeTypeId);
 
-    const filter = switch (filterType) {
-        .edgeOnly => try Filter.readFilter(filterType, ctx, i, header.filterSize, q, edgeTypeEntry, undefined),
-        .propOnly => try Filter.readFilter(filterType, ctx, i, header.filterSize, q, typeEntry, undefined),
-        .mixed => try Filter.readFilter(filterType, ctx, i, header.filterSize, q, typeEntry, edgeTypeEntry),
-        .noFilter => undefined,
-    };
+    const filter = try Filter.readFilter(
+        .edge,
+        ctx,
+        i,
+        header.filterSize,
+        q,
+        typeEntry,
+        edgeType,
+    );
 
     const nestedQuery = q[i.* .. i.* + header.includeSize];
     const edgeQuery = q[i.* + header.includeSize .. i.* + header.includeSize + header.edgeSize];
@@ -90,23 +90,21 @@ pub fn edge(
     }
 
     while (it.nextRef()) |ref| {
-        if (filterType == .mixed) {
-            if (!try Filter.filter(filterType, ref.node, ctx, filter, ref.edge)) continue;
-        } else if (filterType == .propOnly) {
-            if (!try Filter.filter(filterType, ref.node, ctx, filter, undefined)) continue;
-        } else if (filterType == .edgeOnly) {
-            if (!try Filter.filter(filterType, ref.edge, ctx, filter, undefined)) continue;
+        if (filterType == .propFilter) {
+            if (!try Filter.filter(.noEdge, ref.node, ctx, filter)) continue;
+        } else if (filterType == .edgeFilter) {
+            if (!try Filter.filter(.edge, ref, ctx, filter)) continue;
         }
 
         try ctx.thread.query.append(t.ReadOp.id);
         try ctx.thread.query.append(Node.getNodeId(ref.node));
         try Include.include(ref.node, ctx, nestedQuery, typeEntry);
 
-        if (includeEdge) {
+        if (edgeIncludeType == .includeEdge) {
             try ctx.thread.query.append(t.ReadOp.edge);
             const edgesByteSizeIndex = try ctx.thread.query.reserve(4);
             const edgeStartIndex = ctx.thread.query.index;
-            try Include.include(ref.edge, ctx, edgeQuery, edgeTypeEntry);
+            try Include.include(ref.edge, ctx, edgeQuery, edgeType);
             ctx.thread.query.writeAs(
                 u32,
                 @truncate(ctx.thread.query.index - edgeStartIndex),

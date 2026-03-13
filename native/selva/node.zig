@@ -120,15 +120,15 @@ pub inline fn getPrevNode(typeEntry: selva.Type, node: Node) ?Node {
 }
 
 pub fn NodeTypeIterator(
-    comptime desc: bool,
+    comptime order: t.Order,
 ) type {
     return struct {
         typeEntry: selva.Type,
         node: ?Node,
-        pub fn next(self: *NodeTypeIterator(desc)) ?Node {
+        pub fn next(self: *NodeTypeIterator(order)) ?Node {
             const node = self.node;
             if (node) |n| {
-                if (desc) {
+                if (order == .desc) {
                     self.node = getPrevNode(self.typeEntry, n);
                 } else {
                     self.node = getNextNode(self.typeEntry, n);
@@ -140,11 +140,11 @@ pub fn NodeTypeIterator(
 }
 
 pub inline fn iterator(
-    comptime desc: bool,
+    comptime order: t.Order,
     typeEntry: selva.Type,
-) NodeTypeIterator(desc) {
-    return NodeTypeIterator(desc){
-        .node = if (desc) getLastNode(typeEntry) else getFirstNode(typeEntry),
+) NodeTypeIterator(order) {
+    return NodeTypeIterator(order){
+        .node = if (order == .desc) getLastNode(typeEntry) else getFirstNode(typeEntry),
         .typeEntry = typeEntry,
     };
 }

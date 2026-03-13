@@ -51,22 +51,22 @@ pub inline fn aggregateRefsProps(
     try ctx.thread.query.append(header.targetProp);
     switch (header.iteratorType) {
         .aggregate => {
-            var it = try References.iterator(false, false, ctx.db, from, header.targetProp, fromType);
+            var it = try References.iterator(.asc, .noEdge, ctx.db, from, header.targetProp, fromType);
             aggCtx.typeEntry = it.dstType;
             _ = try Aggregates.iterator(&aggCtx, &it, false, undefined, q[i.* .. i.* + header.aggDefsSize], accumulatorProp);
             try ctx.thread.query.append(@as(u32, header.resultsSize));
             try Aggregates.finalizeResults(&aggCtx, q[i.* .. i.* + header.aggDefsSize], accumulatorProp, 0);
         },
         .aggregateFilter => {
-            var it = try References.iterator(false, false, ctx.db, from, header.targetProp, fromType);
-            filter = try Filter.readFilter(.propOnly, ctx, i, header.filterSize, q, fromType, undefined);
+            var it = try References.iterator(.asc, .noEdge, ctx.db, from, header.targetProp, fromType);
+            filter = try Filter.readFilter(.noEdge, ctx, i, header.filterSize, q, fromType, undefined);
             aggCtx.typeEntry = it.dstType;
             _ = try Aggregates.iterator(&aggCtx, &it, true, filter, q[i.* .. i.* + header.aggDefsSize], accumulatorProp);
             try ctx.thread.query.append(@as(u32, header.resultsSize));
             try Aggregates.finalizeResults(&aggCtx, q[i.* .. i.* + header.aggDefsSize], accumulatorProp, 0);
         },
         .aggregateEdge => {
-            var it = try References.iterator(false, true, ctx.db, from, header.targetProp, fromType);
+            var it = try References.iterator(.asc, .edge, ctx.db, from, header.targetProp, fromType);
             aggCtx.typeEntry = it.dstType;
             aggCtx.edgeTypeEntry = it.edgeType;
             _ = try Aggregates.iterator(&aggCtx, &it, false, undefined, q[i.* .. i.* + header.aggDefsSize], accumulatorProp);
@@ -74,8 +74,8 @@ pub inline fn aggregateRefsProps(
             try Aggregates.finalizeResults(&aggCtx, q[i.* .. i.* + header.aggDefsSize], accumulatorProp, 0);
         },
         .aggregateEdgeFilter => {
-            var it = try References.iterator(false, true, ctx.db, from, header.targetProp, fromType);
-            filter = try Filter.readFilter(.propOnly, ctx, i, header.filterSize, q, it.dstType, undefined);
+            var it = try References.iterator(.asc, .edge, ctx.db, from, header.targetProp, fromType);
+            filter = try Filter.readFilter(.edge, ctx, i, header.filterSize, q, it.dstType, undefined);
             aggCtx.typeEntry = it.dstType;
             aggCtx.edgeTypeEntry = it.edgeType;
             _ = try Aggregates.iterator(&aggCtx, &it, true, filter, q[i.* .. i.* + header.aggDefsSize], accumulatorProp);
@@ -83,22 +83,22 @@ pub inline fn aggregateRefsProps(
             try Aggregates.finalizeResults(&aggCtx, q[i.* .. i.* + header.aggDefsSize], accumulatorProp, 0);
         },
         .groupBy => {
-            var it = try References.iterator(false, false, ctx.db, from, header.targetProp, fromType);
+            var it = try References.iterator(.asc, .noEdge, ctx.db, from, header.targetProp, fromType);
             aggCtx.typeEntry = it.dstType;
             _ = GroupBy.iterator(&aggCtx, &groupByHashMap, &it, false, undefined, q[i.* .. i.* + header.aggDefsSize]);
             try ctx.thread.query.append(@as(u32, @intCast(aggCtx.totalResultsSize)));
             try GroupBy.finalizeRefsGroupResults(&aggCtx, &groupByHashMap, q[i.* .. i.* + header.aggDefsSize]);
         },
         .groupByFilter => {
-            var it = try References.iterator(false, false, ctx.db, from, header.targetProp, fromType);
-            filter = try Filter.readFilter(.propOnly, ctx, i, header.filterSize, q, it.dstType, undefined);
+            var it = try References.iterator(.asc, .noEdge, ctx.db, from, header.targetProp, fromType);
+            filter = try Filter.readFilter(.noEdge, ctx, i, header.filterSize, q, it.dstType, undefined);
             aggCtx.typeEntry = it.dstType;
             _ = GroupBy.iterator(&aggCtx, &groupByHashMap, &it, true, filter, q[i.* .. i.* + header.aggDefsSize]);
             try ctx.thread.query.append(@as(u32, @intCast(aggCtx.totalResultsSize)));
             try GroupBy.finalizeRefsGroupResults(&aggCtx, &groupByHashMap, q[i.* .. i.* + header.aggDefsSize]);
         },
         .groupByEdge => {
-            var it = try References.iterator(false, true, ctx.db, from, header.targetProp, fromType);
+            var it = try References.iterator(.asc, .edge, ctx.db, from, header.targetProp, fromType);
             aggCtx.typeEntry = it.dstType;
             aggCtx.edgeTypeEntry = it.edgeType;
             _ = GroupBy.iterator(&aggCtx, &groupByHashMap, &it, false, undefined, q[i.* .. i.* + header.aggDefsSize]);
@@ -106,8 +106,8 @@ pub inline fn aggregateRefsProps(
             try GroupBy.finalizeRefsGroupResults(&aggCtx, &groupByHashMap, q[i.* .. i.* + header.aggDefsSize]);
         },
         .groupByEdgeFilter => {
-            var it = try References.iterator(false, true, ctx.db, from, header.targetProp, fromType);
-            filter = try Filter.readFilter(.propOnly, ctx, i, header.filterSize, q, it.dstType, undefined);
+            var it = try References.iterator(.asc, .edge, ctx.db, from, header.targetProp, fromType);
+            filter = try Filter.readFilter(.noEdge, ctx, i, header.filterSize, q, it.dstType, undefined);
             aggCtx.typeEntry = it.dstType;
             aggCtx.edgeTypeEntry = it.edgeType;
             _ = GroupBy.iterator(&aggCtx, &groupByHashMap, &it, true, filter, q[i.* .. i.* + header.aggDefsSize]);

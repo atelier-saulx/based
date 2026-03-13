@@ -49,17 +49,25 @@ pub fn default(
     const typeEntry = try Node.getType(ctx.db, header.typeId);
     if (Node.getNode(typeEntry, header.id)) |node| {
         if (hasFilter) {
-            const filter = try Filter.readFilter(.propOnly, ctx, &i, header.filterSize, q, typeEntry, undefined);
-            if (!try Filter.filter(.propOnly, node, ctx, filter, undefined)) {
+            const filter = try Filter.readFilter(
+                .noEdge,
+                ctx,
+                &i,
+                header.filterSize,
+                q,
+                typeEntry,
+                undefined,
+            );
+            if (!try Filter.filter(.noEdge, node, ctx, filter)) {
                 try ctx.thread.query.append(@as(u32, 0));
                 return;
             }
         }
+        // one command to add all this stuff
         try ctx.thread.query.append(@as(u32, 1));
         try ctx.thread.query.append(t.ReadOp.id);
         try ctx.thread.query.append(header.id);
         const nestedQuery = q[i .. i + header.includeSize];
-
         try Include.include(node, ctx, nestedQuery, typeEntry);
     } else {
         try ctx.thread.query.append(@as(u32, 0));

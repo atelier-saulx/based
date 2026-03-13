@@ -37,7 +37,7 @@ pub fn recursionErrorBoundarySingleRef(
 
 pub fn recursionErrorBoundaryRefs(
     cb: anytype,
-    comptime edge: Multiple.EdgeType,
+    comptime edge: t.EdgeType,
     node: Node.Node,
     ctx: *Query.QueryCtx,
     q: []u8,

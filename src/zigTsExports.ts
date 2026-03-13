@@ -2012,22 +2012,6 @@ export const IntervalInverse = {
  */
 export type IntervalEnum = (typeof Interval)[keyof typeof Interval]
 
-export const Order = {
-  asc: 0,
-  desc: 1,
-} as const
-
-export const OrderInverse = {
-  0: 'asc',
-  1: 'desc',
-} as const
-
-/**
-  asc, 
-  desc 
- */
-export type OrderEnum = (typeof Order)[keyof typeof Order]
-
 export type SortHeader = {
   order: OrderEnum
   prop: number
@@ -2135,12 +2119,108 @@ export const pushSortHeader = (
   return index
 }
 
-export const QUERY_ITERATOR_DEFAULT = 0
-export const QUERY_ITERATOR_EDGE = 20
-export const QUERY_ITERATOR_EDGE_INCLUDE = 30
-export const QUERY_ITERATOR_SEARCH = 120
-export const QUERY_ITERATOR_SEARCH_VEC = 130
-export const QUERY_ITERATOR_AGGREGATES = 140
+export const FilterType = {
+  propFilter: 1,
+  edgeFilter: 2,
+  noFilter: 3,
+} as const
+
+export const FilterTypeInverse = {
+  1: 'propFilter',
+  2: 'edgeFilter',
+  3: 'noFilter',
+} as const
+
+/**
+  propFilter, 
+  edgeFilter, 
+  noFilter 
+ */
+export type FilterTypeEnum = (typeof FilterType)[keyof typeof FilterType]
+
+export const Filter = {
+  filter: 1,
+  noFilter: 2,
+} as const
+
+export const FilterInverse = {
+  1: 'filter',
+  2: 'noFilter',
+} as const
+
+/**
+  filter, 
+  noFilter 
+ */
+export type FilterEnum = (typeof Filter)[keyof typeof Filter]
+
+export const EdgeInclude = {
+  edgeInclude: 1,
+  noEdgeInclude: 2,
+} as const
+
+export const EdgeIncludeInverse = {
+  1: 'edgeInclude',
+  2: 'noEdgeInclude',
+} as const
+
+/**
+  edgeInclude, 
+  noEdgeInclude 
+ */
+export type EdgeIncludeEnum = (typeof EdgeInclude)[keyof typeof EdgeInclude]
+
+export const Order = {
+  asc: 0,
+  desc: 1,
+} as const
+
+export const OrderInverse = {
+  0: 'asc',
+  1: 'desc',
+} as const
+
+/**
+  asc, 
+  desc 
+ */
+export type OrderEnum = (typeof Order)[keyof typeof Order]
+
+export const EdgeType = {
+  noEdge: 0,
+  edge: 1,
+  includeEdge: 2,
+} as const
+
+export const EdgeTypeInverse = {
+  0: 'noEdge',
+  1: 'edge',
+  2: 'includeEdge',
+} as const
+
+/**
+  noEdge, 
+  edge, 
+  includeEdge 
+ */
+export type EdgeTypeEnum = (typeof EdgeType)[keyof typeof EdgeType]
+
+export const Edge = {
+  edge: 1,
+  noEdge: 2,
+} as const
+
+export const EdgeInverse = {
+  1: 'edge',
+  2: 'noEdge',
+} as const
+
+/**
+  edge, 
+  noEdge 
+ */
+export type EdgeEnum = (typeof Edge)[keyof typeof Edge]
+
 export const QueryIteratorType = {
   default: 0,
   desc: 1,
@@ -2154,10 +2234,6 @@ export const QueryIteratorType = {
   descFilterEdge: 9,
   filterSortEdge: 10,
   descFilterSortEdge: 11,
-  filterEdgeAndProp: 12,
-  descFilterEdgeAndProp: 13,
-  filterSortEdgeAndProp: 14,
-  descFilterSortEdgeAndProp: 15,
   search: 120,
   searchFilter: 121,
   vec: 130,
@@ -2185,10 +2261,6 @@ export const QueryIteratorTypeInverse = {
   9: 'descFilterEdge',
   10: 'filterSortEdge',
   11: 'descFilterSortEdge',
-  12: 'filterEdgeAndProp',
-  13: 'descFilterEdgeAndProp',
-  14: 'filterSortEdgeAndProp',
-  15: 'descFilterSortEdgeAndProp',
   120: 'search',
   121: 'searchFilter',
   130: 'vec',
@@ -2216,10 +2288,6 @@ export const QueryIteratorTypeInverse = {
   descFilterEdge, 
   filterSortEdge, 
   descFilterSortEdge, 
-  filterEdgeAndProp, 
-  descFilterEdgeAndProp, 
-  filterSortEdgeAndProp, 
-  descFilterSortEdgeAndProp, 
   search, 
   searchFilter, 
   vec, 
@@ -4378,28 +4446,6 @@ export const pushFilterSelect = (
   buf.pushUint16(Number(header.typeId))
   return index
 }
-
-export const FilterType = {
-  noFilter: 0,
-  propOnly: 1,
-  edgeOnly: 2,
-  mixed: 3,
-} as const
-
-export const FilterTypeInverse = {
-  0: 'noFilter',
-  1: 'propOnly',
-  2: 'edgeOnly',
-  3: 'mixed',
-} as const
-
-/**
-  noFilter, 
-  propOnly, 
-  edgeOnly, 
-  mixed 
- */
-export type FilterTypeEnum = (typeof FilterType)[keyof typeof FilterType]
 
 export type SelvaSchemaHeader = {
   blockCapacity: number

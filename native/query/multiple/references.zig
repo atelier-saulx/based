@@ -9,15 +9,9 @@ const Iterate = @import("./iterate.zig");
 const Filter = @import("../filter/filter.zig");
 const std = @import("std");
 
-pub const EdgeType = enum(u8) {
-    noEdge = 0,
-    edge = 1,
-    includeEdge = 2,
-};
-
 inline fn referencesSort(
-    comptime desc: bool,
-    comptime edge: bool,
+    comptime order: t.Order,
+    comptime edge: t.Edge,
     comptime filterType: t.FilterType,
     ctx: *Query.QueryCtx,
     q: []u8,
@@ -26,20 +20,15 @@ inline fn referencesSort(
     i: *usize,
     header: *const t.QueryHeader,
     typeEntry: Node.Type,
-) !Sort.SortIterator(desc, edge) {
+) !Sort.SortIterator(order, edge) {
     const sortHeader = utils.readNext(t.SortHeader, q, i);
-    const edgeType = if (filterType == .edgeOnly or filterType == .mixed) try Node.getType(ctx.db, header.edgeTypeId) else undefined;
+    const edgeType = if (filterType == .edgeFilter) try Node.getType(ctx.db, header.edgeTypeId) else undefined;
 
-    const filter = switch (filterType) {
-        .edgeOnly => try Filter.readFilter(filterType, ctx, i, header.filterSize, q, edgeType, undefined),
-        .propOnly => try Filter.readFilter(filterType, ctx, i, header.filterSize, q, typeEntry, undefined),
-        .mixed => try Filter.readFilter(filterType, ctx, i, header.filterSize, q, typeEntry, edgeType),
-        .noFilter => undefined,
-    };
+    const filter = if (filterType != .noFilter) try Filter.readFilter(edge, ctx, i, header.filterSize, q, typeEntry, edgeType);
 
-    var refs = try References.iterator(desc, edge, ctx.db, from, header.prop, fromType);
+    var refs = try References.iterator(order, edge, ctx.db, from, header.prop, fromType);
     return try Sort.fromIterator(
-        desc,
+        order,
         edge,
         ctx,
         typeEntry,
@@ -52,7 +41,7 @@ inline fn referencesSort(
 
 inline fn iterate(
     comptime filterType: t.FilterType,
-    comptime edge: EdgeType,
+    comptime edge: t.EdgeType,
     ctx: *Query.QueryCtx,
     q: []u8,
     it: anytype,
@@ -60,23 +49,23 @@ inline fn iterate(
     typeEntry: Node.Type,
     i: *usize,
 ) !u32 {
-    if (edge == .includeEdge or filterType == .edgeOnly or filterType == .mixed) {
-        return try Iterate.edge(filterType, edge == .includeEdge, ctx, q, it, header, typeEntry, i);
+    if (edge == .includeEdge or filterType == .edgeFilter) {
+        return try Iterate.edge(filterType, edge, ctx, q, it, header, typeEntry, i);
     } else {
-        return try Iterate.node(filterType == .propOnly, ctx, q, it, header, typeEntry, i);
+        const hasFilter: t.Filter = if (filterType == .propFilter) .filter else .noFilter;
+        return try Iterate.node(hasFilter, ctx, q, it, header, typeEntry, i);
     }
 }
 
 pub fn references(
-    comptime edge: EdgeType,
+    comptime edge: t.EdgeType,
     ctx: *Query.QueryCtx,
     q: []u8,
     from: Node.Node,
     fromType: Node.Type,
     i: *usize,
 ) !void {
-    const hasEdge = edge != .noEdge;
-
+    const hasEdge: t.Edge = if (edge != .noEdge) t.Edge.edge else t.Edge.noEdge;
     const header = utils.readNext(t.QueryHeader, q, i);
     try ctx.thread.query.append(t.ReadOp.references);
     try ctx.thread.query.append(header.prop);
@@ -89,85 +78,62 @@ pub fn references(
     switch (header.iteratorType) {
         // --------- default -------------
         .default => {
-            var it = try References.iterator(false, hasEdge, ctx.db, from, header.prop, fromType);
+            var it = try References.iterator(.asc, hasEdge, ctx.db, from, header.prop, fromType);
             nodeCnt = try iterate(.noFilter, edge, ctx, q, &it, &header, typeEntry, i);
         },
         .desc => {
-            var it = try References.iterator(true, hasEdge, ctx.db, from, header.prop, fromType);
+            var it = try References.iterator(.desc, hasEdge, ctx.db, from, header.prop, fromType);
             nodeCnt = try iterate(.noFilter, edge, ctx, q, &it, &header, typeEntry, i);
         },
         // --------- sort -------------
         .sort => {
-            var it = try referencesSort(false, hasEdge, .noFilter, ctx, q, from, fromType, i, &header, typeEntry);
+            var it = try referencesSort(.asc, hasEdge, .noFilter, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try iterate(.noFilter, edge, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
         .descSort => {
-            var it = try referencesSort(true, hasEdge, .noFilter, ctx, q, from, fromType, i, &header, typeEntry);
+            var it = try referencesSort(.desc, hasEdge, .noFilter, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try iterate(.noFilter, edge, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
         // --------- filter: propOnly -------------
         .filter => {
-            var it = try References.iterator(false, hasEdge, ctx.db, from, header.prop, fromType);
-            nodeCnt = try iterate(.propOnly, edge, ctx, q, &it, &header, typeEntry, i);
+            var it = try References.iterator(.asc, hasEdge, ctx.db, from, header.prop, fromType);
+            nodeCnt = try iterate(.propFilter, edge, ctx, q, &it, &header, typeEntry, i);
         },
         .descFilter => {
-            var it = try References.iterator(true, hasEdge, ctx.db, from, header.prop, fromType);
-            nodeCnt = try iterate(.propOnly, edge, ctx, q, &it, &header, typeEntry, i);
+            var it = try References.iterator(.desc, hasEdge, ctx.db, from, header.prop, fromType);
+            nodeCnt = try iterate(.propFilter, edge, ctx, q, &it, &header, typeEntry, i);
         },
         .filterSort => {
-            var it = try referencesSort(false, hasEdge, .propOnly, ctx, q, from, fromType, i, &header, typeEntry);
+            var it = try referencesSort(.asc, hasEdge, .propFilter, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try iterate(.noFilter, edge, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
         .descFilterSort => {
-            var it = try referencesSort(true, hasEdge, .propOnly, ctx, q, from, fromType, i, &header, typeEntry);
+            var it = try referencesSort(.desc, hasEdge, .propFilter, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try iterate(.noFilter, edge, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
         // --------- filter: edgeOnly -------------
         .filterEdge => {
-            // have to hard core the hasEdge here else the comptime is incorrect for the any callback
-            var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
-            nodeCnt = try iterate(.edgeOnly, edge, ctx, q, &it, &header, typeEntry, i);
+            var it = try References.iterator(.asc, .edge, ctx.db, from, header.prop, fromType);
+            nodeCnt = try iterate(.edgeFilter, edge, ctx, q, &it, &header, typeEntry, i);
         },
         .descFilterEdge => {
-            var it = try References.iterator(true, true, ctx.db, from, header.prop, fromType);
-            nodeCnt = try iterate(.edgeOnly, edge, ctx, q, &it, &header, typeEntry, i);
+            var it = try References.iterator(.desc, .edge, ctx.db, from, header.prop, fromType);
+            nodeCnt = try iterate(.edgeFilter, edge, ctx, q, &it, &header, typeEntry, i);
         },
         .filterSortEdge => {
-            var it = try referencesSort(false, true, .edgeOnly, ctx, q, from, fromType, i, &header, typeEntry);
+            var it = try referencesSort(.asc, .edge, .edgeFilter, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try iterate(.noFilter, edge, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
         .descFilterSortEdge => {
-            var it = try referencesSort(true, true, .edgeOnly, ctx, q, from, fromType, i, &header, typeEntry);
+            var it = try referencesSort(.desc, .edge, .edgeFilter, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try iterate(.noFilter, edge, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
-        // call this mixed and just handle it differently
-        // --------- filter: edgeAndProp -------------
-        .filterEdgeAndProp => {
-            var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
-            nodeCnt = try iterate(.mixed, edge, ctx, q, &it, &header, typeEntry, i);
-        },
-        .descFilterEdgeAndProp => {
-            var it = try References.iterator(true, true, ctx.db, from, header.prop, fromType);
-            nodeCnt = try iterate(.mixed, edge, ctx, q, &it, &header, typeEntry, i);
-        },
-        .filterSortEdgeAndProp => {
-            var it = try referencesSort(false, true, .mixed, ctx, q, from, fromType, i, &header, typeEntry);
-            // ----  X
-            nodeCnt = try iterate(.noFilter, edge, ctx, q, &it, &header, typeEntry, i);
-            it.deinit();
-        },
-        .descFilterSortEdgeAndProp => {
-            var it = try referencesSort(true, true, .mixed, ctx, q, from, fromType, i, &header, typeEntry);
-            nodeCnt = try iterate(.noFilter, edge, ctx, q, &it, &header, typeEntry, i);
-            it.deinit();
-        },
-        // --------------------
         else => {},
     }
 

@@ -40,7 +40,7 @@ pub fn iterator(
     if (@hasDecl(@TypeOf(it.*), "nextRef")) {
         while (it.nextRef()) |ref| {
             if (hasFilter) {
-                if (!try filter(.propOnly, ref.node, aggCtx.queryCtx, filterBuf, undefined)) {
+                if (!try filter(.noEdge, ref.node, aggCtx.queryCtx, filterBuf)) {
                     continue;
                 }
             }
@@ -51,7 +51,7 @@ pub fn iterator(
     } else {
         while (it.next()) |node| {
             if (hasFilter) {
-                if (!try filter(.propOnly, node, aggCtx.queryCtx, filterBuf, undefined)) {
+                if (!try filter(.noEdge, node, aggCtx.queryCtx, filterBuf)) {
                     continue;
                 }
             }
@@ -91,11 +91,11 @@ pub fn iteratorEdge(
     } else {
         while (it.next()) |node| {
             if (hasFilter) {
-                if (!try filter(.propOnly, node, aggCtx.queryCtx, filterBuf, undefined)) {
+                if (!try filter(.noEdge, node, aggCtx.queryCtx, filterBuf)) {
                     continue;
                 }
             }
-            var refsIt = try References.iterator(false, true, aggCtx.queryCtx.db, node, edgePropId, aggCtx.typeEntry);
+            var refsIt = try References.iterator(.asc, .edge, aggCtx.queryCtx.db, node, edgePropId, aggCtx.typeEntry);
             while (refsIt.nextRef()) |ref| {
                 aggregateProps(node, ref.edge, aggDefs, accumulatorProp, aggCtx);
             }

@@ -565,11 +565,6 @@ pub const Interval: type = enum(u8) {
     year = 14,
 };
 
-pub const Order = enum(u8) {
-    asc = 0,
-    desc = 1,
-};
-
 pub const SortHeader = packed struct {
     order: Order,
     prop: u8, // use prop type for this
@@ -584,12 +579,44 @@ pub const SortHeader = packed struct {
 // maybe just add desc or not desc this can then fit in range and offset
 // sort is allready handled
 
-pub const QUERY_ITERATOR_DEFAULT = 0;
-pub const QUERY_ITERATOR_EDGE = 20;
-pub const QUERY_ITERATOR_EDGE_INCLUDE = 30;
-pub const QUERY_ITERATOR_SEARCH = 120;
-pub const QUERY_ITERATOR_SEARCH_VEC = 130;
-pub const QUERY_ITERATOR_AGGREGATES = 140;
+// pub const QUERY_ITERATOR_DEFAULT = 0;
+// pub const QUERY_ITERATOR_EDGE = 20;
+// pub const QUERY_ITERATOR_EDGE_INCLUDE = 30;
+// pub const QUERY_ITERATOR_SEARCH = 120;
+// pub const QUERY_ITERATOR_SEARCH_VEC = 130;
+// pub const QUERY_ITERATOR_AGGREGATES = 140;
+
+pub const FilterType = enum(u8) {
+    propFilter = 1,
+    edgeFilter = 2,
+    noFilter = 3,
+};
+
+pub const Filter = enum(u8) {
+    filter = 1,
+    noFilter = 2,
+};
+
+pub const EdgeInclude = enum(u8) {
+    edgeInclude = 1,
+    noEdgeInclude = 2,
+};
+
+pub const Order = enum(u8) {
+    asc = 0,
+    desc = 1,
+};
+
+pub const EdgeType = enum(u8) {
+    noEdge = 0,
+    edge = 1,
+    includeEdge = 2,
+};
+
+pub const Edge = enum(u8) {
+    edge = 1,
+    noEdge = 2,
+};
 
 pub const QueryIteratorType = enum(u8) {
     default = 0,
@@ -606,49 +633,6 @@ pub const QueryIteratorType = enum(u8) {
     descFilterEdge = 9,
     filterSortEdge = 10,
     descFilterSortEdge = 11,
-
-    filterEdgeAndProp = 12,
-    descFilterEdgeAndProp = 13,
-    filterSortEdgeAndProp = 14,
-    descFilterSortEdgeAndProp = 15,
-    // edge
-    // edge = 20,
-    // edgeSort = 21,
-    // edgeFilter = 22,
-    // edgeFilterSort = 23,
-    // edgeDesc = 24,
-    // edgeDescSort = 25,
-    // edgeDescFilter = 26,
-    // edgeDescFilterSort = 27,
-    // edge include
-    // edgeInclude = 30,
-    // edgeIncludeSort = 31,
-    // edgeIncludeFilter = 32,
-    // edgeIncludeFilterSort = 33,
-    // edgeIncludeDesc = 34,
-    // edgeIncludeDescSort = 35,
-    // edgeIncludeDescFilter = 36,
-    // edgeIncludeDescFilterSort = 37,
-
-    // edgeIncludeFilterOnEdge = 40,
-    // edgeIncludeFilterOnEdgeDesc = 41,
-    // edgeIncludeFilterOnEdgeSort = 42,
-    // edgeIncludeFilterOnEdgeSortDesc = 43,
-
-    // edgeFilterOnEdge = 60,
-    // edgeFilterOnEdgeDesc = 61,
-    // edgeFilterOnEdgeSort = 62,
-    // edgeFilterOnEdgeSortDesc = 63,
-
-    // edgeIncludeFilterAndFilterOnEdge = 70,
-    // edgeIncludeFilterAndFilterOnEdgeDesc = 71,
-    // edgeIncludeFilterAndFilterOnEdgeSort = 72,
-    // edgeIncludeFilterAndFilterOnEdgeSortDesc = 73,
-
-    // edgeFilterAndFilterOnEdge = 80,
-    // edgeFilterAndFilterOnEdgeDesc = 81,
-    // edgeFilterAndFilterOnEdgeSort = 82,
-    // edgeFilterAndFilterOnEdgeSortDesc = 83,
 
     // default search
     search = 120,
@@ -961,13 +945,6 @@ pub const FilterSelect = packed struct {
     // this is basicly another condition seperate from the ref thing itself
     // edgeTypeId: TypeId,
     // you want EDGE INDEX as well
-};
-
-pub const FilterType = enum(u8) {
-    noFilter = 0,
-    propOnly = 1,
-    edgeOnly = 2,
-    mixed = 3,
 };
 
 pub const SelvaSchemaHeader = packed struct {

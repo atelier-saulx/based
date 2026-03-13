@@ -9,6 +9,7 @@ const t = @import("../../types.zig");
 const Fixed = @import("fixed.zig");
 const Variable = @import("./variable/variable.zig");
 const Thread = @import("../../thread/thread.zig");
+const Referencess = @import("../../selva/references.zig");
 
 const COND_ALIGN_BYTES = @alignOf(t.FilterCondition);
 
@@ -18,18 +19,18 @@ fn recursionErrorBoundary(
     ctx: *Query.QueryCtx,
     q: []u8,
 ) bool {
-    return cb(.propOnly, node, ctx, q, undefined) catch |err| {
+    return cb(.noEdge, node, ctx, q) catch |err| {
         std.debug.print("Filter: recursionErrorBoundary: Error {any} \n", .{err});
         return false;
     };
 }
 
 fn prepare(
-    comptime filterType: t.FilterType,
+    comptime edge: t.Edge,
     q: []u8,
     ctx: *Query.QueryCtx,
     typeEntry: Node.Type,
-    edgeType: if (filterType == .mixed) Node.Type else void,
+    edgeType: if (edge == .edge) Node.Type else void,
 ) !void {
     // add a number on query ctx dont run this if filter is set
     var i: usize = 0;
@@ -48,7 +49,7 @@ fn prepare(
             if (c.op.compare != t.FilterOpCompare.nextOrIndex and
                 c.op.prop != t.PropType.id)
             {
-                if (filterType == .mixed and c.useEdge) {
+                if (edge == .edge and c.useEdge) {
                     c.fieldSchema = try Schema.getFieldSchema(edgeType, c.prop);
                 } else {
                     c.fieldSchema = try Schema.getFieldSchema(typeEntry, c.prop);
@@ -73,12 +74,9 @@ fn prepare(
                 .selectRef => {
                     const select = utils.readPtr(t.FilterSelect, q, nextI + @alignOf(t.FilterSelect) - c.offset);
                     select.typeEntry = try Node.getType(ctx.db, select.typeId);
-                    // tmp
-                    try prepare(.propOnly, q[end .. end + select.size], ctx, select.typeEntry, undefined);
+                    try prepare(.noEdge, q[end .. end + select.size], ctx, select.typeEntry, undefined);
                     i = end + select.size;
                 },
-                // .nincLcase => {}
-                // can check it here...
                 else => {
                     i = end;
                 },
@@ -94,13 +92,13 @@ fn prepare(
 }
 
 pub fn readFilter(
-    comptime filterType: t.FilterType,
+    comptime edge: t.Edge,
     ctx: *Query.QueryCtx,
     i: *usize,
     filterSize: u16, // Might need to make this u32
     q: []u8,
     typeEntry: Node.Type,
-    edgeType: if (filterType == .mixed) Node.Type else void,
+    edgeType: if (edge == .edge) Node.Type else void,
 ) ![]u8 {
     const offset = i.*;
     const needPrep = utils.read(u32, q, offset) != ctx.thread.runId;
@@ -108,23 +106,36 @@ pub fn readFilter(
     const filterBuf = utils.sliceNext(filterSize - 4, q, i);
     if (needPrep) {
         utils.write(q, ctx.thread.runId, offset);
-        try prepare(filterType, filterBuf, ctx, typeEntry, edgeType);
+        try prepare(edge, filterBuf, ctx, typeEntry, edgeType);
     }
     return filterBuf;
 }
 
+inline fn getTarget(
+    comptime edge: t.Edge,
+    target: if (edge == .edge) Referencess.ReferencesIteratorEdgesResult else Node.Node,
+    c: *t.FilterCondition,
+) Node.Node {
+    if (edge == .edge) {
+        if (c.useEdge) {
+            return target.edge;
+        }
+        return target.node;
+    }
+    return target;
+}
+
 pub fn filter(
-    comptime filterType: t.FilterType,
-    node: Node.Node,
+    comptime edge: t.Edge,
+    target: if (edge == .edge) Referencess.ReferencesIteratorEdgesResult else Node.Node,
     ctx: *Query.QueryCtx,
     q: []u8,
-    edge: if (filterType == .mixed) Node.Node else void,
 ) !bool {
     var i: usize = 0;
 
     var pass: bool = true;
     var v: []const u8 = undefined;
-    var prop: if (filterType == .propOnly) u8 else u16 = 255;
+    var prop: if (edge == .edge) u8 else u16 = 255;
     var end: usize = q.len;
 
     while (i < end) {
@@ -133,72 +144,33 @@ pub fn filter(
         var nextIndex = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + c.size + i;
 
         if (prop != c.prop) {
-            if (filterType == .mixed) {
+            if (edge == .edge) {
                 if (c.useEdge) {
-                    v = Fields.getRaw(edge, c.fieldSchema);
-                    prop = (c.prop << 1) | 1; // to make it different for edge
+                    v = Fields.getRaw(target.edge, c.fieldSchema);
+                    prop = (c.prop << 1) | 1;
                 } else {
-                    v = Fields.getRaw(node, c.fieldSchema);
+                    v = Fields.getRaw(target.node, c.fieldSchema);
                     prop = (c.prop << 1);
                 }
             } else {
-                v = Fields.getRaw(node, c.fieldSchema);
+                v = Fields.getRaw(target, c.fieldSchema);
                 prop = c.prop;
             }
         }
 
         pass = switch (c.op.compare) {
-            // make .selectCardinality
-            .selectAlias => blk: {
-                if (filterType == .mixed and c.useEdge) {
-                    const typeEntry = Node.getType(ctx.db, edge) catch {
-                        break :blk false;
-                    };
-                    v = Fields.getAliasByNode(typeEntry, edge, c.fieldSchema.field) catch {
-                        break :blk false;
-                    };
-                } else {
-                    const typeEntry = Node.getType(ctx.db, node) catch {
-                        break :blk false;
-                    };
-                    v = Fields.getAliasByNode(typeEntry, node, c.fieldSchema.field) catch {
-                        break :blk false;
-                    };
-                }
-                break :blk true;
-            },
-            .selectId => blk: {
-                v = Node.getNodeIdAsSlice(if (filterType == .mixed and c.useEdge) edge else node);
-                break :blk true;
-            },
-            .nextOrIndex => blk: {
-                end = utils.readPtr(u64, q, index + @alignOf(u64) - c.offset).*;
-                break :blk true;
-            },
-            .selectRef => blk: {
-                const select = utils.readPtr(t.FilterSelect, q, index + @alignOf(t.FilterSelect) - c.offset);
-                nextIndex += select.size;
-                if (Node.getNode(select.typeEntry, utils.readPtr(u32, v, 0).*)) |refNode| {
-                    break :blk recursionErrorBoundary(filter, refNode, ctx, q[nextIndex - select.size .. nextIndex]);
-                } else {
-                    break :blk false;
-                }
-            },
-            .selectSmallRefs, .selectLargeRefsEdge, .selectLargeRefEdge, .selectLargeRefs => blk: {
-                break :blk true;
-            },
             inline .eq,
-            .neq,
-            .eqBatch,
-            .neqBatch,
-            .eqBatchSmall,
-            .neqBatchSmall,
-            .range,
-            .nrange,
             .le,
             .lt,
             .ge,
             .gt,
+            .neq,
+            .range,
+            .eqBatch,
+            .neqBatch,
+            .eqBatchSmall,
+            .neqBatchSmall,
+            .nrange,
             => |op| blk: {
                 break :blk switch (c.op.prop) {
                     .id, .uint32, .int32 => Fixed.compare(u32, op, q, v, index, c),
@@ -209,16 +181,16 @@ pub fn filter(
                 };
             },
             inline .eqCrc32,
-            .neqCrc32,
-            .eqCrc32Batch,
-            .neqCrc32Batch,
+            .incLcase,
+            .inc,
             .eqVar,
             .neqVar,
+            .eqCrc32Batch,
             .eqVarBatch,
             .neqVarBatch,
-            .inc,
             .ninc,
-            .incLcase,
+            .neqCrc32,
+            .neqCrc32Batch,
             .nincLcase,
             .incLcaseFast,
             .nincLcaseFast,
@@ -243,6 +215,39 @@ pub fn filter(
                     else => false,
                 };
             },
+            // make .selectCardinality
+            .selectAlias => blk: {
+                const node = getTarget(edge, target, c);
+                const typeEntry = Node.getType(ctx.db, node) catch {
+                    break :blk false;
+                };
+                v = Fields.getAliasByNode(typeEntry, node, c.fieldSchema.field) catch {
+                    break :blk false;
+                };
+                break :blk true;
+            },
+            .selectId => blk: {
+                const node = getTarget(edge, target, c);
+                v = Node.getNodeIdAsSlice(node);
+                break :blk true;
+            },
+            .nextOrIndex => blk: {
+                end = utils.readPtr(u64, q, index + @alignOf(u64) - c.offset).*;
+                break :blk true;
+            },
+            .selectRef => blk: {
+                const select = utils.readPtr(t.FilterSelect, q, index + @alignOf(t.FilterSelect) - c.offset);
+                nextIndex += select.size;
+                if (Node.getNode(select.typeEntry, utils.readPtr(u32, v, 0).*)) |refNode| {
+                    break :blk recursionErrorBoundary(filter, refNode, ctx, q[nextIndex - select.size .. nextIndex]);
+                } else {
+                    break :blk false;
+                }
+            },
+            .selectSmallRefs, .selectLargeRefsEdge, .selectLargeRefEdge, .selectLargeRefs => blk: {
+                break :blk true;
+            },
+
             // else => false,
         };
         if (!pass) {
