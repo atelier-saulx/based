@@ -140,7 +140,7 @@ const walk = (
     ast.props ??= {}
     ast.props['*'] ??= {}
     ast.props['*'].include ??= {}
-  } else if (!ast.props) {
+  } else if (!ast.props && !ast.edges) {
     ast.props = { '*': { include: {} } }
   }
 
@@ -150,25 +150,27 @@ const walk = (
   // if ast.include.glob === '*' include all from schema
   // same for ast.include.glob === '**'
 
-  for (const field in ast.props) {
-    const astProp = ast.props[field]
-    if (field === 'id') {
-      continue
-    }
-    if (field === '*') {
-      for (const [field, prop] of walkCtx.tree.props) {
-        if (!('ref' in prop) && !(field in ast.props)) {
-          walkProp(astProp, ctx, typeDef, walkCtx, field)
-        }
+  if (ast.props) {
+    for (const field in ast.props) {
+      const astProp = ast.props[field]
+      if (field === 'id') {
+        continue
       }
-    } else if (field === '**') {
-      for (const [field, prop] of typeDef.tree.props) {
-        if (!(field in ast.props)) {
-          walkProp(astProp, ctx, typeDef, walkCtx, field)
+      if (field === '*') {
+        for (const [field, prop] of walkCtx.tree.props) {
+          if (!('ref' in prop) && !(field in ast.props)) {
+            walkProp(astProp, ctx, typeDef, walkCtx, field)
+          }
         }
+      } else if (field === '**') {
+        for (const [field, prop] of typeDef.tree.props) {
+          if (!(field in ast.props)) {
+            walkProp(astProp, ctx, typeDef, walkCtx, field)
+          }
+        }
+      } else {
+        walkProp(astProp, ctx, typeDef, walkCtx, field)
       }
-    } else {
-      walkProp(astProp, ctx, typeDef, walkCtx, field)
     }
   }
   return walkCtx

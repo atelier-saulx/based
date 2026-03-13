@@ -173,7 +173,7 @@ pub fn filter(
             .nrange,
             => |op| blk: {
                 break :blk switch (c.op.prop) {
-                    .id, .uint32, .int32 => Fixed.compare(u32, op, q, v, index, c),
+                    .id, .uint32, .int32, .cardinality => Fixed.compare(u32, op, q, v, index, c),
                     .uint16, .int16 => Fixed.compare(u16, op, q, v, index, c),
                     .number => Fixed.compare(f64, op, q, v, index, c),
                     .timestamp => Fixed.compare(u64, op, q, v, index, c),
@@ -243,6 +243,11 @@ pub fn filter(
                 } else {
                     break :blk false;
                 }
+            },
+            .selectCardinality => blk: {
+                const node = getTarget(edge, target, c);
+                v = Fields.getCardinality(node, c.fieldSchema) orelse &.{ 0, 0, 0, 0 };
+                break :blk true;
             },
             .selectSmallRefs, .selectLargeRefsEdge, .selectLargeRefEdge, .selectLargeRefs => blk: {
                 break :blk true;

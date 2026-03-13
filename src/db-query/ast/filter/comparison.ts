@@ -39,6 +39,17 @@ export const comparison = (
   }
 
   if (prop.type === PropType.cardinality) {
+    const { condition } = createCondition(
+      {
+        id: prop.id,
+        size: 0,
+        start: 0,
+        type: prop.type,
+      },
+      FilterOpCompare.selectCardinality,
+    )
+    ctx.query.set(condition, ctx.query.length)
+
     return fixedComparison(
       {
         ...prop,

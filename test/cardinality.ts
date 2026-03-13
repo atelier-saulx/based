@@ -97,8 +97,6 @@ await test('hll', async (t) => {
     .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
     .get()
 
-  console.dir(qarr, { depth: null })
-
   deepEqual(qarr, [
     { id: 1, myUniqueValuesCount: 1, myUniqueValuesCountFromArray: 0 },
     { id: 2, myUniqueValuesCountFromArray: 7, myUniqueValuesCount: 0 },
@@ -289,6 +287,7 @@ await test('hll', async (t) => {
           //@ts-ignore
           {
             id: 1,
+            $undeftokens: 0,
           },
         ],
       },

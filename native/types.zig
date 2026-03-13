@@ -917,6 +917,7 @@ pub const FilterOpCompare = enum(u8) {
 
     selectLargeRefEdge = 206,
     selectLargeRefsEdge = 207,
+    selectCardinality = 208,
 
     nextOrIndex = 253,
 };
