@@ -1985,7 +1985,7 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, const struct S
     return 0;
 }
 
-int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+static int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     return fields_del(db, node, fs, false);
 }
