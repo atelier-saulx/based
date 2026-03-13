@@ -505,6 +505,8 @@ out:
 /**
  * Clear single ref value.
  * A helper for remove_reference().
+ * Clear will fail if expect is not satisfied.
+ * @param expect should be set to the id expected to be removed; If there is no expectation set to 0.
  * @returns the original value.
  */
 static node_id_t del_single_ref(
@@ -513,12 +515,16 @@ static node_id_t del_single_ref(
         const struct EdgeFieldConstraint *efc,
         struct SelvaFields *fields,
         struct SelvaFieldInfo *nfo,
+        node_id_t expect,
         bool ignore_dependent)
 {
     void *vp = nfo2p(fields, nfo);
     struct SelvaNodeLargeReference ref;
 
     memcpy(&ref, vp, sizeof(ref));
+    if (expect != 0 && ref.dst != expect) {
+        return 0;
+    }
     memset(vp, 0, sizeof(ref)); /* This is fine here because we have a copy of the original struct. */
     reference_edge_destroy(db, efc, &ref, false);
 
@@ -682,8 +688,16 @@ static void clear_ref_dst(struct SelvaDb *db, const struct SelvaFieldSchema *fs_
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
         node_id_t removed;
 
-        removed = del_single_ref(db, dst, &fs_dst->edge_constraint, fields_dst, nfo_dst, false);
-        assert(removed == src_node_id);
+        /*
+         * We also accept that nothing was removed as it's better to recover
+         * from a glitch than crash. We don't accept removing a wrong node
+         * reference because that could mean that we are breaking another
+         * reference.
+         */
+        removed = del_single_ref(db, dst, &fs_dst->edge_constraint, fields_dst, nfo_dst, src_node_id, false);
+        if (unlikely(removed != src_node_id)) {
+            fprintf(stderr, "%s: Possible reference corruption\n", __func__);
+        }
     } else if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCES) {
         struct SelvaNodeReferences *refs = nfo2p(fields_dst, nfo_dst);
 
@@ -692,8 +706,14 @@ static void clear_ref_dst(struct SelvaDb *db, const struct SelvaFieldSchema *fs_
         }
 
         ssize_t i = refs_find_node_i(refs, src_node_id);
-        assert(i >= 0);
-        (void)del_multi_ref(db, dst, &fs_dst->edge_constraint, refs, i, false);
+        /*
+         * same here as above.
+         */
+        if (i >= 0) {
+            (void)del_multi_ref(db, dst, &fs_dst->edge_constraint, refs, i, false);
+        } else {
+            fprintf(stderr, "%s: Possible references corruption\n", __func__);
+        }
     }
 
     auto src_type = selva_get_type_by_index(db, fs_dst->edge_constraint.dst_node_type);
@@ -768,7 +788,7 @@ static node_id_t remove_reference(struct SelvaDb *db, struct SelvaNode *src, con
 
     if (nfo_src->in_use) {
         if (fs_src->type == SELVA_FIELD_TYPE_REFERENCE) {
-            dst_node_id = del_single_ref(db, src, &fs_src->edge_constraint, fields_src, nfo_src, ignore_src_dependent);
+            dst_node_id = del_single_ref(db, src, &fs_src->edge_constraint, fields_src, nfo_src, 0, ignore_src_dependent);
         } else if (fs_src->type == SELVA_FIELD_TYPE_REFERENCES) {
             struct SelvaNodeReferences *refs = nfo2p(fields_src, nfo_src);
 
