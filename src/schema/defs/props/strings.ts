@@ -76,7 +76,8 @@ export const string = class String extends BasePropDef {
     _op?: ModifyEnum,
     lang: LangCodeEnum = LangCode.none,
   ): asserts value is string | Uint8Array {
-    if (value instanceof Uint8Array) {
+    if (value === null) value = '' // TODO We might want to handle nulls in a different way: FDN-1998 and FDN-2005
+     if (value instanceof Uint8Array) {
       buf.pushUint32(value.byteLength)
       buf.set(value, buf.length)
     } else {

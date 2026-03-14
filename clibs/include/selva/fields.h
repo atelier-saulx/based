@@ -279,13 +279,6 @@ struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, const str
     __attribute__((nonnull));
 
 /**
- * Delete field.
- */
-SELVA_EXPORT
-int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
-    __attribute__((nonnull(1, 2, 3)));
-
-/**
  * Delete an edge from a references field.
  */
 SELVA_EXPORT

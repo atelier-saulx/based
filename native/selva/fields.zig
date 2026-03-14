@@ -147,10 +147,6 @@ pub fn ensurePropTypeString(
     return selva.c.selva_fields_ensure_string(node, fieldSchema, selva.c.HLL_INIT_SIZE) orelse errors.SelvaError.SELVA_EINTYPE;
 }
 
-pub inline fn deleteField(db: *DbCtx, node: Node.Node, fieldSchema: Schema.FieldSchema) !void {
-    try errors.selva(selva.c.selva_fields_del(db.selva, node, fieldSchema));
-}
-
 // pub inline fn deleteTextFieldTranslation(ctx: *Modify.ModifyCtx, fieldSchema: Schema.FieldSchema, lang: t.LangCode) !void {
 //     return errors.selva(selva.c.selva_fields_set_text(ctx.node, fieldSchema, &selva.c.selva_fields_text_tl_empty[@intFromEnum(lang)], selva.c.SELVA_FIELDS_TEXT_TL_EMPTY_LEN));
 // }

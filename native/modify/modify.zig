@@ -180,7 +180,7 @@ inline fn modifyPropsInner(comptime updateSort: bool, db: *DbCtx, typeEntry: Nod
                                 }
                             }
                         }
-                        try Fields.deleteField(db, node, propSchema);
+                        Fields.reset(db, typeEntry, node, propSchema);
                         continue;
                     }
                     var k: usize = 0;
@@ -212,7 +212,7 @@ inline fn modifyPropsInner(comptime updateSort: bool, db: *DbCtx, typeEntry: Nod
                 },
                 .reference => {
                     if (prop.size == 0) {
-                        try Fields.deleteField(db, node, propSchema);
+                        Fields.reset(db, typeEntry, node, propSchema);
                         continue;
                     }
                     const refTypeId = Schema.getRefTypeIdFromFieldSchema(propSchema);
@@ -237,7 +237,7 @@ inline fn modifyPropsInner(comptime updateSort: bool, db: *DbCtx, typeEntry: Nod
                 },
                 .references => {
                     if (prop.size == 0) {
-                        try Fields.deleteField(db, node, propSchema);
+                        Fields.reset(db, typeEntry, node, propSchema);
                         continue;
                     }
                     var k: usize = 0;
