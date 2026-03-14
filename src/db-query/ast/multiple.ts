@@ -109,38 +109,8 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     pushSortHeader(ctx.query, sort(ast, ctx, prop.ref!, prop))
   }
 
-  // make nested fn
-  // if (ast.filter && !ast.filter.filterType) {
-  //   const hasEdges =
-  //     ast.filter.edges && Object.keys(ast.filter.edges).length > 0
-  //   const hasProps =
-  //     (ast.filter.props && Object.keys(ast.filter.props).length > 0) ||
-  //     ast.filter.and
-  //   if (hasEdges && hasProps) {
-  //     ast.filter.filterType = FilterType.edgeAndProps
-  //   } else if (hasEdges) {
-  //     ast.filter.filterType = FilterType.edgeOnly
-  //   } else if (hasProps) {
-  //     ast.filter.filterType = FilterType.propOnly
-  //   }
-  // }
-
-  if (ast.filter && ast.filter.filterType == FilterType.propFilter) {
-    const filterSize = filter(ast.filter, ctx, prop.ref!)
-    props.filterSize(ctx.query.data, filterSize, headerIndex)
-  } else if (ast.filter && ast.filter.filterType == FilterType.edgeFilter) {
-    const edges = prop.edges
-    if (!edges) {
-      throw new Error('Edge filter but references do not have edges')
-    }
-    const filterSize = filter(
-      ast.filter,
-      ctx,
-      prop.ref!,
-      undefined,
-      undefined,
-      prop.edges,
-    )
+  if (ast.filter) {
+    const filterSize = filter(ast.filter, ctx, prop.ref!, prop.edges)
     props.filterSize(ctx.query.data, filterSize, headerIndex)
   }
 

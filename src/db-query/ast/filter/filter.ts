@@ -12,6 +12,7 @@ import {
   PropType,
   writeFilterConditionProps,
   LangCode,
+  FilterType,
 } from '../../../zigTsExports.js'
 import { Ctx, FilterAst, FilterOp } from '../ast.js'
 import { comparison } from './comparison.js'
@@ -161,6 +162,7 @@ const indexOf = (
 }
 
 const filterInternal = (
+  topLevelAst: FilterAst,
   ast: FilterAst,
   ctx: Ctx,
   typeDef: TypeDef,
@@ -202,6 +204,13 @@ const filterInternal = (
 
   walk(ast, ctx, typeDef, walkCtx)
 
+  if (ast.edges) {
+    topLevelAst.filterType = FilterType.edgeFilter
+    if (!edgeType) {
+      throw new Error('Do not have edges for filter and trying to use them')
+    }
+  }
+
   if (ast.and) {
     if (ast.or) {
       const { offset, condition } = createCondition(
@@ -221,6 +230,7 @@ const filterInternal = (
       )
       andOrReplace = condition
       filterInternal(
+        topLevelAst,
         ast.and,
         ctx,
         typeDef,
@@ -231,6 +241,7 @@ const filterInternal = (
       )
     } else {
       filterInternal(
+        topLevelAst,
         ast.and,
         ctx,
         typeDef,
@@ -278,6 +289,7 @@ const filterInternal = (
       )
     }
     filterInternal(
+      topLevelAst,
       ast.or,
       ctx,
       typeDef,
@@ -295,10 +307,6 @@ export const filter = (
   ast: FilterAst,
   ctx: Ctx,
   typeDef: TypeDef,
-  filterIndex: number = 0,
-  // fix this
-  lastProp: number = PropType.id,
-  // fix this
   edgeType?: TypeDef,
   prevOr?: Uint8Array,
 ) => {
@@ -306,10 +314,11 @@ export const filter = (
   ctx.query.pushUint32(0)
   const len = filterInternal(
     ast,
+    ast,
     ctx,
     typeDef,
-    filterIndex,
-    lastProp,
+    0,
+    PropType.id,
     edgeType,
     prevOr,
   )
