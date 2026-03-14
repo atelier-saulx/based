@@ -71,7 +71,7 @@ pub fn edge(
     var nodeCnt: u32 = 0;
     const edgeType = try Node.getType(ctx.db, header.edgeTypeId);
 
-    const filter = try Filter.readFilter(
+    const filter = if (filterType != .noFilter) try Filter.readFilter(
         .edge,
         ctx,
         i,
@@ -79,7 +79,7 @@ pub fn edge(
         q,
         typeEntry,
         edgeType,
-    );
+    ) else undefined;
 
     const nestedQuery = q[i.* .. i.* + header.includeSize];
     const edgeQuery = q[i.* + header.includeSize .. i.* + header.includeSize + header.edgeSize];

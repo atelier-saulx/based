@@ -141,20 +141,25 @@ await test('include', async (t) => {
             $level: { include: { meta: true } },
           },
         },
-        filter: {
-          // mixed can now be made have to handle in filter
-          // we can also just pass null for edge and keep it rly simple
-          // also pass null edgeType
-          // filterType: FilterType.edgeFilter,
-          props: {
-            y: { ops: [{ op: '=', val: [15] }] },
-          },
-          edges: {
-            props: {
-              $level: { ops: [{ op: 'includes', val: '1' }] },
-            },
-          },
-        },
+        // filter: {
+        //   // mixed can now be made have to handle in filter
+        //   // we can also just pass null for edge and keep it rly simple
+        //   // also pass null edgeType
+        //   // filterType: FilterType.edgeFilter,
+        //   props: {
+        //     y: { ops: [{ op: '=', val: [15] }] },
+        //   },
+        //   edges: {
+        //     props: {
+        //       $level: { ops: [{ op: 'includes', val: '67' }] },
+        //     },
+        //     or: {
+        //       props: {
+        //         $level: { ops: [{ op: 'includes', val: '2' }] },
+        //       },
+        //     },
+        //   },
+        // },
       },
     },
   }
