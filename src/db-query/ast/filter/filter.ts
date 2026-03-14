@@ -209,6 +209,14 @@ const filterInternal = (
     if (!edgeType) {
       throw new Error('Do not have edges for filter and trying to use them')
     }
+    filterInternal(
+      topLevelAst,
+      ast.edges,
+      ctx,
+      edgeType,
+      ctx.query.length - startIndex,
+      walkCtx.prop,
+    )
   }
 
   if (ast.and) {
@@ -219,6 +227,7 @@ const filterInternal = (
           size: 8,
           start: 0,
           type: PropType.null,
+          isEdge: false,
         },
         FilterOpCompare.nextOrIndex,
       )
@@ -256,7 +265,13 @@ const filterInternal = (
     const nextOrIndex = resultSize + filterIndex
 
     const { offset, condition } = createCondition(
-      { id: lastProp, size: 8, start: 0, type: PropType.null },
+      {
+        id: lastProp,
+        size: 8,
+        start: 0,
+        type: PropType.null,
+        isEdge: false,
+      },
       FilterOpCompare.nextOrIndex,
     )
 

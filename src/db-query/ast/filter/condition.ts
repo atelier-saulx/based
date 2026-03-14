@@ -1,3 +1,4 @@
+import { PropDef } from '../../../schema/defs/index.js'
 import {
   FilterConditionByteSize,
   FilterConditionAlignOf,
@@ -13,7 +14,13 @@ export const conditionByteSize = (propSize: number, size: number) => {
 }
 
 export const createCondition = (
-  prop: { start: number; id: number; size: number; type: PropTypeEnum },
+  prop: {
+    start: number
+    id: number
+    size: number
+    type: PropTypeEnum
+    isEdge: boolean
+  },
   op: OpEnum,
   size: number = prop.size,
   propSize: number = prop.size,
@@ -21,6 +28,10 @@ export const createCondition = (
 ) => {
   const conditionBuffer = new Uint8Array(conditionByteSize(propSize, size))
   conditionBuffer[0] = 255 // Means condition header is not aligned
+
+  // @ts-ignore
+  console.log('!!', prop.path, prop.isEdge)
+
   const offset =
     writeFilterCondition(
       conditionBuffer,
@@ -36,7 +47,7 @@ export const createCondition = (
         len: propSize,
         offset: 255, // Means value is not aligned
         size: size + propSize,
-        useEdge: false,
+        useEdge: prop.isEdge,
       },
       FilterConditionAlignOf + 1,
     ) + propSize

@@ -31,6 +31,7 @@ export const comparison = (
           size: 0,
           start: 0,
           type: PropType.id,
+          isEdge: false,
         },
         FilterOpCompare.selectId,
       )
@@ -46,6 +47,7 @@ export const comparison = (
         size: 0,
         start: 0,
         type: prop.type,
+        isEdge: prop.isEdge,
       },
       FilterOpCompare.selectCardinality,
     )
@@ -74,6 +76,7 @@ export const comparison = (
           size: 0,
           start: 0,
           type: prop.type,
+          isEdge: prop.isEdge, // do we support edge on alias?
         },
         FilterOpCompare.selectAlias,
       )

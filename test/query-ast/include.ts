@@ -103,13 +103,16 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
   // const ids: number[] = []
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 2; i++) {
     // ids.push(i + 1)
     client.create('user', {
       y: i,
       aliasId: '#' + i,
       derp: 'aaaaa',
-      friends: [a, { id: b, $level: rand(0, 200) + '' }],
+      friends: [
+        { id: a, $level: rand(0, 200) + '' },
+        { id: b, $level: rand(0, 200) + '' },
+      ],
     })
   }
 
@@ -118,17 +121,17 @@ await test('include', async (t) => {
   const ast: QueryAst = {
     type: 'user',
     range: { start: 0, end: 1e6 },
-    filter: {
-      // mixed can now be made have to handle in filter
-      // we can also just pass null for edge and keep it rly simple
-      // also pass null edgeType
-      // filterType: FilterType.propOnly,
-      props: {
-        y: { ops: [{ op: '=', val: [2] }] },
-        id: { ops: [{ op: '>', val: [0] }] },
-        aliasId: { ops: [{ op: '=', val: ['#2'] }] },
-      },
-    },
+    // filter: {
+    //   // mixed can now be made have to handle in filter
+    //   // we can also just pass null for edge and keep it rly simple
+    //   // also pass null edgeType
+    //   // filterType: FilterType.propOnly,
+    //   props: {
+    //     y: { ops: [{ op: '=', val: [15] }] },
+    //     id: { ops: [{ op: '>', val: [0] }] },
+    //     // aliasId: { ops: [{ op: '=', val: ['#2'] }] },
+    //   },
+    // },
     props: {
       y: { include: {} },
       // '*': { include: {} }, // combining these has to work
@@ -141,25 +144,25 @@ await test('include', async (t) => {
             $level: { include: { meta: true } },
           },
         },
-        // filter: {
-        //   // mixed can now be made have to handle in filter
-        //   // we can also just pass null for edge and keep it rly simple
-        //   // also pass null edgeType
-        //   // filterType: FilterType.edgeFilter,
-        //   props: {
-        //     y: { ops: [{ op: '=', val: [15] }] },
-        //   },
-        //   edges: {
-        //     props: {
-        //       $level: { ops: [{ op: 'includes', val: '67' }] },
-        //     },
-        //     or: {
-        //       props: {
-        //         $level: { ops: [{ op: 'includes', val: '2' }] },
-        //       },
-        //     },
-        //   },
-        // },
+        filter: {
+          // mixed can now be made have to handle in filter
+          // we can also just pass null for edge and keep it rly simple
+          // also pass null edgeType
+          // filterType: FilterType.edgeFilter,
+          // props: {
+          //   y: { ops: [{ op: '=', val: [15] }] },
+          // },
+          edges: {
+            props: {
+              $level: { ops: [{ op: 'includes', val: '1' }] },
+            },
+            // or: {
+            //   props: {
+            //     $level: { ops: [{ op: 'includes', val: '2' }] },
+            //   },
+            // },
+          },
+        },
       },
     },
   }
