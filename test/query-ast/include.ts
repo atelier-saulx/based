@@ -14,6 +14,7 @@ import { deflateSync } from 'zlib'
 import { fastPrng } from '../../src/utils/fastPrng.js'
 import { deepEqual, testDbClient, testDbServer } from '../shared/index.js'
 import { FilterType } from '../../src/zigTsExports.js'
+import { equal } from 'assert'
 // import { deserialize } from 'v8' super nice to use
 
 await test('include', async (t) => {
@@ -154,13 +155,13 @@ await test('include', async (t) => {
           // },
           edges: {
             props: {
-              $level: { ops: [{ op: 'includes', val: '8' }] },
+              $level: { ops: [{ op: 'includes', val: 'DErp' }] },
             },
-            // or: {
-            //   props: {
-            //     $level: { ops: [{ op: 'includes', val: '2' }] },
-            //   },
-            // },
+            or: {
+              props: {
+                $level: { ops: [{ op: 'includes', val: '2' }] },
+              },
+            },
           },
         },
       },
@@ -216,6 +217,9 @@ await test('include', async (t) => {
   // console.log('-------------------------------')
   // console.dir(deSerializeSchema(readSchemaBuf), { depth: 10 })
   console.dir(obj, { depth: 10 })
+
+  equal(obj[1].friends.length, 1)
+  equal(obj[3].friends.length, 1)
 
   deepEqual(obj, resultToObject(ctx.readSchema, result, result.byteLength - 4))
 

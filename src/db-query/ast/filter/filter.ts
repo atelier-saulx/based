@@ -139,26 +139,10 @@ const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
   return walkCtx
 }
 
-const MAX_INDEX = 11e9 - 1e9
-
-const indexOf = (
-  haystack: Uint8Array,
-  needle: Uint8Array,
-  offset: number,
-  end: number,
-) => {
-  if (needle.length === 0) return 0
-  for (let i = offset; i <= end - needle.length; i++) {
-    let found = true
-    for (let j = 0; j < needle.length; j++) {
-      if (haystack[i + j] !== needle[j]) {
-        found = false
-        break
-      }
-    }
-    if (found) return i
-  }
-  return -1
+type PrevOr = {
+  condition: Uint8Array
+  offset: number
+  index: number
 }
 
 const filterInternal = (
@@ -169,7 +153,7 @@ const filterInternal = (
   filterIndex: number = 0,
   lastProp: number = PropType.id,
   edgeType?: TypeDef,
-  prevOr?: Uint8Array,
+  prevOr?: PrevOr,
 ): number => {
   const startIndex = ctx.query.length
 
@@ -183,7 +167,7 @@ const filterInternal = (
     ctx.query.reserve(conditionByteSize(8, 8))
   }
 
-  let andOrReplace: Uint8Array | void = undefined
+  let andOrReplace: PrevOr | void = undefined
 
   const { main } = walkMain(ast, ctx, typeDef, walkCtx)
   for (const { prop, ops } of main) {
@@ -232,12 +216,7 @@ const filterInternal = (
         FilterOpCompare.nextOrIndex,
       )
       // Fixme: Can be better just pass
-      writeUint64(
-        condition,
-        MAX_INDEX + Math.floor(Math.random() * 1e9),
-        offset,
-      )
-      andOrReplace = condition
+      andOrReplace = { condition, offset, index: -1 }
       filterInternal(
         topLevelAst,
         ast.and,
@@ -281,22 +260,18 @@ const filterInternal = (
     if (prevOr) {
       if (ast.or.or) {
       } else {
-        ctx.query.set(prevOr, ctx.query.length)
+        prevOr.index = ctx.query.length
+        ctx.query.set(prevOr.condition, ctx.query.length)
         prevOr = undefined
       }
     }
 
     if (andOrReplace) {
-      let index = indexOf(
-        ctx.query.data,
-        andOrReplace,
-        startIndex,
-        ctx.query.length,
-      )
+      let index = andOrReplace.index
       if (index === -1) {
         throw new Error('Cannot find AND OR REPLACE INDEX')
       }
-      writeUint64(ctx.query.data, nextOrIndex, offset + index)
+      writeUint64(ctx.query.data, nextOrIndex, andOrReplace.offset + index)
       writeFilterConditionProps.prop(
         ctx.query.data,
         walkCtx.prop,
@@ -323,7 +298,7 @@ export const filter = (
   ctx: Ctx,
   typeDef: TypeDef,
   edgeType?: TypeDef,
-  prevOr?: Uint8Array,
+  prevOr?: PrevOr,
 ) => {
   // Adds a run id this makes sure filters dont get prepared more then once per poll cycle
   ctx.query.pushUint32(0)
