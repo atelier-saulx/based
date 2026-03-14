@@ -96,7 +96,7 @@ pub fn references(
             nodeCnt = try iterate(.noFilter, edge, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
-        // --------- filter: propOnly -------------
+        // --------- filter: only prop -------------
         .filter => {
             var it = try References.iterator(.asc, hasEdge, ctx.db, from, header.prop, fromType);
             nodeCnt = try iterate(.propFilter, edge, ctx, q, &it, &header, typeEntry, i);
@@ -115,7 +115,7 @@ pub fn references(
             nodeCnt = try iterate(.noFilter, edge, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
-        // --------- filter: edgeOnly -------------
+        // --------- filter: /w edge -------------
         .filterEdge => {
             var it = try References.iterator(.asc, .edge, ctx.db, from, header.prop, fromType);
             nodeCnt = try iterate(.edgeFilter, edge, ctx, q, &it, &header, typeEntry, i);
