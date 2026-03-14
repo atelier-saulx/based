@@ -103,6 +103,8 @@ export type Ctx = {
   localeFallbacks: {
     [code: string]: LangCodeEnum[]
   }
+  // Fix this
+  filterHasEdge?: boolean
 }
 
 export type ReadOpts = {

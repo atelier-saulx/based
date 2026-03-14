@@ -30,10 +30,41 @@ const makeIdProp = (typeDef: TypeDef): PropDef => {
   prop.id = 255
   return prop
 }
+const walkMain = (
+  ast: FilterAst,
+  ctx: Ctx,
+  typeDef: TypeDef,
+  walkCtx: WalkCtx,
+) => {
+  const { tree, main } = walkCtx
+  for (const field in ast.props) {
+    const prop =
+      field === 'id'
+        ? makeIdProp(typeDef) // TODO super ineffienct might just want to add it on schema
+        : tree.props.get(field)
+    const astProp = ast.props[field]
+    const ops = astProp.ops
+    if (isPropDef(prop)) {
+      if (ops && prop.id === 0) {
+        main.push({ prop, ops })
+      }
+    } else {
+      if (prop) {
+        walk(astProp, ctx, typeDef, {
+          main,
+          tree: prop,
+          prop: walkCtx.prop,
+        })
+      } else {
+        throw new Error(`Prop does not exist ${field}`)
+      }
+    }
+  }
+  return walkCtx
+}
 
 const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
-  const { tree, main } = walkCtx
-
+  const { tree } = walkCtx
   for (const field in ast.props) {
     const prop =
       field === 'id'
@@ -43,32 +74,33 @@ const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
     const astProp = ast.props[field]
     const ops = astProp.ops
     if (isPropDef(prop)) {
-      if (prop.type === PropType.jsonLocalized || PropType.stringLocalized) {
-        if (astProp.props) {
-          for (const lang in astProp.props) {
-            const code = LangCode[lang]
-            if (!code || !ctx.locales[code]) {
-              throw new Error(`Filter language not supported ${lang}`)
-            }
-            const ops = astProp.props[lang].ops
-            if (ops) {
-              for (const op of ops) {
-                const condition = comparison(
-                  ctx,
-                  prop,
-                  op.op,
-                  op.val,
-                  code,
-                  op.opts,
-                )
-                ctx.query.set(condition, ctx.query.length)
-              }
+      if (
+        (prop.type === PropType.jsonLocalized ||
+          prop.type === PropType.stringLocalized) &&
+        astProp.props
+      ) {
+        for (const lang in astProp.props) {
+          const code = LangCode[lang]
+          if (!code || !ctx.locales[code]) {
+            throw new Error(`Filter language not supported ${lang}`)
+          }
+          const ops = astProp.props[lang].ops
+          if (ops) {
+            for (const op of ops) {
+              const condition = comparison(
+                ctx,
+                prop,
+                walkCtx.prop,
+                op.op,
+                op.val,
+                code,
+                op.opts,
+              )
+              ctx.query.set(condition, ctx.query.length)
             }
           }
         }
-      }
-
-      if (prop.type === PropType.references) {
+      } else if (prop.type === PropType.references) {
         // references(astProp, ctx, prop)
         // DERP
       } else if (prop.type === PropType.reference) {
@@ -77,27 +109,24 @@ const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
         // reference(astProp, ctx, prop)
         // DERP
       } else if (ops) {
-        if (prop.id === 0) {
-          main.push({ prop, ops })
-        } else {
-          walkCtx.prop = prop.id
-          for (const op of ops) {
-            const condition = comparison(
-              ctx,
-              prop,
-              op.op,
-              op.val,
-              ctx.locale,
-              op.opts,
-            )
-            ctx.query.set(condition, ctx.query.length)
-          }
+        for (const op of ops) {
+          const condition = comparison(
+            ctx,
+            prop,
+            walkCtx.prop,
+            op.op,
+            op.val,
+            ctx.locale,
+            op.opts,
+          )
+          ctx.query.set(condition, ctx.query.length)
         }
       }
+      walkCtx.prop = prop.id
     } else {
       if (prop) {
         walk(astProp, ctx, typeDef, {
-          main,
+          main: [],
           tree: prop,
           prop: walkCtx.prop,
         })
@@ -154,14 +183,13 @@ const filterInternal = (
 
   let andOrReplace: Uint8Array | void = undefined
 
-  const { main } = walk(ast, ctx, typeDef, walkCtx)
-
+  const { main } = walkMain(ast, ctx, typeDef, walkCtx)
   for (const { prop, ops } of main) {
-    walkCtx.prop = prop.id
     for (const op of ops) {
       const condition = comparison(
         ctx,
         prop,
+        walkCtx.prop, // last prop id
         op.op,
         op.val,
         ctx.locale,
@@ -169,7 +197,10 @@ const filterInternal = (
       )
       ctx.query.set(condition, ctx.query.length)
     }
+    walkCtx.prop = prop.id
   }
+
+  walk(ast, ctx, typeDef, walkCtx)
 
   if (ast.and) {
     if (ast.or) {

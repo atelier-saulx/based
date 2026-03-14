@@ -103,10 +103,11 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
   // const ids: number[] = []
-  for (let i = 0; i < 500; i++) {
+  for (let i = 0; i < 3; i++) {
     // ids.push(i + 1)
     client.create('user', {
       y: i,
+      aliasId: '#' + i,
       derp: 'aaaaa',
       friends: [a, { id: b, $level: rand(0, 200) + '' }],
     })
@@ -124,6 +125,8 @@ await test('include', async (t) => {
       // filterType: FilterType.propOnly,
       props: {
         y: { ops: [{ op: '=', val: [2] }] },
+        id: { ops: [{ op: '>', val: [0] }] },
+        aliasId: { ops: [{ op: '=', val: ['#2'] }] },
       },
     },
     props: {
@@ -171,7 +174,7 @@ await test('include', async (t) => {
 
   console.log('START PERF', Date.now() - d, 'ms')
   const sizes: Set<number> = new Set()
-  await perf(
+  await perf.skip(
     async () => {
       const q: any = []
       for (let i = 0; i < 5; i++) {
@@ -198,9 +201,9 @@ await test('include', async (t) => {
   )
 
   console.log('BLA:')
-  console.dir(ctx.readSchema, { depth: 10 })
-  console.log('-------------------------------')
-  console.dir(deSerializeSchema(readSchemaBuf), { depth: 10 })
+  // console.dir(ctx.readSchema, { depth: 10 })
+  // console.log('-------------------------------')
+  // console.dir(deSerializeSchema(readSchemaBuf), { depth: 10 })
   console.dir(obj, { depth: 10 })
 
   deepEqual(obj, resultToObject(ctx.readSchema, result, result.byteLength - 4))

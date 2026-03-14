@@ -14,6 +14,7 @@ import { writeUint32 } from '../../../utils/uint8.js'
 export const comparison = (
   ctx: Ctx,
   prop: PropDef,
+  lastProp: number,
   op: Operator,
   val: any,
   lang: LangCodeEnum,
@@ -26,7 +27,7 @@ export const comparison = (
     if (prop.type === PropType.id) {
       const { condition } = createCondition(
         {
-          id: PropType.id,
+          id: prop.id,
           size: 0,
           start: 0,
           type: PropType.id,

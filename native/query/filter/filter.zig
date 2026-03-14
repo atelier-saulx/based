@@ -34,6 +34,7 @@ fn prepare(
 ) !void {
     // add a number on query ctx dont run this if filter is set
     var i: usize = 0;
+    var prevProp: u8 = 255;
     while (i < q.len) {
         const headerSize = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition);
         var c: *t.FilterCondition = undefined;
@@ -62,6 +63,13 @@ fn prepare(
 
             const end = totalSize + i;
 
+            if (c.op.prop == t.PropType.alias or
+                c.op.prop == t.PropType.cardinality or
+                c.op.prop == t.PropType.id)
+            {
+                c.prop = prevProp;
+            }
+
             switch (c.op.compare) {
                 .selectLargeRefEdge => {
                     // const select = utils.readPtr(t.FilterSelect, q, i + q[i] + utils.sizeOf(t.FilterCondition) + @alignOf(t.FilterSelect) - c.offset);
@@ -81,6 +89,7 @@ fn prepare(
                     i = end;
                 },
             }
+            prevProp = c.prop;
         } else {
             c = utils.readPtr(t.FilterCondition, q, q[i] + i); // + 1
             const totalSize = headerSize + c.size;
@@ -144,6 +153,7 @@ pub fn filter(
         var nextIndex = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + c.size + i;
 
         if (prop != c.prop) {
+            // std.debug.print("SELECT PROP GET RAW {any} {any} {any} \n", .{ prop, c.prop, c.op });
             if (edge == .edge) {
                 if (c.useEdge) {
                     v = Fields.getRaw(target.edge, c.fieldSchema);
@@ -224,6 +234,7 @@ pub fn filter(
                 v = Fields.getAliasByNode(typeEntry, node, c.fieldSchema.field) catch {
                     break :blk false;
                 };
+                // std.debug.print("GET SEL ALIAS {s} \n", .{v});
                 break :blk true;
             },
             .selectId => blk: {
