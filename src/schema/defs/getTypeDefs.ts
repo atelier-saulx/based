@@ -214,6 +214,9 @@ export const getTypeDefs = (schema: SchemaOut): Map<string, TypeDef> => {
       if (edges) {
         const edgeTypeName = `_${typeName}.${propPath}`
         def.edges = getTypeDef(edgeTypeName, { props: edges }, schema)
+        for (const [, edgePropDef] of def.edges.props) {
+          edgePropDef.isEdge = true
+        }
         typeDefs.set(edgeTypeName, def.edges)
       }
     }

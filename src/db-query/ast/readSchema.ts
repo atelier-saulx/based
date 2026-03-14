@@ -61,7 +61,8 @@ export const readPropDef = (
   opts: ReadOpts = emptyReadOpts,
 ): ReadProp => {
   const readProp: ReadProp = {
-    path: p.isEdge ? p.path.slice(1) : p.path,
+    //     path: p.isEdge ? p.path.slice(1) : p.path,
+    path: p.path,
     type: getReadType(p, opts),
     readBy: 0,
   }

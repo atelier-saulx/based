@@ -154,7 +154,7 @@ await test('include', async (t) => {
           // },
           edges: {
             props: {
-              $level: { ops: [{ op: 'includes', val: '1' }] },
+              $level: { ops: [{ op: 'includes', val: '8' }] },
             },
             // or: {
             //   props: {

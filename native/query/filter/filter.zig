@@ -153,13 +153,13 @@ pub fn filter(
         var nextIndex = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + c.size + i;
 
         if (prop != c.prop) {
-            std.debug.print("SELECT PROP GET RAW isEdge {any} {any} {any} {any} {any} \n", .{
-                c.useEdge,
-                edge,
-                prop,
-                c.prop,
-                c.op,
-            });
+            // std.debug.print("SELECT PROP GET RAW isEdge {any} {any} {any} {any} {any} \n", .{
+            //     c.useEdge,
+            //     edge,
+            //     prop,
+            //     c.prop,
+            //     c.op,
+            // });
             if (edge == .edge) {
                 if (c.useEdge) {
                     v = Fields.getRaw(target.edge, c.fieldSchema);
