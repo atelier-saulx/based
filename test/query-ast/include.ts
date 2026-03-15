@@ -13,13 +13,19 @@ import test, { T } from '../shared/test.js'
 import { deflateSync } from 'zlib'
 import { fastPrng } from '../../src/utils/fastPrng.js'
 import { deepEqual, testDbClient, testDbServer } from '../shared/index.js'
-import { FilterType } from '../../src/zigTsExports.js'
 import { equal } from 'assert'
-// import { deserialize } from 'v8' super nice to use
+import { SchemaIn } from '../../src/sdk.js'
+
+const generateMockEmbedding = (size = 768) => {
+  return {
+    probability: Math.random(),
+    embedding: Array.from({ length: size }, () => Math.random() * 2 - 1),
+  }
+}
 
 await test('include', async (t) => {
   const server = await testDbServer(t, { noBackup: true })
-  const schema = {
+  const schema: SchemaIn = {
     locales: {
       en: true,
       nl: { fallback: ['en'] },
@@ -37,6 +43,11 @@ await test('include', async (t) => {
         localized: {
           type: 'string',
           localized: true,
+        },
+        personality: {
+          type: 'vector',
+          baseType: 'float32',
+          size: 768,
         },
         mrFriend: {
           ref: 'user',
@@ -102,14 +113,19 @@ await test('include', async (t) => {
 
   let d = Date.now()
 
+  const embeds: { probability: number; embedding: number[] }[] = []
+
   const rand = fastPrng()
   // const ids: number[] = []
   for (let i = 0; i < 2; i++) {
     // ids.push(i + 1)
+    const embedding = generateMockEmbedding()
+    embeds[i] = embedding
     client.create('user', {
       y: i,
       aliasId: '#' + i,
       derp: 'aaaaa',
+      personality: new Float32Array(embedding.embedding),
       friends: [
         { id: a, $level: rand(0, 200) + '' },
         { id: b, $level: rand(0, 200) + '' },
@@ -122,6 +138,13 @@ await test('include', async (t) => {
   const ast: QueryAst = {
     type: 'user',
     range: { start: 0, end: 1e6 },
+    filter: {
+      props: {
+        personality: {
+          ops: [{ op: '=', val: new Float32Array(embeds[0].embedding) }],
+        },
+      },
+    },
     // filter: {
     //   // mixed can now be made have to handle in filter
     //   // we can also just pass null for edge and keep it rly simple
@@ -133,39 +156,39 @@ await test('include', async (t) => {
     //     // aliasId: { ops: [{ op: '=', val: ['#2'] }] },
     //   },
     // },
-    props: {
-      y: { include: {} },
-      // '*': { include: {} }, // combining these has to work
-      friends: {
-        props: {
-          y: { include: {} },
-        },
-        edges: {
-          props: {
-            $level: { include: { meta: true } },
-          },
-        },
-        filter: {
-          // mixed can now be made have to handle in filter
-          // we can also just pass null for edge and keep it rly simple
-          // also pass null edgeType
-          // filterType: FilterType.edgeFilter,
-          // props: {
-          //   y: { ops: [{ op: '=', val: [15] }] },
-          // },
-          edges: {
-            props: {
-              $level: { ops: [{ op: 'includes', val: 'DErp' }] },
-            },
-            or: {
-              props: {
-                $level: { ops: [{ op: 'includes', val: '2' }] },
-              },
-            },
-          },
-        },
-      },
-    },
+    // props: {
+    //   y: { include: {} },
+    //   // '*': { include: {} }, // combining these has to work
+    //   friends: {
+    //     props: {
+    //       y: { include: {} },
+    //     },
+    //     edges: {
+    //       props: {
+    //         $level: { include: { meta: true } },
+    //       },
+    //     },
+    //     filter: {
+    //       // mixed can now be made have to handle in filter
+    //       // we can also just pass null for edge and keep it rly simple
+    //       // also pass null edgeType
+    //       // filterType: FilterType.edgeFilter,
+    //       // props: {
+    //       //   y: { ops: [{ op: '=', val: [15] }] },
+    //       // },
+    //       edges: {
+    //         props: {
+    //           $level: { ops: [{ op: 'includes', val: 'DErp' }] },
+    //         },
+    //         or: {
+    //           props: {
+    //             $level: { ops: [{ op: 'includes', val: '2' }] },
+    //           },
+    //         },
+    //       },
+    //     },
+    //   },
+    // },
   }
 
   console.dir(ast, { depth: 10 })
@@ -218,8 +241,10 @@ await test('include', async (t) => {
   // console.dir(deSerializeSchema(readSchemaBuf), { depth: 10 })
   console.dir(obj, { depth: 10 })
 
-  equal(obj[1].friends.length, 1)
-  equal(obj[3].friends.length, 1)
+  equal(obj.length, 1)
+  equal(obj[0].personality, embeds[0])
+
+  // equal(obj[3].friends.length, 1)
 
   deepEqual(obj, resultToObject(ctx.readSchema, result, result.byteLength - 4))
 
