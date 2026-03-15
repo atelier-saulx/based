@@ -137,58 +137,15 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
+    target: { aliasId: '#1' },
     range: { start: 0, end: 1e6 },
     filter: {
       props: {
-        personality: {
-          ops: [{ op: '=', val: new Float32Array(embeds[0].embedding) }],
+        y: {
+          ops: [{ op: '>', val: 0 }],
         },
       },
     },
-    // filter: {
-    //   // mixed can now be made have to handle in filter
-    //   // we can also just pass null for edge and keep it rly simple
-    //   // also pass null edgeType
-    //   // filterType: FilterType.propOnly,
-    //   props: {
-    //     y: { ops: [{ op: '=', val: [15] }] },
-    //     id: { ops: [{ op: '>', val: [0] }] },
-    //     // aliasId: { ops: [{ op: '=', val: ['#2'] }] },
-    //   },
-    // },
-    // props: {
-    //   y: { include: {} },
-    //   // '*': { include: {} }, // combining these has to work
-    //   friends: {
-    //     props: {
-    //       y: { include: {} },
-    //     },
-    //     edges: {
-    //       props: {
-    //         $level: { include: { meta: true } },
-    //       },
-    //     },
-    //     filter: {
-    //       // mixed can now be made have to handle in filter
-    //       // we can also just pass null for edge and keep it rly simple
-    //       // also pass null edgeType
-    //       // filterType: FilterType.edgeFilter,
-    //       // props: {
-    //       //   y: { ops: [{ op: '=', val: [15] }] },
-    //       // },
-    //       edges: {
-    //         props: {
-    //           $level: { ops: [{ op: 'includes', val: 'DErp' }] },
-    //         },
-    //         or: {
-    //           props: {
-    //             $level: { ops: [{ op: 'includes', val: '2' }] },
-    //           },
-    //         },
-    //       },
-    //     },
-    //   },
-    // },
   }
 
   console.dir(ast, { depth: 10 })
@@ -196,9 +153,6 @@ await test('include', async (t) => {
   const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
 
   console.log(deflateSync(ctx.query).byteLength, '/', ctx.query.byteLength)
-
-  // debugBuffer(ctx.query)
-  // debugBuffer(deflateSync(ctx.query).toString('base64'))
 
   const queries: any = []
   for (let i = 0; i < 10; i++) {
@@ -242,7 +196,7 @@ await test('include', async (t) => {
   console.dir(obj, { depth: 10 })
 
   equal(obj.length, 1)
-  equal(obj[0].personality, embeds[0])
+  equal(obj[0].id, 1)
 
   // equal(obj[3].friends.length, 1)
 

@@ -8,7 +8,6 @@ import {
   QueryIteratorType,
   readQueryHeader,
   pushSortHeader,
-  FilterType,
 } from '../../zigTsExports.js'
 import { Ctx, QueryAst } from './ast.js'
 import { filter } from './filter/filter.js'

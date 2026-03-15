@@ -1,4 +1,3 @@
-import { PropDef } from '../../../schema/defs/index.js'
 import {
   FilterConditionByteSize,
   FilterConditionAlignOf,
@@ -28,9 +27,6 @@ export const createCondition = (
 ) => {
   const conditionBuffer = new Uint8Array(conditionByteSize(propSize, size))
   conditionBuffer[0] = 255 // Means condition header is not aligned
-
-  // @ts-ignore
-  console.log('!!', prop.path, prop.isEdge)
 
   const offset =
     writeFilterCondition(
