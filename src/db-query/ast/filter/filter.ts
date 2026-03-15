@@ -31,6 +31,7 @@ const makeIdProp = (typeDef: TypeDef): PropDef => {
   prop.id = 255
   return prop
 }
+
 const walkMain = (
   ast: FilterAst,
   ctx: Ctx,

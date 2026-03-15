@@ -52,7 +52,6 @@ export const comparison = (
       FilterOpCompare.selectCardinality,
     )
     ctx.query.set(condition, ctx.query.length)
-
     return fixedComparison(
       {
         ...prop,
@@ -76,7 +75,7 @@ export const comparison = (
           size: 0,
           start: 0,
           type: prop.type,
-          isEdge: prop.isEdge, // do we support edge on alias?
+          isEdge: prop.isEdge, // TODO do we support alias edge? seems useless
         },
         FilterOpCompare.selectAlias,
       )
