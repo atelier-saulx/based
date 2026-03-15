@@ -1,7 +1,7 @@
 import { VectorBaseType } from '../../zigTsExports.js'
-import { ReaderPropDef } from './types.js'
+import { ReadProp } from './types.js'
 
-export const readVector = (prop: ReaderPropDef, tmp: Uint8Array) => {
+export const readVector = (prop: ReadProp, tmp: Uint8Array) => {
   switch (prop.vectorBaseType) {
     case VectorBaseType.int8:
       return new Int8Array(tmp.buffer, tmp.byteOffset, tmp.byteLength)

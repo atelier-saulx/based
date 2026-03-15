@@ -1,0 +1,18 @@
+{
+  "extends": "@saulx/tsconfig/default.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "esModuleInterop": true,
+    "allowJs": true,
+    "noPropertyAccessFromIndexSignature": false,
+    "rootDir": ".",
+    "strictNullChecks": true,
+    "noEmit": true,
+    "jsx": "react",
+    "declarationMap": true,
+    "strictPropertyInitialization": true,
+    "pretty": true
+  },
+  "include": ["test"],
+  "exclude": ["dist", "**/_*"]
+}

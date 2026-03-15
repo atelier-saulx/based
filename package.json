@@ -15,6 +15,7 @@
     "build-zig-debug:linux-x64": "zig build -Dtarget=x86_64-linux-gnu -Denable_debug=true",
     "build-ts": "tsc -p tsconfig.build.json",
     "build-native": "npm run build-c && npm run build-zig",
+    "build-native-debug": "npm run build-c && npm run build-zig-debug",
     "build-exports": "tsx scripts/zigTsExports.ts",
     "build-ts-bundle": "tsdown --dts",
     "build": "npm run concurrently npm:build-native npm:build-ts npm:build-exports",
@@ -23,11 +24,15 @@
     "watch-zig:linux-arm64": "zig build -Dtarget=aarch64-linux-gnu --watch",
     "watch-zig:linux-x64": "zig build -Dtarget=x86_64-linux-gnu --watch",
     "watch-ts": "tsc -p tsconfig.build.json --watch",
+    "watch-ts-test": "tsc -p tsconfig.test.json --watch",
     "watch-native": "npm run build-c && npm run watch-zig",
+    "watch-native-debug": "npm run build-c && npm run watch-zig-debug",
     "watch-exports": "tsx --watch-path=./native/types.zig scripts/zigTsExports.ts ",
     "watch": "npm run concurrently npm:watch-native npm:watch-ts npm:watch-exports",
+    "watch-debug": "npm run concurrently npm:watch-native-debug npm:watch-ts npm:watch-exports",
     "concurrently": "FORCE_COLOR=1 concurrently -c 'grey,blue,cyan'",
     "test": "LOCPATH=dist/locale tsx ./scripts/test.ts",
+    "test-debug": "LOCPATH=dist/locale tsx --force-node-api-uncaught-exceptions-policy=true ./scripts/test.ts",
     "test-gdb": "LOCPATH=dist/locale ./scripts/node-gdb ./scripts/test.ts",
     "test-lldb": "LOCPATH=dist/locale ./scripts/node-lldb ./scripts/test.ts",
     "test-valgrind": "LOCPATH=dist/locale ./scripts/node-valgrind ./scripts/test.ts",
@@ -35,6 +40,7 @@
     "test-zig-debug": "npm run build-zig-debug && npm run test --",
     "install-esbuild": "./scripts/install-esbuild",
     "linux-arm64": "./scripts/linux-arm64 npm run",
+    "linux-arm64-debug": "./scripts/linux-arm64-debug npm run",
     "linux-x64": "./scripts/linux-x64 npm run",
     "repl": "LOCPATH=dist/locale node --import=tsx  ./scripts/repl.ts",
     "// todo:cleanup": "",
@@ -68,6 +74,7 @@
     "@swc-node/register": "^1.11.1",
     "@types/node": "^22.5.3",
     "@types/react": "^18.3.1",
+    "arktype": "2.1.29",
     "async-sema": "3.1.1",
     "concurrently": "^9.2.1",
     "fs-extra": "^11.1.1",
@@ -77,9 +84,11 @@
     "prettier": "^3.6.2",
     "tar": "^7.4.3",
     "ts-node": "^10.9.2",
-    "tsdown": "^0.16.7",
+    "tsc-files": "^1.1.4",
+    "tsdown": "^0.16.8",
     "tsx": "^4.20.6",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "valibot": "1.2.0"
   },
   "exports": {
     ".": "./dist/sdk.js",
@@ -102,7 +111,7 @@
     "node": "24",
     "npm": "11"
   },
-  "devEngines": {
+  "_devEngines": {
     "runtime": {
       "name": "node",
       "version": "24",

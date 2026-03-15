@@ -1,15 +1,9 @@
-import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { testDb } from './shared/index.js'
 
 await test('isModified', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -32,7 +26,7 @@ await test('isModified', async (t) => {
   const r = await Promise.all(q)
 
   for (const result of r) {
-    deepEqual(result.toObject(), [
+    deepEqual(result, [
       { id: 1, nr: 0 },
       { id: 2, nr: 1 },
       { id: 3, nr: 2 },

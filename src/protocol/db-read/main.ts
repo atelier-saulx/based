@@ -1,5 +1,5 @@
-import { ReaderMeta, ReaderPropDef, ReaderSchema } from './types.js'
-import { addMetaProp, addProp } from './addProps.js'
+import { Meta, ReadMeta, ReadProp, ReadSchema } from './types.js'
+import { addMetaProp, addProp } from './addProps.js' // addMetaProp
 import {
   readInt64,
   readDoubleLE,
@@ -8,18 +8,36 @@ import {
   readUint16,
   readInt32,
   readUtf8,
+  combineToNumber,
 } from '../../utils/index.js'
 import { Item } from './types.js'
-import { readMetaMainString } from './meta.js'
 import { PropType } from '../../zigTsExports.js'
+import crc32c from '../../hash/crc32c.js'
+
+export const readMetaMainString = (
+  result: Uint8Array,
+  i: number,
+  len: number,
+): Meta => {
+  const crc32 = crc32c(result.subarray(i, i + len))
+  const checksum = combineToNumber(crc32, len)
+  return {
+    checksum,
+    size: len,
+    crc32,
+    compressed: false,
+    compressedSize: len,
+  }
+}
 
 const readMainValue = (
-  prop: ReaderPropDef,
+  prop: ReadProp,
   result: Uint8Array,
   i: number,
   item: Item,
 ) => {
-  const typeIndex = prop.typeIndex
+  const typeIndex = prop.type
+
   if (typeIndex === PropType.timestamp) {
     addProp(prop, readInt64(result, i), item)
   } else if (typeIndex === PropType.number) {
@@ -30,30 +48,31 @@ const readMainValue = (
     addProp(prop, Boolean(result[i]), item)
   } else if (typeIndex === PropType.enum) {
     if (result[i] === 0) {
-      addProp(prop, undefined, item)
+      addProp(prop, null, item)
     } else {
       addProp(prop, prop.enum![result[i] - 1], item)
     }
-  } else if (typeIndex === PropType.string) {
+  } else if (typeIndex === PropType.stringFixed) {
     const len = result[i]
     i++
     const value = len === 0 ? '' : readUtf8(result, i, len)
-    if (prop.meta) {
-      if (prop.meta === ReaderMeta.combined) {
-        addMetaProp(prop, readMetaMainString(result, i, len), item)
-        addProp(prop, value, item)
-      } else {
-        addMetaProp(prop, readMetaMainString(result, i, len), item)
-      }
+    if (prop.meta === ReadMeta.only) {
+      addMetaProp(prop, readMetaMainString(result, i, len), item)
+    } else if (prop.meta === ReadMeta.combined) {
+      addMetaProp(prop, readMetaMainString(result, i, len), item)
+      addProp(prop, value, item)
     } else {
       addProp(prop, value, item)
     }
-  } else if (typeIndex === PropType.json) {
+  } else if (typeIndex === PropType.json || typeIndex === PropType.jsonFixed) {
     const len = result[i]
     i++
     const value = len === 0 ? null : global.JSON.parse(readUtf8(result, i, len))
     addProp(prop, value, item)
-  } else if (typeIndex === PropType.binary) {
+  } else if (
+    typeIndex === PropType.binary ||
+    typeIndex === PropType.binaryFixed
+  ) {
     const len = result[i]
     i++
     const value = len === 0 ? new Uint8Array(0) : result.subarray(i, i + len)
@@ -73,7 +92,7 @@ const readMainValue = (
 }
 
 export const readMain = (
-  q: ReaderSchema,
+  q: ReadSchema,
   result: Uint8Array,
   i: number,
   item: Item,

@@ -1,9 +1,8 @@
 import { serverChildProcess } from '../shared/serverChildProcess.js'
-import { DbClient, DbClientHooks, DbServer } from '../../src/index.js'
+import { DbClient, DbClientHooks } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepCopy, deepMerge, wait } from '../../src/utils/index.js'
 import { copy, emptyDir } from 'fs-extra/esm'
-import { deepEqual, equal } from '../shared/assert.js'
 import type { SchemaOut } from '../../src/schema/index.js'
 
 const cleanProps = (props) => {
@@ -88,7 +87,7 @@ await test('schema debug', async (t) => {
 
   let i = 1
   while (i--) {
-    const contestants = await client.query('contestant').get().toObject()
+    const contestants = await client.query('contestant').get()
 
     await client.setSchema(
       deepMerge(schema, {

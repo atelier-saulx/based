@@ -1,23 +1,26 @@
-import { BasedDbQuery, QueryByAliasObj } from './query/BasedDbQuery.js'
 import { debugMode } from '../utils/debug.js'
-import { SubStore } from './query/subscription/index.js'
 import { DbShared } from '../shared/DbBase.js'
 import { DbClientHooks } from './hooks.js'
 import { setLocalClientSchema } from './setLocalClientSchema.js'
-import { ModifyOpts } from './modify/types.js'
-import { create } from './modify/create/index.js'
-import { Ctx } from './modify/Ctx.js'
-import { update } from './modify/update/index.js'
-import { del } from './modify/delete/index.js'
-import { expire } from './modify/expire/index.js'
-import { cancel, drain, schedule } from './modify/drain.js'
-import { insert, upsert } from './modify/upsert/index.js'
 import {
   parse,
   type SchemaIn,
-  type SchemaMigrateFns,
+  // type SchemaMigrateFns,
   type SchemaOut,
+  // type ResolveSchema,
+  // type StrictSchema,
 } from '../schema/index.js'
+import { AutoSizedUint8Array } from '../utils/AutoSizedUint8Array.js'
+import { LangCode, Modify } from '../zigTsExports.js'
+import { ModifyCtx, flush, BasedModify } from './modify/index.js'
+import type { InferPayload, InferTarget } from './modify/types.js'
+import { serializeCreate } from './modify/create.js'
+import { serializeUpdate } from './modify/update.js'
+import { serializeDelete } from './modify/delete.js'
+import { serializeUpsert } from './modify/upsert.js'
+import { DbQuery } from '../db-query/query/index.js'
+import type { InferSchemaOutput } from '../db-query/query/types.js'
+import type { ResolveSchema, StrictSchema } from '../schema/schema/schema.js'
 
 type DbClientOpts = {
   hooks: DbClientHooks
@@ -26,7 +29,20 @@ type DbClientOpts = {
   debug?: boolean
 }
 
-export class DbClient extends DbShared {
+export type BasedCreatePromise = BasedModify<typeof serializeCreate>
+export type BasedUpdatePromise = BasedModify<typeof serializeUpdate>
+export type BasedDeletePromise = BasedModify<typeof serializeDelete>
+export type BasedUpsertPromise = BasedModify<typeof serializeUpsert>
+export type BasedInsertPromise = BasedUpsertPromise
+
+export type ModifyOpts = {
+  unsafe?: boolean
+  locale?: keyof typeof LangCode
+}
+
+export class DbClientClass<
+  S extends { types: any } = SchemaOut,
+> extends DbShared {
   constructor({
     hooks,
     maxModifySize = 100 * 1e3 * 1e3,
@@ -35,219 +51,165 @@ export class DbClient extends DbShared {
   }: DbClientOpts) {
     super()
     this.hooks = hooks
-    this.maxModifySize = maxModifySize
-    this.modifyCtx = new Ctx(
-      0,
-      new Uint8Array(
-        new ArrayBuffer(Math.min(1e3, maxModifySize), {
-          maxByteLength: maxModifySize,
-        }),
-      ),
-    )
-    this.flushTime = flushTime
-
+    this.modifyCtx = {
+      buf: new AutoSizedUint8Array(256, maxModifySize),
+      flushTime,
+      batch: { count: 0 },
+      hooks,
+    }
     if (debug) {
       debugMode(this)
     }
+
     this.hooks.subscribeSchema((schema) => {
       setLocalClientSchema(this, schema)
     })
   }
 
-  subs = new Map<BasedDbQuery, SubStore>()
-  stopped: boolean
+  // subs = new Map<BasedDbQuery, SubStore>()
+  stopped!: boolean
   hooks: DbClientHooks
+  modifyCtx: ModifyCtx
 
-  // modify
-  flushTime: number
-  writeTime: number = 0
-  isDraining = false
-  modifyCtx: Ctx
-  maxModifySize: number
-  upserting: Map<number, { o: Record<string, any>; p: Promise<number> }> =
-    new Map()
+  // async schemaIsSet() {
+  //   if (!this.schema) {
+  //     await this.once('schema')
+  //   }
+  // }
 
-  async schemaIsSet() {
-    if (!this.schema) {
-      await this.once('schema')
-    }
-  }
-
-  async setSchema(
-    schema: SchemaIn,
-    transformFns?: SchemaMigrateFns,
-  ): Promise<SchemaOut['hash']> {
-    const strictSchema = parse(schema).schema
+  async setSchema<const T extends SchemaIn>(
+    schema: StrictSchema<T>,
+    // transformFns?: SchemaMigrateFns,
+  ): Promise<DbClientClass<ResolveSchema<T>>> {
+    const strictSchema = parse(schema as any).schema
     await this.drain()
     const schemaChecksum = await this.hooks.setSchema(
       strictSchema as SchemaOut,
-      transformFns,
+      // transformFns,
     )
     if (this.stopped) {
-      return this.schema?.hash ?? 0
+      return this as unknown as DbClientClass<ResolveSchema<T>>
     }
     if (schemaChecksum !== this.schema?.hash) {
       await this.once('schema')
-      return this.schema?.hash ?? 0
+      return this as unknown as DbClientClass<ResolveSchema<T>>
     }
-    return schemaChecksum
+    return this as unknown as DbClientClass<ResolveSchema<T>>
   }
 
-  create(type: string, obj = {}, opts?: ModifyOpts): Promise<number> {
-    return create(this, type, obj, opts)
-  }
+  query<T extends keyof S['types'] & string = keyof S['types'] & string>(
+    type: T,
+    id?: number[],
+  ): DbQuery<S, T, { $K: '*'; $Single: false }>
 
-  async copy(
-    type: string,
-    target: number,
-    objOrTransformFn?:
-      | Record<string, any>
-      | ((item: Record<string, any>) => Promise<any>),
-  ): Promise<number> {
-    const item = await this.query(type, target)
-      .include('*', '**.id')
-      .get()
-      .toObject()
-
-    if (typeof objOrTransformFn === 'function') {
-      const { id: _, ...props } = await objOrTransformFn(item)
-      return this.create(type, props)
-    }
-
-    if (typeof objOrTransformFn === 'object' && objOrTransformFn !== null) {
-      const { id: _, ...props } = item
-      await Promise.all(
-        Object.keys(objOrTransformFn).map(async (key) => {
-          const val = objOrTransformFn[key]
-          if (val === null) {
-            delete props[key]
-          } else if (typeof val === 'function') {
-            const res = await val(item)
-            if (Array.isArray(res)) {
-              props[key] = await Promise.all(res)
-            } else {
-              props[key] = res
-            }
-          } else {
-            props[key] = val
-          }
-        }),
-      )
-      return this.create(type, props)
-    }
-
-    const { id: _, ...props } = item
-    return this.create(type, props)
-  }
-
-  query(
-    type: string,
-    id?:
+  query<T extends keyof S['types'] & string = keyof S['types'] & string>(
+    type: T,
+    id:
       | number
-      | Promise<number>
-      | (number | Promise<number>)[]
-      | QueryByAliasObj
-      | QueryByAliasObj[]
-      | Uint32Array,
-  ): BasedDbQuery
-
-  query(
-    type: string,
+      | (Partial<InferSchemaOutput<S, T>> & { [Symbol.toStringTag]?: never }),
+  ): DbQuery<S, T, { $K: '*'; $Single: true }>
+  query<T extends keyof S['types'] & string = keyof S['types'] & string>(
+    type: T,
     id?:
       | number
       | number[]
-      | QueryByAliasObj
-      | QueryByAliasObj[]
-      | Uint32Array
-      | { [alias: string]: string }, // alias
-  ): BasedDbQuery {
-    return new BasedDbQuery(this, type, id as number | number[] | Uint32Array)
+      | (Partial<InferSchemaOutput<S, T>> & { [Symbol.toStringTag]?: never }),
+  ): any {
+    return new DbQuery(this, type, id as any)
   }
 
-  update(
-    type: string,
-    id: number | Promise<number>,
-    value: any,
-    opts?: ModifyOpts,
-  ): Promise<number>
-
-  update(
-    type: string,
-    value: Record<string, any> & { id: number },
-    opts?: ModifyOpts,
-  ): Promise<number>
-
-  update(
-    typeOrValue: string | any,
-    idOverwriteOrValue:
-      | number
-      | Promise<number>
-      | boolean
-      | ModifyOpts
-      | (Record<string, any> & { id: number }),
-    value?: any,
-    opts?: ModifyOpts,
-  ): Promise<number> {
-    if (typeof typeOrValue !== 'string') {
-      return this.update(
-        '_root',
-        1,
-        typeOrValue,
-        idOverwriteOrValue as ModifyOpts,
-      )
-    }
-    if (typeof idOverwriteOrValue === 'object') {
-      if (
-        'then' in idOverwriteOrValue &&
-        typeof idOverwriteOrValue.then === 'function'
-      ) {
-        // @ts-ignore
-        if (idOverwriteOrValue.id) {
-          // @ts-ignore
-          return this.update(typeOrValue, idOverwriteOrValue.id, value, opts)
-        }
-        return idOverwriteOrValue.then((id: number) => {
-          return this.update(typeOrValue, id, value, opts)
-        })
-      }
-      if ('id' in idOverwriteOrValue) {
-        const { id, ...props } = idOverwriteOrValue
-        return this.update(typeOrValue, id, props, opts)
-      }
-    }
-    return update(this, typeOrValue, idOverwriteOrValue as number, value, opts)
+  create<
+    T extends keyof S['types'] & string = keyof S['types'] & string,
+    Opts extends ModifyOpts = ModifyOpts,
+  >(type: T, obj?: InferPayload<S, T, Opts>, opts?: Opts): BasedCreatePromise {
+    return new BasedModify(
+      this.modifyCtx,
+      serializeCreate,
+      this.schema!,
+      type,
+      obj ?? {},
+      this.modifyCtx.buf,
+      opts?.locale ? LangCode[opts.locale] : LangCode.none,
+    )
   }
 
-  upsert(type: string, obj: Record<string, any>, opts?: ModifyOpts) {
-    return upsert(this, type, obj, opts)
+  update<
+    T extends keyof S['types'] & string = keyof S['types'] & string,
+    Opts extends ModifyOpts = ModifyOpts,
+  >(
+    type: T,
+    target: number | BasedModify,
+    obj: InferPayload<S, T, Opts>,
+    opts?: Opts,
+  ): BasedUpdatePromise {
+    return new BasedModify(
+      this.modifyCtx,
+      serializeUpdate,
+      this.schema!,
+      type,
+      target,
+      obj,
+      this.modifyCtx.buf,
+      opts?.locale ? LangCode[opts.locale] : LangCode.none,
+    )
   }
 
-  insert(type: string, obj: Record<string, any>, opts?: ModifyOpts) {
-    return insert(this, type, obj, opts)
+  upsert<
+    T extends keyof S['types'] & string = keyof S['types'] & string,
+    Opts extends ModifyOpts = ModifyOpts,
+  >(
+    type: T,
+    target: InferTarget<S, T>,
+    obj: InferPayload<S, T, Opts>,
+    opts?: Opts,
+  ): BasedUpsertPromise {
+    return new BasedModify(
+      this.modifyCtx,
+      serializeUpsert,
+      this.schema!,
+      type,
+      target,
+      obj,
+      this.modifyCtx.buf,
+      opts?.locale ? LangCode[opts.locale] : LangCode.none,
+      Modify.upsert,
+    )
   }
 
-  delete(type: string, id: number | Promise<number>) {
-    if (
-      typeof id === 'object' &&
-      id !== null &&
-      'then' in id &&
-      typeof id.then === 'function'
-    ) {
-      // @ts-ignore
-      if (id.id) {
-        // @ts-ignore
-        id = id.id
-      } else {
-        // @ts-ignore
-        return id.then((id) => this.delete(type, id))
-      }
-    }
-    // @ts-ignore
-    return del(this, type, id)
+  insert<
+    T extends keyof S['types'] & string = keyof S['types'] & string,
+    Opts extends ModifyOpts = ModifyOpts,
+  >(
+    type: T,
+    target: InferTarget<S, T>,
+    obj: InferPayload<S, T, Opts>,
+    opts?: Opts,
+  ): BasedInsertPromise {
+    return new BasedModify(
+      this.modifyCtx,
+      serializeUpsert,
+      this.schema!,
+      type,
+      target,
+      obj,
+      this.modifyCtx.buf,
+      opts?.locale ? LangCode[opts.locale] : LangCode.none,
+      Modify.insert,
+    )
   }
 
-  expire(type: string, id: number, seconds: number) {
-    return expire(this, type, id, seconds)
+  delete(
+    type: keyof S['types'] & string,
+    target: number | BasedModify,
+  ): BasedDeletePromise {
+    return new BasedModify(
+      this.modifyCtx,
+      serializeDelete,
+      this.schema!,
+      type,
+      target,
+      this.modifyCtx.buf,
+    )
   }
 
   destroy() {
@@ -257,25 +219,36 @@ export class DbClient extends DbShared {
 
   stop() {
     this.stopped = true
-    for (const [, { onClose }] of this.subs) {
-      onClose()
-    }
-    this.subs.clear()
-    cancel(this.modifyCtx, Error('Db stopped - in-flight modify cancelled'))
+    // for (const [, { onClose }] of this.subs) {
+    //   onClose()
+    // }
+    // this.subs.clear()
+    // cancel(this.modifyCtx, Error('Db stopped - in-flight modify cancelled'))
   }
 
   // For more advanced / internal usage - use isModified instead for most cases
-  async drain() {
-    if (this.upserting.size) {
-      await Promise.all(Array.from(this.upserting).map(([, { p }]) => p))
-    }
-    await drain(this, this.modifyCtx)
-    const t = this.writeTime
-    this.writeTime = 0
-    return t
+  async drain(): Promise<number> {
+    const start = Date.now()
+    flush(this.modifyCtx)
+    await this.isModified()
+    return Date.now() - start
   }
 
-  isModified() {
-    return schedule(this, this.modifyCtx)
+  async isModified() {
+    let lastModify
+    while (lastModify !== this.modifyCtx.lastModify) {
+      lastModify = this.modifyCtx.lastModify
+      await lastModify.catch(noop)
+    }
   }
 }
+
+export type DbClient<S extends { types: any } = SchemaOut> = DbClientClass<S>
+
+export const DbClient = DbClientClass as {
+  new <const S extends SchemaIn = SchemaOut>(
+    opts: DbClientOpts,
+  ): DbClient<ResolveSchema<S>>
+}
+
+function noop() {}

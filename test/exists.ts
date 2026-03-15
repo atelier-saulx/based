@@ -1,15 +1,9 @@
-import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { testDb } from './shared/index.js'
 
 await test('exists', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -103,13 +97,7 @@ await test('exists', async (t) => {
 })
 
 await test('with other filters', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -131,7 +119,7 @@ await test('with other filters', async (t) => {
     name: 'dude',
     start: Date.now() + 10000,
   })
-  const id2 = await db.create('user', {
+  await db.create('user', {
     name: 'cool guy has friends',
     friends: [id1],
   })
@@ -164,7 +152,7 @@ await test('with other filters', async (t) => {
 
   deepEqual(
     await db.query('user').include('name').filter('friends', '!exists').get(),
-    [{ id: 3, name: 'sad guy has no friends' }],
+    [{ id: id3, name: 'sad guy has no friends' }],
     '!exists refs',
   )
 })

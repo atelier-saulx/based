@@ -1,8 +1,8 @@
-import { errors } from '../../src/db-client/modify/error.js'
-import { BasedDb } from '../../src/index.js'
+import { DbServer } from '../../src/sdk.js'
 import { throws, equal, isSorted } from '../shared/assert.js'
 import test from '../shared/test.js'
 import { randomString, wait } from '../../src/utils/index.js'
+import { testDbClient } from '../shared/index.js'
 
 const randomPrice = () => Math.round((Math.random() * 100 + 5) * 100) / 100
 const randomStock = () => Math.floor(Math.random() * 500)
@@ -11,14 +11,13 @@ const getRandom = (nr: number) => {
 }
 
 const catchNotExists = (err: Error) => {
-  if (err instanceof errors.NotExists) return
+  //if (err instanceof errors.NotExists) return
   throw err
 }
 
 await test('E-commerce Simulation', async (t) => {
-  const db = new BasedDb({
+  const db = new DbServer({
     path: t.tmp,
-    maxModifySize: 50000,
   })
 
   const simulationDuration = 5e3
@@ -36,7 +35,7 @@ await test('E-commerce Simulation', async (t) => {
 
   t.after(async () => t.backup(db))
 
-  await db.setSchema({
+  const client = await testDbClient(db, {
     locales: { en: {}, de: {} }, // Add locales for text fields
     types: {
       user: {
@@ -65,7 +64,7 @@ await test('E-commerce Simulation', async (t) => {
       category: {
         props: {
           name: { type: 'string', maxBytes: 50 },
-          description: { type: 'text' },
+          description: { type: 'string', localized: true },
           products: {
             items: {
               ref: 'product',
@@ -77,7 +76,7 @@ await test('E-commerce Simulation', async (t) => {
       product: {
         props: {
           name: { type: 'string', maxBytes: 100 },
-          description: { type: 'text' },
+          description: { type: 'string', localized: true },
           price: { type: 'number', min: 0.01, max: 10000, step: 0.01 },
           stock: { type: 'uint32', min: 0, max: 100000 },
           tags: { type: 'cardinality' },
@@ -107,7 +106,7 @@ await test('E-commerce Simulation', async (t) => {
           user: { ref: 'user', prop: 'reviews' },
           product: { ref: 'product', prop: 'reviews' },
           rating: { type: 'uint8', min: 1, max: 5 },
-          comment: { type: 'text' },
+          comment: { type: 'string', localized: true },
           createdAt: { type: 'timestamp', on: 'create' },
         },
       },
@@ -135,7 +134,7 @@ await test('E-commerce Simulation', async (t) => {
   const userIdsArr: any[] = []
 
   for (let i = 0; i < initialCategories; i++) {
-    const catId = db.create('category', {
+    const catId = client.create('category', {
       name: `Category ${i}`,
       description: { en: `Description for category ${i}` },
     })
@@ -145,7 +144,7 @@ await test('E-commerce Simulation', async (t) => {
   }
 
   for (let i = 0; i < initialUsers; i++) {
-    const userId = db.create('user', {
+    const userId = client.create('user', {
       name: `User ${i}`,
       email: `user${i}@example.com`,
       lastLogin: Math.max(
@@ -161,7 +160,7 @@ await test('E-commerce Simulation', async (t) => {
   for (let i = 0; i < initialProducts; i++) {
     const category = getRandom(categoryIds)
     if (category) {
-      const prodId = db.create('product', {
+      const prodId = client.create('product', {
         name: `Product ${i} ${randomString(5)}`,
         description: {
           en: `This is product ${i}. ${randomString(50)}`,
@@ -177,7 +176,7 @@ await test('E-commerce Simulation', async (t) => {
       totalItemsCreated++
     }
   }
-  await db.drain()
+  await client.drain()
 
   // --- Simulation Loop ---
   let totalAliasUpdate = 0
@@ -192,7 +191,7 @@ await test('E-commerce Simulation', async (t) => {
       const entityType = Math.random()
       if (entityType < 0.1 && categoryIds < 500) {
         // Create Category
-        const catId = await db.create('category', {
+        const catId = await client.create('category', {
           name: `New Category ${totalItemsCreated}`,
           description: { en: `Dynamic category ${totalItemsCreated}` },
         })
@@ -201,7 +200,7 @@ await test('E-commerce Simulation', async (t) => {
         totalItemsCreated++
       } else if (entityType < 0.4 && userIds < 10000) {
         // Create User
-        const userId = await db.create('user', {
+        const userId = await client.create('user', {
           name: `User ${totalItemsCreated}`,
           email: `user${totalItemsCreated}@example.com`,
         })
@@ -212,7 +211,7 @@ await test('E-commerce Simulation', async (t) => {
         // Create Product
         const category = getRandom(categoryIds)
         if (category) {
-          const prodId = await db.create('product', {
+          const prodId = await client.create('product', {
             name: `Product ${totalItemsCreated} ${randomString(5)}`,
             description: { en: `Desc ${totalItemsCreated}` },
             price: randomPrice(),
@@ -229,7 +228,7 @@ await test('E-commerce Simulation', async (t) => {
         const user = getRandom(userIds)
         const product = getRandom(productIds)
         if (user && product) {
-          const reviewId = await db.create('review', {
+          const reviewId = await client.create('review', {
             user,
             // product,
             rating: (Math.floor(Math.random() * 5) + 1) as 1 | 2 | 3 | 4 | 5,
@@ -249,7 +248,7 @@ await test('E-commerce Simulation', async (t) => {
         // Update Product (Price/Stock)
         const productId = getRandom(productIds)
         if (productId) {
-          await db
+          await client
             .update('product', productId, {
               price: randomPrice(),
               stock: { increment: Math.random() > 0.5 ? 1 : -1 }, // Increment or decrement stock
@@ -261,7 +260,7 @@ await test('E-commerce Simulation', async (t) => {
         const userId = getRandom(userIds)
         const productId = getRandom(productIds)
         if (userId && productId) {
-          await db
+          await client
             .update('user', userId, {
               lastLogin: Date.now(),
               viewedProducts: {
@@ -281,11 +280,14 @@ await test('E-commerce Simulation', async (t) => {
         // Update User (Name/Email via Upsert)
         const oldEmail = `user${getRandom(userIds)}@example.com`
         if (oldEmail) {
-          await db.upsert('user', {
-            email: oldEmail, // Find by alias
-            name: `Updated Name ${randomString(4)}`,
-            lastLogin: Date.now(),
-          })
+          await client.upsert(
+            'user',
+            { email: oldEmail },
+            {
+              name: `Updated Name ${randomString(4)}`,
+              lastLogin: Date.now(),
+            },
+          )
         }
         totalAliasUpdate++
         totalAliasUpdateTime += performance.now() - d
@@ -294,7 +296,7 @@ await test('E-commerce Simulation', async (t) => {
         // Update Category Description
         const catId = getRandom(categoryIds)
         if (catId) {
-          await db
+          await client
             .update('category', catId, {
               description: { de: `Aktualisiert ${randomString(10)}` },
             })
@@ -308,21 +310,21 @@ await test('E-commerce Simulation', async (t) => {
         const idx = Math.floor(Math.random() * productIdsArr.length)
         const productId = productIdsArr[idx]
         if (productId) {
-          await db.delete('product', productId).catch(catchNotExists)
+          await client.delete('product', productId).catch(catchNotExists)
           productIdsArr.splice(idx, 1)
         }
       } else if (entityType < 0.6 && userIdsArr.length > 50) {
         const idx = Math.floor(Math.random() * userIdsArr.length)
         const userId = userIdsArr[idx]
         if (userId) {
-          await db.delete('user', userId).catch(catchNotExists)
+          await client.delete('user', userId).catch(catchNotExists)
           userIdsArr.splice(idx, 1)
         }
       } else if (reviewIdsArr.length > 10) {
         const idx = Math.floor(Math.random() * reviewIdsArr.length)
         const reviewId = reviewIdsArr[idx]
         if (reviewId) {
-          await db.delete('review', reviewId).catch(catchNotExists)
+          await client.delete('review', reviewId).catch(catchNotExists)
           reviewIdsArr.splice(idx, 1)
         }
       }
@@ -332,7 +334,7 @@ await test('E-commerce Simulation', async (t) => {
       const queryType = Math.random()
       if (queryType < 0.1) {
         isSorted(
-          await db.query('user').sort('lastLogin', 'asc').get(),
+          await client.query('user').sort('lastLogin', 'asc').get(),
           'lastLogin',
           'asc',
         )
@@ -340,7 +342,7 @@ await test('E-commerce Simulation', async (t) => {
         // Get products in a category, sorted by price
         const categoryId = getRandom(categoryIds)
         if (categoryId) {
-          await db
+          await client
             .query('product')
             .filter('category', '=', categoryId)
             .sort('price', Math.random() > 0.5 ? 'asc' : 'desc')
@@ -353,7 +355,7 @@ await test('E-commerce Simulation', async (t) => {
         const userId = getRandom(userIds)
         if (userId) {
           // console.log({ userId })
-          await db
+          await client
             .query('user', userId)
             .include(
               'name',
@@ -389,7 +391,7 @@ await test('E-commerce Simulation', async (t) => {
           searchTerm = randomString(4)
         }
         if (searchTerm) {
-          await db
+          await client
             .query('product')
             .search(searchTerm, 'name', 'description')
             .include('name', 'price')
@@ -400,7 +402,7 @@ await test('E-commerce Simulation', async (t) => {
         // Get user by email (alias)
         const email = `user${getRandom(userIds)}@example.com`
         if (email) {
-          await db.query('user', { email }).get()
+          await client.query('user', { email }).get()
         }
       }
     }
@@ -410,13 +412,13 @@ await test('E-commerce Simulation', async (t) => {
       // Occasionally try invalid operations
       await throws(
         async () =>
-          db.create('product', { name: 'Too expensive', price: 20000 }),
+          client.create('product', { name: 'Too expensive', price: 20000 }),
         false,
         'Validation: Price too high',
       )
       await throws(
         async () =>
-          db.create('review', {
+          client.create('review', {
             rating: 6,
             user: getRandom(userIds),
             product: getRandom(productIds),
@@ -484,7 +486,7 @@ await test('E-commerce Simulation', async (t) => {
   await wait(500)
 
   const finalProductCount = (
-    await db.query('product').range(0, 10_000_000).get()
+    await client.query('product').range(0, 10_000_000).get()
   ).length
 
   equal(

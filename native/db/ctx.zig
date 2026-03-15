@@ -9,6 +9,7 @@ const SelvaError = @import("../errors.zig").SelvaError;
 const jsBridge = @import("../thread/jsBridge.zig");
 const threads = @import("../thread/thread.zig");
 const sort = @import("../sort/sort.zig");
+const t = @import("../types.zig");
 
 const rand = std.crypto.random;
 
@@ -18,8 +19,8 @@ pub const DbCtx = struct {
     allocator: std.mem.Allocator,
     arena: *std.heap.ArenaAllocator,
     sortIndexes: sort.TypeSortIndexes,
-    selva: ?*selva.SelvaDb,
-    ids: []u32,
+    selva: *selva.SelvaDb,
+    ids: []t.NodeId,
     jsBridge: *jsBridge.Callback,
     fsPath: []u8,
     threads: *threads.Threads,
@@ -50,14 +51,18 @@ pub fn createDbCtx(
     bridge: napi.Value,
     fsPath: []u8,
     nrThreads: u16,
+    selvaDb: *selva.struct_SelvaDb,
 ) !*DbCtx {
     var arena = try db_backing_allocator.create(std.heap.ArenaAllocator);
     arena.* = std.heap.ArenaAllocator.init(db_backing_allocator);
     const allocator = arena.allocator();
     const dbCtxPointer = try allocator.create(DbCtx);
+    const idsLen: usize = selva.selva_get_max_type(selvaDb);
+    const ids = jemalloc.alloc(t.NodeId, idsLen);
 
     errdefer {
         arena.deinit();
+        jemalloc.free(ids);
     }
 
     dbCtxPointer.* = .{
@@ -68,8 +73,8 @@ pub fn createDbCtx(
         .allocator = allocator,
         .sortIndexes = sort.TypeSortIndexes.init(allocator),
         .initialized = false,
-        .selva = null,
-        .ids = &[_]u32{},
+        .selva = selvaDb,
+        .ids = ids,
         .jsBridge = try jsBridge.Callback.init(env, dbCtxPointer, bridge),
         .decompressor = deflate.createDecompressor(),
         .libdeflateBlockState = deflate.initBlockState(305000),
@@ -83,17 +88,7 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
     ctx.jsBridge.deinit();
     ctx.threads.deinit();
 
-    var it = ctx.sortIndexes.iterator();
-    while (it.next()) |index| {
-        var mainIt = index.value_ptr.*.main.iterator();
-        while (mainIt.next()) |main| {
-            selva.selva_sort_destroy(main.value_ptr.*.index);
-        }
-        var fieldIt = index.value_ptr.*.field.iterator();
-        while (fieldIt.next()) |field| {
-            selva.selva_sort_destroy(field.value_ptr.*.index);
-        }
-    }
+    sort.deinit(&ctx.sortIndexes);
 
     if (ctx.ids.len > 0) {
         jemalloc.free(ctx.ids);
@@ -104,6 +99,5 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
     deflate.deinitBlockState(&ctx.libdeflateBlockState);
 
     selva.selva_db_destroy(ctx.selva);
-    ctx.selva = null;
     ctx.arena.deinit();
 }

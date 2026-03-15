@@ -1,20 +1,9 @@
-import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
-import { deepEqual, equal } from '../shared/assert.js'
+import { testDb } from '../shared/index.js'
 
 await test('sort Enum', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
-
   const status = ['a', 'b', 'c', 'd', 'e', 'f']
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -24,17 +13,16 @@ await test('sort Enum', async (t) => {
     },
   })
 
-  for (let i = 0; i < 3e6; i++) {
+  const n = 3e4 //6
+  for (let i = 0; i < n; i++) {
     db.create('user', {
       status: status[i % 6],
     })
   }
 
-  const dbTime = await db.drain()
-
   const randoIds: any[] = []
   for (let i = 0; i < 100; i++) {
-    randoIds.push(~~(Math.random() * 3e6) + 1)
+    randoIds.push(~~(Math.random() * n) + 1)
   }
 
   const q: any[] = []

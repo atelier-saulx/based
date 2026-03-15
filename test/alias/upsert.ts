@@ -1,16 +1,12 @@
-import { BasedDb, DbClient, getDefaultHooks } from '../../src/index.js'
+import { DbServer } from '../../dist/index.js'
+import { DbClient, getDefaultHooks } from '../../src/index.js'
 import { equal } from '../shared/assert.js'
 import test from '../shared/test.js'
 
 await test('alias upsert', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const server = new DbServer({ path: t.tmp })
+  t.after(() => server.destroy())
+  const schema = {
     types: {
       user: {
         props: {
@@ -20,37 +16,50 @@ await test('alias upsert', async (t) => {
         },
       },
     },
+  } as const
+  const client1 = new DbClient<typeof schema>({
+    hooks: getDefaultHooks(server),
+  })
+  const client2 = new DbClient<typeof schema>({
+    hooks: getDefaultHooks(server),
   })
 
-  const client1 = db.client
-  const client2 = new DbClient({
-    hooks: getDefaultHooks(db.server),
-  })
+  await client1.setSchema(schema)
 
   const ids = await Promise.all([
     client1.create('user', {
       uuid: 'a',
     }),
-    client1.upsert('user', {
-      uuid: 'x',
-      one: 1,
-    }),
+    client1.upsert(
+      'user',
+      {
+        uuid: 'x',
+      },
+      {
+        one: 1,
+      },
+    ),
     client1.create('user', {
       uuid: 'b',
     }),
     client2.create('user', {
       uuid: 'c',
     }),
-    client2.upsert('user', {
-      uuid: 'x',
-      two: 2,
-    }),
+    client2.upsert(
+      'user',
+      {
+        uuid: 'x',
+      },
+      {
+        two: 2,
+      },
+    ),
     client2.create('user', {
       uuid: 'd',
     }),
   ])
 
-  const results = await db.query('user').get()
+  const results = await client1.query('user').get()
 
   equal(
     results,

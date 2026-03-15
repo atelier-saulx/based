@@ -183,28 +183,28 @@ pub inline fn text(
     q: []u8,
     i: *usize,
     optsHeader: *const t.IncludeOpts,
-    appendCb: anytype,
+    callback: anytype,
 ) !void {
     switch (optsHeader.langFallbackSize) {
         0 => {
             if (optsHeader.lang == t.LangCode.none) {
                 var iter = Fields.textIterator(value);
                 while (iter.next()) |textValue| {
-                    try appendCb(thread, prop, textValue, optsHeader);
+                    try callback(thread, prop, textValue, optsHeader);
                 }
-            } else if (optsHeader.hasOpts) {
+            } else if (optsHeader.hasNextOpt) {
                 var optsHeaderSelf = optsHeader.*;
-                while (optsHeaderSelf.hasOpts) {
-                    try appendCb(
+                while (true) : (optsHeaderSelf = utils.readNext(t.IncludeOpts, q, i)) {
+                    try callback(
                         thread,
                         prop,
-                        Fields.textFromValue(value, optsHeader.lang),
+                        Fields.textFromValue(value, optsHeaderSelf.lang),
                         &optsHeaderSelf,
                     );
-                    optsHeaderSelf = utils.readNext(t.IncludeOpts, q, i);
+                    if (!optsHeaderSelf.hasNextOpt) break;
                 }
             } else {
-                try appendCb(
+                try callback(
                     thread,
                     prop,
                     Fields.textFromValue(value, optsHeader.lang),
@@ -213,7 +213,7 @@ pub inline fn text(
             }
         },
         1 => {
-            try appendCb(
+            try callback(
                 thread,
                 prop,
                 Fields.textFromValueFallback(
@@ -225,7 +225,7 @@ pub inline fn text(
             );
         },
         else => {
-            try appendCb(
+            try callback(
                 thread,
                 prop,
                 Fields.textFromValueFallbacks(

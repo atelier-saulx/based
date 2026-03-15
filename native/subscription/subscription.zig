@@ -7,6 +7,11 @@ const t = @import("../types.zig");
 const DbCtx = @import("../db/ctx.zig").DbCtx;
 const napi = @import("../napi.zig");
 const Id = @import("singleId.zig");
+const Fields = @import("../selva/fields.zig");
+const Node = @import("../selva/node.zig");
+const shared = @import("./shared.zig");
+const radix = @import("./radix.zig");
+const jemalloc = @import("../jemalloc.zig");
 
 pub fn fireIdSubscription(threads: *Thread.Threads, thread: *Thread.Thread) !void {
     if (thread.subscriptions.lastIdMarked > 0) {
@@ -31,23 +36,44 @@ pub fn fireIdSubscription(threads: *Thread.Threads, thread: *Thread.Thread) !voi
     }
 }
 
-pub fn subscribe(
-    thread: *Thread.Thread,
-    buffer: []u8,
-    subHeader: *const t.SubscriptionHeader,
-    subSize: u32,
-) !void {
-    var index: usize = 0;
-    const fields = utils.sliceNext(subHeader.fieldsLen, buffer, &index);
-    const partialFields = utils.sliceNext(subHeader.partialLen * 2, buffer, &index);
-    const query = utils.sliceNext(buffer.len - subSize, buffer, &index);
-    index = 0;
-    const subId = utils.readNext(u32, query, &index);
-    const queryType: t.OpType = @enumFromInt(query[index]);
+pub fn subscribe(thread: *Thread.Thread, buf: []u8, threads: *Thread.Threads) !void {
+    var i: usize = 4;
+    const subHeader = utils.readNext(t.SubscriptionHeader, buf, &i);
+    if (subHeader.typeId % threads.threads.len != thread.id) return;
+    const fields = utils.sliceNext(subHeader.fieldsLen, buf, &i);
+    const partialFields = utils.sliceNext(subHeader.partialLen * 2, buf, &i);
+    const query = buf[i..];
+    i = 0;
+    const subId = utils.readNext(u32, query, &i);
+    const queryType: t.OpType = @enumFromInt(query[i]);
+
     switch (queryType) {
         .id, .idFilter => {
-            const header = utils.readNext(t.QueryHeaderSingle, query, &index);
-            try Id.addIdSubscription(thread, query, partialFields, fields, subId, &header, subHeader);
+            const header = utils.readNext(t.QueryHeaderSingle, query, &i);
+            try Id.addIdSubscription(thread, query, partialFields, fields, subId, &header, &subHeader);
+        },
+        .alias => {
+            std.debug.print("disabled alias sub, TODO\n", .{});
+            // var header = utils.readNext(t.QueryHeaderSingle, query, &i);
+            // const typeEntry = try Node.getType(db, header.typeId);
+            // const aliasValue = utils.sliceNext(header.aliasSize, query, &i);
+            // // TODO: this part only needs to happen in query
+            // if (Fields.getAliasByName(typeEntry, header.prop, aliasValue)) |node| {
+            //     header.id = Node.getNodeId(node);
+            // }
+            // try Id.addIdSubscription(thread, query, partialFields, fields, subId, &header, &subHeader);
+            // // add the alias store
+            // const typeSubs = try shared.upsertSubType(thread, header.typeId);
+            // if (typeSubs.aliasSubs.contains(header.prop)) {
+            //     const aliasSubs = typeSubs.aliasSubs.get(header.prop).?;
+            //     try aliasSubs.insert(aliasValue, subId);
+            // } else {
+            //     const memory_block = jemalloc.alloc(u8, 4096);
+            //     const aliasSubs = jemalloc.create(radix.RadixTree);
+            //     aliasSubs.* = try radix.RadixTree.init(memory_block);
+            //     try typeSubs.aliasSubs.put(header.prop, aliasSubs);
+            //     try aliasSubs.insert(aliasValue, subId);
+            // }
         },
         else => {
             // multi - has to be scheduled for the specific thread handle this when flushing
@@ -58,10 +84,13 @@ pub fn subscribe(
 }
 
 pub fn unsubscribe(
-    dbCtx: *DbCtx,
-    buffer: []u8,
     thread: *Thread.Thread,
+    buf: []u8,
+    db: *DbCtx,
 ) !void {
-    // only needs SUB-ID
-    std.debug.print("unsubscribe {any} {any} {any}   \n", .{ dbCtx, buffer, thread });
+    const subId = utils.read(u32, buf, 0);
+    if (thread.subscriptions.subsHashMap.get(subId)) |sub| {
+        Id.removeIdSubscription(db, thread, subId, sub.typeId, sub.id);
+        // remove alias
+    }
 }

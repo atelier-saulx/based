@@ -1,16 +1,10 @@
-import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, perf } from './shared/assert.js'
 import assert from 'node:assert'
+import { testDb } from './shared/index.js'
 
 await test('delete performance', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -55,7 +49,7 @@ await test('delete performance', async (t) => {
   }, 'delete 1M users')
   assert(t0 < 400, 'delete 1M users')
 
-  deepEqual((await db.query('user').get()).toObject(), [])
+  deepEqual(await db.query('user').get(), [])
 
   const amountArticles = 1e6
   const articles: any[] = []
@@ -76,7 +70,7 @@ await test('delete performance', async (t) => {
   }, 'delete 1M articles')
   assert(t2 < 400, 'delete 1M users')
 
-  deepEqual((await db.query('article').get()).toObject(), [])
+  deepEqual(await db.query('article').get(), [])
 
   const articles2: any[] = []
 
@@ -111,5 +105,5 @@ await test('delete performance', async (t) => {
     }
     await db.drain()
   }, 'delete 1M articles - again') //  < 400
-  deepEqual((await db.query('article').get()).toObject(), [])
+  deepEqual(await db.query('article').get(), [])
 })

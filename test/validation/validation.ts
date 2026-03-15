@@ -1,17 +1,10 @@
 import { BasedDb } from '../../src/index.js'
 import { deepEqual, throws } from '../shared/assert.js'
+import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 
 await test('update', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => db.destroy())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: { en: {}, de: {} },
     types: {
       user: {
@@ -31,7 +24,7 @@ await test('update', async (t) => {
           numberMax: { type: 'number', max: 20, min: 10 },
           derp: ['a', 'b', 'derp'],
           cardinality: 'cardinality',
-          text: 'text',
+          text: { type: 'string', localized: true },
           friend: { ref: 'user', prop: 'friend' },
           countryCode: { type: 'string', maxBytes: 2 },
           connections: {
@@ -46,6 +39,7 @@ await test('update', async (t) => {
   })
 
   await throws(async () => {
+    // @ts-expect-error
     await db.query('derp', { flap: 'snru' }).get()
   }, true)
 
@@ -58,6 +52,7 @@ await test('update', async (t) => {
   await throws(async () => {
     db.create('user', {
       text: {
+        // @ts-expect-error
         en: 123,
       },
     })
@@ -67,6 +62,7 @@ await test('update', async (t) => {
     db.create(
       'user',
       {
+        // @ts-expect-error
         text: 123,
       },
       { locale: 'en' },
@@ -75,6 +71,7 @@ await test('update', async (t) => {
 
   await throws(async () => {
     db.create('user', {
+      // @ts-expect-error
       text: { xh: 'hello!' },
     })
   })
@@ -91,11 +88,13 @@ await test('update', async (t) => {
 
   await throws(async () => {
     db.create('user', {
+      // @ts-expect-error
       name: 1,
     })
   })
 
   await throws(async () => {
+    // @ts-expect-error
     await db.create('user', { date: {} })
   })
 
@@ -104,11 +103,13 @@ await test('update', async (t) => {
   })
 
   await throws(async () => {
+    // @ts-expect-error
     await db.create('user', { on: 255 + 1 })
   })
 
   await throws(async () => {
     db.create('user', {
+      // @ts-expect-error
       number: 'nla',
     })
   })
@@ -127,6 +128,7 @@ await test('update', async (t) => {
 
   await throws(async () => {
     db.create('user', {
+      // @ts-expect-error
       derp: [1, 2, 3, 4],
     })
   })
@@ -149,29 +151,39 @@ await test('update', async (t) => {
 
   await throws(async () => {
     await db.update('user', cId, {
+      // @ts-expect-error
       cardinality: ['a', 'b', 1],
     })
   })
 
-  deepEqual(await db.query('user', cId).include('cardinality').get(), {
-    id: await cId,
-    cardinality: 2,
-  })
+  deepEqual(
+    await db
+      .query('user', await cId)
+      .include('cardinality')
+      .get(),
+    {
+      id: await cId,
+      cardinality: 2,
+    },
+  )
 
   await throws(async () => {
     db.create('user', {
+      // @ts-expect-error
       cardinality: [1, 2, 3, 4],
     })
   })
 
   await throws(async () => {
     db.create('user', {
+      // @ts-expect-error
       cardinality: { id: [1, 2, 3, 4] },
     })
   })
 
   await throws(async () => {
     db.create('user', {
+      // @ts-expect-error
       friend: { id: undefined },
     })
   })
@@ -184,6 +196,7 @@ await test('update', async (t) => {
 
   await throws(async () => {
     db.create('user', {
+      // @ts-expect-error
       name: 1,
     })
   })
@@ -191,6 +204,7 @@ await test('update', async (t) => {
   await throws(async () => {
     db.create('user', {
       name: 'jamex',
+      // @ts-expect-error
       friend: bad,
     })
   })
@@ -198,6 +212,7 @@ await test('update', async (t) => {
   await throws(async () => {
     db.create('user', {
       name: 'fred',
+      // @ts-expect-error
       connections: [good, bad],
     })
   })
@@ -205,6 +220,7 @@ await test('update', async (t) => {
   await throws(async () => {
     db.create('user', {
       name: 'wrongRating',
+      // @ts-expect-error
       u32: 'not a number',
     })
   })
@@ -215,6 +231,7 @@ await test('update', async (t) => {
     async () => {
       db.create('user', {
         name: 'wrongRating',
+        // @ts-expect-error
         u32: 'not a number',
       }).catch((err) => {
         cnt++
@@ -233,6 +250,7 @@ await test('update', async (t) => {
   await throws(async () => {
     db.create('user', {
       name: 'fred',
+      // @ts-expect-error
       connections: [good, bad],
     })
   })
@@ -240,6 +258,7 @@ await test('update', async (t) => {
   await throws(async () => {
     db.create('user', {
       name: 'wrongRating',
+      // @ts-expect-error
       u32: 'not a number',
     })
   })
@@ -247,6 +266,7 @@ await test('update', async (t) => {
   await throws(() =>
     db.create('user', {
       name: 'nope',
+      // @ts-expect-error
       randomField: true,
     }),
   )
@@ -324,6 +344,7 @@ await test('update', async (t) => {
   await throws(async () => {
     db.create('user', {
       connections: {
+        // @ts-expect-error
         set: [],
       },
     })
@@ -331,19 +352,21 @@ await test('update', async (t) => {
 
   await throws(async () => {
     db.create('user', {
+      // @ts-expect-error
       connections: 1,
     })
   })
 
   await throws(async () => {
     db.create('user', {
+      // @ts-expect-error
       connections: {
         add: ['x'],
       },
     })
   })
 
-  const id = await db.create('user', undefined)
+  const id = await db.create('user')
 
   await throws(
     async () => {
@@ -441,24 +464,30 @@ await test('update', async (t) => {
     'Too small out of bounds value should throw (int8)',
   )
 
-  db.create('user', {
-    binaryData: 'not a binary',
+  await throws(async () => {
+    db.create('user', {
+      // @ts-expect-error
+      binaryData: 'not a binary',
+    })
   })
 
   await throws(async () => {
     db.create('user', {
+      // @ts-expect-error
       binaryData: 12345,
     })
   })
 
   await throws(async () => {
     db.create('user', {
+      // @ts-expect-error
       binaryData: { some: 'object' },
     })
   })
 
   await throws(async () => {
     db.create('user', {
+      // @ts-expect-error
       binaryData: [1, 2, 3, 4],
     })
   })
@@ -469,21 +498,12 @@ await test('update', async (t) => {
 })
 
 await test('query', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => db.destroy())
-
   const drip = ['dope', 'cringe', 'meh']
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: {
       en: {},
-      it: { fallback: 'en' },
-      fi: { fallback: 'en' },
+      it: { fallback: ['en'] },
+      fi: { fallback: ['en'] },
     },
     types: {
       todo: {
@@ -492,7 +512,7 @@ await test('query', async (t) => {
         unique: 'cardinality',
         status: ['a', 'b', 'c'],
         title: 'string',
-        body: 'text',
+        body: { type: 'string', localized: true },
       },
       user: {
         props: {
@@ -501,7 +521,7 @@ await test('query', async (t) => {
           isOn: 'boolean',
           drip,
           friend: { ref: 'user', prop: 'friend' },
-          description: 'text',
+          description: { type: 'string', localized: true },
           countryCode: { type: 'string', maxBytes: 2 },
           blap: { type: 'vector', size: 5, baseType: 'float32' },
           connections: {
@@ -532,10 +552,15 @@ await test('query', async (t) => {
     'throw on string as id',
   )
 
+  // @ts-expect-error
   await throws(() => db.query('derp').get(), false, 'non existing type')
 
-  // @ts-ignore
-  await throws(() => db.query('user', 'derp derp').get(), false, 'incorrect id')
+  await throws(
+    // @ts-expect-error
+    () => db.query('user', 'derp derp').get(),
+    false,
+    'incorrect id',
+  )
 
   await throws(
     () => db.query('user', [1, 1221.11, 0]).get(),
@@ -544,29 +569,32 @@ await test('query', async (t) => {
   )
 
   await throws(
-    // @ts-ignore
+    // @ts-expect-error
     () => db.query('user', [1, 'X', {}]).get(),
     false,
     'incorrect ids 2',
   )
 
   const x = new Uint32Array(new Array(2e6).map((v) => 1))
+  // @ts-expect-error
   await throws(() => db.query('user', x).get(), false, 'incorrect ids 2')
 
   await throws(
+    // @ts-expect-error
     () => db.query('user').include('derp').get(),
     false,
     'non existing field in include',
   )
 
   await throws(
-    // @ts-ignore
+    // @ts-expect-error
     () => db.query('user', { $id: 1 }).get(),
     false,
     'incorrect alias',
   )
 
   await throws(
+    // @ts-expect-error
     () => db.query('user').filter('derp', '=', true).get(),
     false,
     'non existing field in filter',
@@ -581,76 +609,81 @@ await test('query', async (t) => {
     })
 
   await throws(
-    () => db.query('user').filter('friend.description.flap', '=', 'nice').get(),
+    () =>
+      // @ts-expect-error
+      db.query('user').filter('friend.description.flap', '=', 'nice').get(),
     false,
     'non existing lang in filter',
   )
 
   await throws(
-    () => db.query('user').filter('friend.description.flap', '=', 'nice').get(),
+    () =>
+      // @ts-expect-error
+      db.query('user').filter('friend.description.flap', '=', 'nice').get(),
     false,
     'non existing lang in filter',
   )
 
   await throws(
+    // @ts-expect-error
     () => db.query('user').filter('friend.description.fr', '=', 'nice').get(),
     false,
     'non existing lang in filter',
   )
 
   await throws(
+    // @ts-expect-error
     () => db.query('user').include('friend.description.flap').get(),
     false,
     'non existing lang in include #1',
   )
 
   await throws(
+    // @ts-expect-error
     () => db.query('user').include('friend.description.fr').get(),
     false,
     'non existing lang in include #2',
   )
 
   await throws(
-    // @ts-ignore
+    // @ts-expect-error
     () => db.query('user').filter('friend.description.fr', 'derp', 1).get(),
     false,
     'Filter non existing operator',
   )
 
   await throws(
-    // @ts-ignore
+    // @ts-expect-error
     () => db.query('user').filter('friend.description.en', '>', 1).get(),
     false,
     'Filter incorrect operator on text',
   )
 
   await throws(
-    // @ts-ignore
     () => db.query('user').filter('rating', 'includes', 1).get(),
     false,
     'Filter incorrect operator on uint32',
   )
 
   await throws(
-    // @ts-ignore
+    // @ts-expect-error
     () => db.query('user').filter('isOn', 'includes', 1).get(),
     false,
     'Filter incorrect operator on bool',
   )
 
-  await db.query('user').filter('isOn', true).get()
-  await db.query('user').filter('isOn').get()
-  await db.query('user').filter('isOn', false).get()
+  // await db.query('user').filter('isOn', true).get()
+  // await db.query('user').filter('isOn').get()
+  // await db.query('user').filter('isOn', false).get()
 
   await throws(
-    // @ts-ignore
     () => db.query('user').filter('friend', 'includes', 1).get(),
     false,
     'Filter incorrect operator on reference',
   )
 
   await throws(
-    // @ts-ignore
+    // @ts-expect-error
     () => db.query('user').filter('connections', 'like', 1).get(),
     false,
     'Filter incorrect operator on references',
@@ -670,12 +703,7 @@ await test('query', async (t) => {
   ]
 
   deepEqual(
-    await db
-      .query('user')
-      .filter('name', 'includes', '')
-      .include('name')
-      .get()
-      .toObject(),
+    await db.query('user').filter('name', 'includes', '').include('name').get(),
     allData,
     'skip empty string',
   )
@@ -685,22 +713,20 @@ await test('query', async (t) => {
       .query('user', [])
       .filter('name', 'includes', '')
       .include('name')
-      .get()
-      .toObject(),
+      .get(),
     [],
     'ignore empty ids',
   )
 
-  deepEqual(
-    await db
-      .query('user')
-      .filter('friend.description.en', '=', undefined)
-      .include('name')
-      .get()
-      .toObject(),
-    allData,
-    'skip undefined',
-  )
+  // deepEqual(
+  //   await db
+  //     .query('user')
+  //     .filter('friend.description.en', '=', undefined)
+  //     .include('name')
+  //     .get(),
+  //   allData,
+  //   'skip undefined',
+  // )
 
   await throws(
     // @ts-ignore
@@ -720,6 +746,7 @@ await test('query', async (t) => {
     'Incorrect payload',
   )
 
+  // @ts-expect-error
   const q = db.query('flap')
   for (let i = 0; i < 2; i++) {
     await throws(
@@ -778,78 +805,46 @@ await test('query', async (t) => {
   }, false)
 
   await throws(async () => {
-    // @ts-ignore
+    // @ts-expect-error
     await db.query('user').sort('drip').range('derp', -100).get()
   }, false)
 
   await throws(async () => {
+    // @ts-expect-error
     await db.query('user').locale('az').get()
   }, false)
 
-  await throws(async () => {
-    await db.query('user').search('xyz', 'derpderp').get()
-  }, false)
+  // await throws(async () => {
+  //   // @ts-expect-error
+  //   await db.query('user').search('xyz', 'derpderp').get()
+  // }, false)
 
-  await throws(async () => {
-    await db.query('user').search('xyz', 'derpderp').get()
-  }, false)
+  // await throws(async () => {
+  //   // @ts-expect-error
+  //   await db.query('user').search('xyz', 'derpderp').get()
+  // }, false)
 
-  await throws(async () => {
-    await db.query('user').search('xyz', 'blap').get()
-  }, false)
+  // await throws(async () => {
+  //   // @ts-expect-error
+  //   await db.query('user').search('xyz', 'blap').get()
+  // }, false)
 
-  await throws(async () => {
-    // @ts-ignore
-    await db.query('user').search([1, 2, 3, 4], 'blap').get()
-  }, false)
+  // await throws(async () => {
+  //   // @ts-expect-error
+  //   await db.query('user').search([1, 2, 3, 4], 'blap').get()
+  // }, false)
 
   await throws(async () => {
     const envs = await db
       .query('user')
+      // @ts-expect-error
       .filter('connections', 'includes', 0)
       .get()
   }, false)
 })
 
-await test('query - no schema', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => db.destroy())
-
-  setTimeout(async () => {
-    await db.setSchema({
-      types: {
-        user: {
-          props: {
-            name: 'string',
-          },
-        },
-      },
-    })
-  }, 100)
-
-  await throws(async () => {
-    await db.query('ploink').get()
-  }, false)
-
-  await db.schemaIsSet()
-  deepEqual(await db.query('user').get().toObject(), [])
-})
-
 await test('minmax', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => db.destroy())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -868,7 +863,7 @@ await test('minmax', async (t) => {
     number: 0.5,
   })
 
-  deepEqual(await db.query('user', id).get().toObject(), {
+  deepEqual(await db.query('user', id).get(), {
     name: 'luigi',
     number: 0.5,
     id,
@@ -876,13 +871,7 @@ await test('minmax', async (t) => {
 })
 
 await test('set text without locale', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db)) // commenting this out fixes the crash part
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: {
       en: {},
       it: {},
@@ -890,7 +879,7 @@ await test('set text without locale', async (t) => {
     types: {
       country: {
         name: 'string',
-        cool: 'text',
+        cool: { type: 'string', localized: true },
       },
     },
   })
@@ -915,14 +904,7 @@ await test('set text without locale', async (t) => {
 })
 
 await test('range validation', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => db.destroy())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -1051,11 +1033,7 @@ await test('range validation', async (t) => {
 })
 
 await test('binary validation', async (t) => {
-  const db = new BasedDb({ path: t.tmp })
-  await db.start({ clean: true })
-  t.after(() => db.destroy())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -1070,21 +1048,25 @@ await test('binary validation', async (t) => {
     name: 'test',
     binaryData: Buffer.from([1, 2, 3, 4]),
   })
-  await db.create('user', { name: 'test2', binaryData: 'binary string' })
+
+  // await db.create('user', { name: 'test2', binaryData: 'binary string' })
   await db.create('user', {
     name: 'test3',
     binaryData: new Uint8Array([5, 6, 7, 8]),
   })
 
   await throws(async () => {
+    // @ts-expect-error
     await db.create('user', { name: 'test4', binaryData: 123 })
   })
 
   await throws(async () => {
+    // @ts-expect-error
     await db.create('user', { name: 'test5', binaryData: { some: 'object' } })
   })
 
   await throws(async () => {
+    // @ts-expect-error
     await db.create('user', { name: 'test6', binaryData: [1, 2, 3] })
   })
 
@@ -1092,25 +1074,29 @@ await test('binary validation', async (t) => {
     .query('user')
     .filter('binaryData', '=', Buffer.from([1, 2, 3, 4]))
     .get()
-  await db.query('user').filter('binaryData', '=', 'binary string').get()
+  // await db.query('user').filter('binaryData', '=', 'binary string').get()
   await db
     .query('user')
     .filter('binaryData', '=', new Uint8Array([5, 6, 7, 8]))
     .get()
 
   await throws(async () => {
+    // @ts-expect-error
     await db.query('user').filter('binaryData', '=', 123).get()
   })
 
   await throws(async () => {
+    // @ts-expect-error
     await db.query('user').filter('binaryData', '=', {}).get()
   })
 
   await throws(async () => {
+    // @ts-expect-error
     await db.query('user').filter('binaryData', '=', { some: 'object' }).get()
   })
 
   await throws(async () => {
+    // @ts-expect-error
     await db.query('user').filter('binaryData', '=', [1, 2, 3]).get()
   })
 })

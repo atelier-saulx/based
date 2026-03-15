@@ -9,7 +9,6 @@ const valgrind = @import("../valgrind.zig");
 const config = @import("config");
 const Node = @import("node.zig");
 const References = @import("references.zig");
-const Modify = @import("../modify/common.zig");
 const DbCtx = @import("../db/ctx.zig").DbCtx;
 
 pub const Aliases = selva.Aliases;
@@ -19,26 +18,33 @@ const emptyArray: []const [16]u8 = emptySlice;
 
 extern "c" const selva_string: opaque {};
 
-pub fn getCardinality(node: Node.Node, fieldSchema: Schema.FieldSchema) ?[]u8 {
-    if (selva.c.selva_fields_get_selva_string(node, fieldSchema)) |stored| {
-        const countDistinct = selva.c.hll_count(@ptrCast(stored));
-        return countDistinct[0..4];
+inline fn toNodeId(node: anytype) selva.c.node_id_t {
+    if (comptime @TypeOf(node) == selva.c.node_id_t) {
+        return node;
+    } else if (comptime @TypeOf(node) == Node.Node) {
+        return Node.getNodeId(node);
     } else {
-        return null;
+        @compileLog("Invalid type: ", @TypeOf(node));
+        @compileError("Invalid type");
     }
 }
 
-pub fn getCardinalityReference(ctx: *DbCtx, efc: Schema.EdgeFieldConstraint, ref: References.ReferenceLarge, fieldSchema: Schema.FieldSchema) []u8 {
-    const edge_node = Node.getEdgeNode(ctx, efc, ref);
-    if (edge_node == null) {
-        return emptySlice;
+pub fn ensureCardinality(node: Node.Node, fieldSchema: Schema.FieldSchema, hllPrecision: u8, hllMode: bool) *selva.c.struct_selva_string {
+    var data = selva.c.selva_fields_get_selva_string(node, fieldSchema);
+    if (data == null) {
+        data = selva.c.selva_fields_ensure_string(node, fieldSchema, selva.c.HLL_INIT_SIZE) orelse errors.SelvaError.SELVA_EINTYPE;
+        selva.c.hll_init(data, hllPrecision, hllMode);
     }
 
-    if (selva.c.selva_fields_get_selva_string(edge_node, fieldSchema) orelse null) |stored| {
-        const countDistinct = selva.c.hll_count(@ptrCast(stored));
+    return data;
+}
+
+pub fn getCardinality(node: Node.Node, fieldSchema: Schema.FieldSchema) ?[]u8 {
+    if (selva.c.selva_fields_get_selva_string(node, fieldSchema)) |stored| {
+        const countDistinct = selva.c.hll_count(stored);
         return countDistinct[0..4];
     } else {
-        return emptySlice;
+        return null;
     }
 }
 
@@ -51,6 +57,9 @@ pub fn get(
     if (propType == t.PropType.alias) {
         const target = Node.getNodeId(node);
         const typeAliases = selva.c.selva_get_aliases(typeEntry, fieldSchema.field);
+        if (typeAliases == null) {
+            return @as([*]u8, undefined)[0..0];
+        }
         const alias = selva.c.selva_get_alias_by_dest(typeAliases, target);
         if (alias == null) {
             return @as([*]u8, undefined)[0..0];
@@ -67,6 +76,9 @@ pub fn get(
         return @as([*]u8, @ptrCast(vec))[0..len];
     } else {
         const result: selva.c.SelvaFieldsPointer = selva.c.selva_fields_get_raw(node, fieldSchema);
+        if (result.len == 0) {
+            return @as([*]u8, undefined)[0..0];
+        }
         return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
     }
 }
@@ -106,7 +118,9 @@ pub inline fn setMicroBuffer(node: Node.Node, fieldSchema: Schema.FieldSchema, v
     ));
 }
 
-pub inline fn setColvec(te: Node.Type, nodeId: selva.c.node_id_t, fieldSchema: Schema.FieldSchema, vec: []u8) void {
+pub inline fn setColvec(te: Node.Type, node: anytype, fieldSchema: Schema.FieldSchema, vec: []u8) void {
+    const nodeId = toNodeId(node);
+
     selva.c.colvec_set_vec(
         te,
         nodeId,
@@ -115,31 +129,38 @@ pub inline fn setColvec(te: Node.Type, nodeId: selva.c.node_id_t, fieldSchema: S
     );
 }
 
+pub inline fn clearColvec(te: Node.Type, node: anytype, fieldSchema: Schema.FieldSchema) void {
+    const nodeId = toNodeId(node);
+
+    selva.c.colvec_clear_vec(
+        te,
+        nodeId,
+        fieldSchema,
+    );
+}
+
 // TODO This is now hll specific but we might want to change it.
-pub inline fn ensurePropTypeString(
-    ctx: *Modify.ModifyCtx,
-    fieldSchema: Schema.FieldSchema,
-) !*selva.c.selva_string {
-    return selva.c.selva_fields_ensure_string(ctx.node.?, fieldSchema, selva.c.HLL_INIT_SIZE) orelse errors.SelvaError.SELVA_EINTYPE;
-}
-
-pub fn ensureEdgePropTypeString(
-    ctx: *Modify.ModifyCtx,
+pub fn ensurePropTypeString(
     node: Node.Node,
-    efc: Schema.EdgeFieldConstraint,
-    ref: References.ReferenceLarge,
     fieldSchema: Schema.FieldSchema,
 ) !*selva.c.selva_string {
-    const edge_node = selva.c.selva_fields_ensure_ref_edge(ctx.db.selva, node, efc, ref, 0) orelse return errors.SelvaError.SELVA_ENOTSUP;
-    return selva.c.selva_fields_ensure_string(edge_node, fieldSchema, selva.c.HLL_INIT_SIZE) orelse return errors.SelvaError.SELVA_EINTYPE;
+    return selva.c.selva_fields_ensure_string(node, fieldSchema, selva.c.HLL_INIT_SIZE) orelse errors.SelvaError.SELVA_EINTYPE;
 }
 
-pub inline fn deleteField(ctx: *Modify.ModifyCtx, node: Node.Node, fieldSchema: Schema.FieldSchema) !void {
-    try errors.selva(selva.c.selva_fields_del(ctx.db.selva, node, fieldSchema));
+// pub inline fn deleteTextFieldTranslation(ctx: *Modify.ModifyCtx, fieldSchema: Schema.FieldSchema, lang: t.LangCode) !void {
+//     return errors.selva(selva.c.selva_fields_set_text(ctx.node, fieldSchema, &selva.c.selva_fields_text_tl_empty[@intFromEnum(lang)], selva.c.SELVA_FIELDS_TEXT_TL_EMPTY_LEN));
+// }
+
+pub inline fn reset(db: *DbCtx, te: Node.Type, node: Node.Node, fieldSchema: Schema.FieldSchema) void {
+    selva.c.selva_fields_reset(db.selva, te, node, fieldSchema);
 }
 
-pub inline fn deleteTextFieldTranslation(ctx: *Modify.ModifyCtx, fieldSchema: Schema.FieldSchema, lang: t.LangCode) !void {
-    return errors.selva(selva.c.selva_fields_set_text(ctx.node, fieldSchema, &selva.c.selva_fields_text_tl_empty[@intFromEnum(lang)], selva.c.SELVA_FIELDS_TEXT_TL_EMPTY_LEN));
+pub inline fn resetSmb(te: Node.Type, node: Node.Node, fieldSchema: Schema.FieldSchema, start: usize, len: usize) void {
+    selva.c.selva_fields_reset_smb(te, node, fieldSchema, start, len);
+}
+
+pub inline fn resetText(db: *DbCtx, te: Node.Type, node: Node.Node, fieldSchema: Schema.FieldSchema, langs: []const u8) void {
+    selva.c.selva_fields_reset_text(db.selva, te, node, fieldSchema, langs.len, langs.ptr);
 }
 
 pub inline fn textFromValueFallback(
@@ -305,4 +326,16 @@ pub fn getAliasByName(typeEntry: Node.Type, field: u8, aliasName: []u8) ?Node.No
     const res = selva.c.selva_get_alias(typeEntry, typeAliases, aliasName.ptr, aliasName.len);
     // TODO Partials
     return res.node;
+}
+
+pub fn getAliasByNode(typeEntry: Node.Type, node: anytype, field: u8) ![]const u8 {
+    if (selva.c.selva_get_aliases(typeEntry, field)) |aliases| {
+        const nodeId = toNodeId(node);
+        if (selva.c.selva_get_alias_by_dest(aliases, nodeId)) |alias| {
+            var len: usize = undefined;
+            const name = selva.c.selva_get_alias_name(alias, &len);
+            return name[0..len];
+        }
+    }
+    return errors.SelvaError.SELVA_ENOENT;
 }

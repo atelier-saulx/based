@@ -7,10 +7,10 @@ export const start = async (t, clientsN = 2) => {
     path: t.tmp,
   })
   const hooks: DbClientHooks = {
-    subscribe() {
-      console.warn('No sub hook here for reasons in multi / test')
-      return () => {}
-    },
+    // subscribe() {
+    //   console.warn('No sub hook here for reasons in multi / test')
+    //   return () => {}
+    // },
     subscribeSchema: (setSchema) => {
       if (server.schema) {
         setSchema(server.schema)
@@ -19,10 +19,10 @@ export const start = async (t, clientsN = 2) => {
         setSchema(schema)
       })
     },
-    async setSchema(schema, transformFns) {
+    async setSchema(schema) {
       schema = { ...schema }
       await setTimeout(20)
-      const res = await server.setSchema(schema, transformFns)
+      const res = await server.setSchema(schema)
       return res
     },
     async flushModify(buf) {

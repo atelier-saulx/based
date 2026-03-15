@@ -1,19 +1,13 @@
-import { BasedDb } from '../../src/index.js'
+import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
 
 // Text is currently not supported in edge props: FDN-1713 FDN-730
 await test.skip('text in an edge prop', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: {
       en: {},
-      it: { fallback: 'en' },
+      it: { fallback: ['en'] },
     },
     types: {
       user: {
@@ -21,13 +15,19 @@ await test.skip('text in an edge prop', async (t) => {
           bestFriend: {
             ref: 'user',
             prop: 'bestFriend',
-            $x: 'text',
+            $x: {
+              type: 'string',
+              localized: true,
+            },
           },
           friends: {
             items: {
               ref: 'user',
               prop: 'friends',
-              $x: 'text',
+              $x: {
+                type: 'string',
+                localized: true,
+              },
             },
           },
         },
@@ -46,7 +46,7 @@ await test.skip('text in an edge prop', async (t) => {
     id: user2,
     bestFriend: {
       id: user1,
-      $x: { en: 'hello' },
+      $x: { en: 'hello', it: '' },
     },
     friends: [],
   })

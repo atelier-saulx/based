@@ -1,4 +1,5 @@
 const deflate = @import("../deflate.zig");
+const jemalloc = @import("../jemalloc.zig");
 const selva = @import("../selva/selva.zig").c;
 const Node = @import("../selva/node.zig");
 const References = @import("../selva/references.zig");
@@ -9,7 +10,9 @@ const errors = @import("../errors.zig");
 const read = utils.read;
 const DbCtx = @import("../db/ctx.zig").DbCtx;
 const Iterator = @import("iterator.zig");
+const Decay = @import("decay.zig");
 pub const SortIndexMeta = @import("common.zig").SortIndexMeta;
+const SortUseCounter = @import("common.zig").SortUseCounter;
 
 pub const iterator = Iterator.iterator;
 pub const fromIterator = Iterator.fromIterator;
@@ -44,22 +47,22 @@ inline fn getTextKey(
 
 fn getSortFlag(sortFieldType: t.PropType) !selva.SelvaSortOrder {
     switch (sortFieldType) {
-        t.PropType.int8,
-        t.PropType.uint8,
-        t.PropType.int16,
-        t.PropType.uint16,
-        t.PropType.int32,
-        t.PropType.uint32,
-        t.PropType.boolean,
-        t.PropType.@"enum",
-        t.PropType.cardinality,
+        .int8,
+        .uint8,
+        .int16,
+        .uint16,
+        .int32,
+        .uint32,
+        .boolean,
+        .@"enum",
+        .cardinality,
         => {
             return selva.SELVA_SORT_ORDER_I64_ASC;
         },
-        t.PropType.number, t.PropType.timestamp => {
+        .number, .timestamp => {
             return selva.SELVA_SORT_ORDER_DOUBLE_ASC;
         },
-        t.PropType.string, t.PropType.text, t.PropType.alias, t.PropType.binary => {
+        .stringFixed, .binaryFixed, .jsonFixed, .jsonLocalized, .json, .string, .stringLocalized, .alias, .binary => {
             return selva.SELVA_SORT_ORDER_BUFFER_ASC;
         },
         else => {
@@ -68,17 +71,51 @@ fn getSortFlag(sortFieldType: t.PropType) !selva.SelvaSortOrder {
     }
 }
 
-pub fn createSortIndexMeta(
+pub fn deinit(sortIndexes: *TypeSortIndexes) void {
+    var it = sortIndexes.iterator();
+    while (it.next()) |index| {
+        const typeIndex = index.value_ptr.*;
+
+        var textIt = typeIndex.text.iterator();
+        while (textIt.next()) |kv| {
+            const sortIndex = kv.value_ptr.*;
+            selva.selva_sort_destroy(sortIndex.index);
+            jemalloc.free(sortIndex);
+        }
+
+        var fieldIt = typeIndex.field.iterator();
+        while (fieldIt.next()) |kv| {
+            const sortIndex = kv.value_ptr.*;
+            selva.selva_sort_destroy(sortIndex.index);
+            jemalloc.free(sortIndex);
+        }
+
+        var mainIt = typeIndex.main.iterator();
+        while (mainIt.next()) |kv| {
+            const sortIndex = kv.value_ptr.*;
+            selva.selva_sort_destroy(sortIndex.index);
+            jemalloc.free(sortIndex);
+        }
+
+        jemalloc.free(typeIndex);
+    }
+
+    sortIndexes.deinit();
+}
+
+fn createSortIndexMeta(
     header: *const t.SortHeader,
     size: usize,
     comptime isEdge: bool,
-) !SortIndexMeta {
+) !*SortIndexMeta {
+    const s = jemalloc.create(SortIndexMeta);
     const sortFlag = try getSortFlag(header.propType);
     const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init3(sortFlag, size, if (isEdge)
         @sizeOf(References.ReferencesIteratorEdgesResult)
     else
         0).?;
-    const s: SortIndexMeta = .{
+
+    s.* = .{
         .len = header.len,
         .start = header.start,
         .index = sortCtx,
@@ -86,7 +123,9 @@ pub fn createSortIndexMeta(
         .langCode = header.lang,
         .field = header.prop,
         .isCreated = false,
+        .decay = Decay.init(),
     };
+
     return s;
 }
 
@@ -95,10 +134,9 @@ pub fn getOrCreateFromCtx(
     typeId: t.TypeId,
     sortHeader: *const t.SortHeader,
 ) !*SortIndexMeta {
-    var sortIndex: ?*SortIndexMeta = undefined;
     var typeIndexes: ?*TypeIndex = dbCtx.sortIndexes.get(typeId);
     if (typeIndexes == null) {
-        typeIndexes = try dbCtx.allocator.create(TypeIndex);
+        typeIndexes = jemalloc.create(TypeIndex);
         typeIndexes.?.* = .{
             .field = FieldSortIndexes.init(dbCtx.allocator),
             .main = MainSortIndexes.init(dbCtx.allocator),
@@ -107,19 +145,20 @@ pub fn getOrCreateFromCtx(
         try dbCtx.sortIndexes.put(typeId, typeIndexes.?);
     }
     const tI: *TypeIndex = typeIndexes.?;
-    sortIndex = getSortIndex(typeIndexes, sortHeader.prop, sortHeader.start, sortHeader.lang);
-    if (sortIndex == null) {
-        sortIndex = try dbCtx.allocator.create(SortIndexMeta);
-        sortIndex.?.* = try createSortIndexMeta(sortHeader, 0, false);
+    if (getSortIndex(typeIndexes, sortHeader.prop, sortHeader.start, sortHeader.lang)) |sortIndex| {
+        return sortIndex;
+    } else {
+        const sortIndex = try createSortIndexMeta(sortHeader, 0, false);
         if (sortHeader.prop == 0) {
-            try tI.main.put(sortHeader.start, sortIndex.?);
-        } else if (sortHeader.propType == t.PropType.text) {
-            try tI.text.put(getTextKey(sortHeader.prop, sortHeader.lang), sortIndex.?);
+            try tI.main.put(sortHeader.start, sortIndex);
+        } else if (sortHeader.propType == t.PropType.stringLocalized) {
+            try tI.text.put(getTextKey(sortHeader.prop, sortHeader.lang), sortIndex);
         } else {
-            try tI.field.put(sortHeader.prop, sortIndex.?);
+            try tI.field.put(sortHeader.prop, sortIndex);
         }
+
+        return sortIndex;
     }
-    return sortIndex.?;
 }
 
 pub fn destroySortIndex(
@@ -129,20 +168,16 @@ pub fn destroySortIndex(
     start: u16,
     lang: t.LangCode,
 ) void {
-    const typeIndexes = dbCtx.sortIndexes.get(typeId);
-    if (typeIndexes == null) {
-        return;
-    }
-    const sortIndex = getSortIndex(typeIndexes, field, start, lang);
-    if (sortIndex) |index| {
-        const tI: *TypeIndex = typeIndexes.?;
-        if (field == 0) {
-            _ = tI.main.remove(start);
-        } else {
-            _ = tI.field.remove(field);
+    if (dbCtx.sortIndexes.get(typeId)) |typeIndexes| {
+        if (getSortIndex(typeIndexes, field, start, lang)) |index| {
+            if (field == 0) {
+                _ = typeIndexes.main.remove(start);
+            } else {
+                _ = typeIndexes.field.remove(field);
+            }
+            selva.selva_sort_destroy(index.index);
+            jemalloc.free(index);
         }
-        selva.selva_sort_destroy(index.index);
-        dbCtx.allocator.destroy(index);
     }
 }
 
@@ -152,17 +187,24 @@ pub fn getSortIndex(
     start: u16,
     lang: t.LangCode,
 ) ?*SortIndexMeta {
+    var sortIndex: ?*SortIndexMeta = undefined;
     if (typeSortIndexes == null) {
         return null;
     }
     const tI = typeSortIndexes.?;
     if (lang != t.LangCode.none) {
-        return tI.text.get(getTextKey(field, lang));
+        sortIndex = tI.text.get(getTextKey(field, lang));
     } else if (field == 0) {
-        return tI.main.get(start);
+        sortIndex = tI.main.get(start);
     } else {
-        return tI.field.get(field);
+        sortIndex = tI.field.get(field);
     }
+
+    if (sortIndex) |index| {
+        _ = index.decay.useCounter.fetchAdd(1, std.builtin.AtomicOrder.monotonic);
+    }
+
+    return sortIndex;
 }
 
 pub fn getTypeSortIndexes(
@@ -190,7 +232,7 @@ inline fn parseString(decompressor: *deflate.Decompressor, data: []u8, out: []u8
     }
 }
 
-inline fn parseAlias(
+inline fn parseSimpleString(
     data: []u8,
 ) [*]u8 {
     if (data.len < SIZE + 2) {
@@ -220,39 +262,34 @@ pub fn remove(
     const start = sortIndex.start;
     const index = sortIndex.index;
     return switch (prop) {
-        t.PropType.@"enum", t.PropType.uint8, t.PropType.int8, t.PropType.boolean => {
+        .@"enum", .uint8, .int8, .boolean => {
             selva.selva_sort_remove_i64(index, data[start], node);
         },
-        t.PropType.alias => {
-            selva.selva_sort_remove_buf(index, parseAlias(data), SIZE, node);
+        .alias => {
+            selva.selva_sort_remove_buf(index, parseSimpleString(data), SIZE, node);
         },
-        t.PropType.string, t.PropType.text, t.PropType.binary => {
-            if (sortIndex.len > 0) {
-                selva.selva_sort_remove_buf(
-                    index,
-                    data[start + 1 .. start + 1 + sortIndex.len].ptr,
-                    sortIndex.len - 1,
-                    node,
-                );
-            } else {
-                var buf: [SIZE]u8 = [_]u8{0} ** SIZE;
-                selva.selva_sort_remove_buf(index, parseString(decompressor, data, &buf), SIZE, node);
-            }
+        .stringFixed, .binaryFixed => {
+            const size = data[start];
+            selva.selva_sort_remove_buf(index, parseSimpleString(data[start + 1 .. start + 1 + size]), size, node);
         },
-        t.PropType.number, t.PropType.timestamp => {
+        .string, .stringLocalized, .json, .jsonLocalized, .binary => {
+            var buf: [SIZE]u8 = [_]u8{0} ** SIZE;
+            selva.selva_sort_remove_buf(index, parseString(decompressor, data, &buf), SIZE, node);
+        },
+        .number, .timestamp => {
             selva.selva_sort_remove_double(index, @floatFromInt(read(u64, data, start)), node);
         },
-        t.PropType.cardinality => {
+        .cardinality => {
             if (data.len > 0) {
                 removeFromIntIndex(u32, data, sortIndex, node);
             } else {
                 removeFromIntIndex(u32, EMPTY_CHAR_SLICE, sortIndex, node);
             }
         },
-        t.PropType.int32 => removeFromIntIndex(i32, data, sortIndex, node),
-        t.PropType.int16 => removeFromIntIndex(i16, data, sortIndex, node),
-        t.PropType.uint32 => removeFromIntIndex(u32, data, sortIndex, node),
-        t.PropType.uint16 => removeFromIntIndex(u16, data, sortIndex, node),
+        .int32 => removeFromIntIndex(i32, data, sortIndex, node),
+        .uint32 => removeFromIntIndex(u32, data, sortIndex, node),
+        .int16 => removeFromIntIndex(i16, data, sortIndex, node),
+        .uint16 => removeFromIntIndex(u16, data, sortIndex, node),
         else => {},
     };
 }
@@ -270,26 +307,22 @@ pub fn insert(
     const prop = sortIndex.prop;
     const start = sortIndex.start;
     const index = sortIndex.index;
+
     return switch (prop) {
         .@"enum", .uint8, .int8, .boolean => {
             selva.selva_sort_insert_i64(index, data[start], value);
         },
         .alias => {
-            selva.selva_sort_insert_buf(index, parseAlias(data), SIZE, value);
+            selva.selva_sort_insert_buf(index, parseSimpleString(data), SIZE, value);
         },
-        .string, .text, .binary => {
-            if (sortIndex.len > 0) {
-                selva.selva_sort_insert_buf(
-                    index,
-                    data[start + 1 .. start + sortIndex.len].ptr,
-                    sortIndex.len - 1,
-                    value,
-                );
-            } else {
-                var buf: [SIZE]u8 = [_]u8{0} ** SIZE;
-                const str = parseString(decompressor, data, &buf);
-                selva.selva_sort_insert_buf(index, str, SIZE, value);
-            }
+        .stringFixed, .binaryFixed => {
+            const size = data[start];
+            selva.selva_sort_insert_buf(index, parseSimpleString(data[start + 1 .. start + 1 + size]), size, value);
+        },
+        .string, .stringLocalized, .json, .jsonLocalized, .binary => {
+            var buf: [SIZE]u8 = [_]u8{0} ** SIZE;
+            const str = parseString(decompressor, data, &buf);
+            selva.selva_sort_insert_buf(index, str, SIZE, value);
         },
         .number, .timestamp => {
             selva.selva_sort_insert_double(index, @floatFromInt(read(u64, data, start)), value);
@@ -302,8 +335,8 @@ pub fn insert(
             }
         },
         .int32 => insertIntIndex(i32, data, sortIndex, value),
-        .int16 => insertIntIndex(i16, data, sortIndex, value),
         .uint32, .id => insertIntIndex(u32, data, sortIndex, value),
+        .int16 => insertIntIndex(i16, data, sortIndex, value),
         .uint16 => insertIntIndex(u16, data, sortIndex, value),
         else => {},
     };

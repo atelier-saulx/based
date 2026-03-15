@@ -1,15 +1,9 @@
-import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
+import { testDb } from '../shared/index.js'
 import { deepEqual } from '../shared/assert.js'
 
 await test('filter or', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -24,9 +18,7 @@ await test('filter or', async (t) => {
   }
 
   deepEqual(
-    (
-      await db.query('user').filter('nr', '>', 8).or('nr', '<', 1).get()
-    ).toObject(),
+    await db.query('user').filter('nr', '>', 8).or('nr', '<', 1).get(),
     [
       {
         id: 1,
@@ -41,15 +33,13 @@ await test('filter or', async (t) => {
   )
 
   deepEqual(
-    (
-      await db
-        .query('user')
-        .filter('nr', '>', 8)
-        .or((t) => {
-          t.filter('nr', '<', 1).or('nr', '=', 5)
-        })
-        .get()
-    ).toObject(),
+    await db
+      .query('user')
+      .filter('nr', '>', 8)
+      .or((t) => {
+        t.filter('nr', '<', 1).or('nr', '=', 5)
+      })
+      .get(),
     [
       {
         id: 1,
@@ -68,14 +58,12 @@ await test('filter or', async (t) => {
   )
 
   deepEqual(
-    (
-      await db
-        .query('user')
-        .filter('nr', '>', 8)
-        .or('nr', '<', 1)
-        .or('nr', '=', 5)
-        .get()
-    ).toObject(),
+    await db
+      .query('user')
+      .filter('nr', '>', 8)
+      .or('nr', '<', 1)
+      .or('nr', '=', 5)
+      .get(),
     [
       {
         id: 1,
@@ -94,13 +82,11 @@ await test('filter or', async (t) => {
   )
 
   deepEqual(
-    (
-      await db
-        .query('user')
-        .filter('nr', '>', 8)
-        .or(() => {})
-        .get()
-    ).toObject(),
+    await db
+      .query('user')
+      .filter('nr', '>', 8)
+      .or(() => {})
+      .get(),
     [
       {
         id: 10,

@@ -1,15 +1,9 @@
-import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { testDb } from './shared/index.js'
 
 await test('main + empty', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         role: ['admin', 'translator', 'viewer'],
@@ -26,7 +20,7 @@ await test('main + empty', async (t) => {
     location: '',
   })
 
-  deepEqual(await db.query('user').get().toObject(), [
+  deepEqual(await db.query('user').get(), [
     { id: 1, role: 'translator', location: '' },
   ])
 })

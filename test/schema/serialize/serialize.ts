@@ -43,8 +43,8 @@ test('serialize and deserialize basic schema', async () => {
   const basicSchema: SchemaOut = {
     hash: 0,
     locales: {
-      en: { required: true },
-      nl: {},
+      en: { fallback: [] },
+      nl: { fallback: [] },
     },
     types: {
       thing: {
@@ -64,6 +64,10 @@ test('serialize and deserialize basic schema', async () => {
           validationFn: {
             type: 'string',
             validation: (v) => v.startsWith('valid'),
+          },
+          myEnum: {
+            type: 'enum',
+            enum: ['a', 'b'],
           },
         },
       },
@@ -150,8 +154,8 @@ test('big schema', async () => {
   const basicSchema: SchemaOut = {
     hash: 0,
     locales: {
-      en: { required: true },
-      nl: {},
+      en: { fallback: [] },
+      nl: { fallback: [] },
     },
     types: {
       thing: {

@@ -7,16 +7,16 @@ const t = @import("../types.zig");
 const std = @import("std");
 const read = utils.read;
 const DbCtx = @import("../db/ctx.zig").DbCtx;
+const Node = @import("node.zig");
 
-fn saveCommon(ctx: *DbCtx) c_int {
+fn saveCommon(ctx: *DbCtx, te: Node.Type) c_int {
     var com: selva.selva_dump_common_data = .{
-        .ids_data = ctx.ids.ptr,
-        .ids_len = ctx.ids.len,
+        .max_id = ctx.ids[selva.selva_get_type(te) - 1],
         .errlog_buf = null,
         .errlog_size = 0,
     };
 
-    return selva.selva_dump_save_common(ctx.selva, &com);
+    return selva.selva_dump_save_common(ctx.selva, te, &com);
 }
 
 pub fn saveBlock(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op: t.OpType) !void {
@@ -72,6 +72,7 @@ fn dispatchSaveJob(jobCtxP: ?*anyopaque, _: ?*selva.SelvaDb, te: ?*selva.SelvaTy
 /// This must be ran on the modify thread.
 pub fn saveAll(threads: *Thread.Threads, thread: *Thread.Thread, q: []u8, op: t.OpType) !void {
     const qid = read(u32, q, 0);
+    const maxType = Node.getMaxType(threads.ctx);
     const resp = try thread.query.result(8, qid, op);
     var jobCtx: DispatchSaveJobCtx = .{
         .threads = threads,
@@ -80,13 +81,26 @@ pub fn saveAll(threads: *Thread.Threads, thread: *Thread.Thread, q: []u8, op: t.
         .nrDirtyBlocks = 0,
     };
 
-    const errSaveCommon = saveCommon(threads.ctx);
-    if (errSaveCommon == 0) {
-        selva.selva_foreach_block(threads.ctx.selva, selva.SELVA_TYPE_BLOCK_STATUS_DIRTY, dispatchSaveJob, &jobCtx);
+    utils.write(resp, @as(i32, 0), 0);
+
+    var i: t.TypeId = 0;
+    while (i < maxType) : (i += 1) {
+        var err: c_int = selva.SELVA_ENOENT;
+
+        if (Node.getType(threads.ctx, i + 1) catch null) |te| {
+            err = saveCommon(threads.ctx, te);
+            if (err == 0) {
+                selva.selva_foreach_block(threads.ctx.selva, te, selva.SELVA_TYPE_BLOCK_STATUS_DIRTY, dispatchSaveJob, &jobCtx);
+            }
+        }
+
+        // TODO We might want to try to save every type and return each error
+        if (err != 0) {
+            utils.write(resp, @as(i32, @intCast(err)), 0);
+            break;
+        }
     }
 
-    const err: i32 = @intCast(errSaveCommon);
-    utils.write(resp, err, 0);
     utils.write(resp, jobCtx.nrDirtyBlocks, 4);
 }
 
@@ -98,35 +112,41 @@ pub fn loadCommon(
 ) !void {
     const resp = try thread.modify.result(512, read(u32, m, 0), op);
     const errlog = resp[4..resp.len];
+    const maxType = Node.getMaxType(dbCtx);
+    const ids = jemalloc.alloc(t.NodeId, maxType);
     var com: selva.selva_dump_common_data = .{
         .errlog_buf = errlog.ptr,
         .errlog_size = errlog.len,
-        .ids_data = null,
+        .blocks = null,
+        .blocks_len = 0,
     };
-    var err: c_int = undefined;
+    var err: c_int = 0;
 
-    err = selva.selva_dump_load_common(dbCtx.selva, &com);
-    if (err == 0) {
-        // Load all blocks
-        for (com.blocks[0..com.blocks_len]) |el| {
-            if (selva.selva_get_type_by_index(dbCtx.selva, el.type)) |te| {
-                err = selva.selva_dump_load_block(dbCtx.selva, te, el.block, com.errlog_buf, com.errlog_size);
-                if (err != 0) {
-                    break;
+    var i: t.TypeId = 0;
+    outer: while (i < maxType) : (i += 1) {
+        if (Node.getType(dbCtx, i + 1) catch null) |te| {
+            defer selva.selva_dump_deinit_common(&com);
+            err = selva.selva_dump_load_common(dbCtx.selva, te, &com);
+            if (err == 0) {
+                ids[i] = com.max_id;
+
+                // Load all blocks
+                for (com.blocks[0..com.blocks_len]) |el| {
+                    err = selva.selva_dump_load_block(dbCtx.selva, te, el.block, com.errlog_buf, com.errlog_size);
+                    if (err != 0) {
+                        break :outer;
+                    }
                 }
             }
         }
     }
 
-    if (com.blocks) |blocks| {
-        jemalloc.free(blocks[0..com.blocks_len]);
+    if (dbCtx.ids.len > 0) {
+        jemalloc.free(dbCtx.ids);
     }
+    dbCtx.ids = ids;
 
-    if (com.ids_data != null) {
-        dbCtx.ids = com.ids_data[0..com.ids_len];
-    }
-
-    utils.write(resp, err, 0);
+    utils.write(resp, @as(i32, @intCast(err)), 0);
 }
 
 pub fn loadBlock(

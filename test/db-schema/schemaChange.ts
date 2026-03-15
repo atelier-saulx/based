@@ -1,17 +1,12 @@
 import test from '../shared/test.js'
-import { BasedDb } from '../../src/index.js'
 import { deepCopy } from '../../src/utils/index.js'
 import type { SchemaIn } from '../../src/schema/index.js'
 import { deepEqual } from '../shared/assert.js'
+import { testDbClient, testDbServer } from '../shared/index.js'
 
 await test('set schema dont migrate', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => db.destroy())
+  const server = await testDbServer(t)
+  const client = await testDbClient(server)
 
   let schema = {
     types: {
@@ -24,18 +19,18 @@ await test('set schema dont migrate', async (t) => {
   }
 
   let updates = 0
-  db.client.on('schema', () => {
+  client.on('schema', () => {
     updates++
   })
 
-  await db.setSchema(deepCopy(schema) as SchemaIn)
-  await db.setSchema(deepCopy(schema) as SchemaIn)
-  await db.setSchema(deepCopy(schema) as SchemaIn)
+  await client.setSchema(deepCopy(schema) as SchemaIn)
+  await client.setSchema(deepCopy(schema) as SchemaIn)
+  await client.setSchema(deepCopy(schema) as SchemaIn)
 
   deepEqual(updates, 1, '1 update')
   // deepEqual(migrates, 0, '0 migrates')
 
-  await db.setSchema({
+  await client.setSchema({
     types: {
       yes: {
         name: 'string',
@@ -65,7 +60,7 @@ await test('set schema dont migrate', async (t) => {
   deepEqual(updates, 2, '2 update')
   // deepEqual(migrates, 1, '1 migrates')
 
-  await db.setSchema({
+  await client.setSchema({
     types: {
       nope: {
         name: 'string',
@@ -80,16 +75,16 @@ await test('set schema dont migrate', async (t) => {
   deepEqual(updates, 3, '3 update')
   // deepEqual(migrates, 2, '2 migrates')
 
-  await db.create('nope', {
+  await client.create('nope', {
     name: 'abe',
   })
 
-  await db.create('yes', {
+  await client.create('yes', {
     name: 'bill',
     success: true,
   })
 
-  await db.setSchema({
+  await client.setSchema({
     types: {
       nope: {
         name: 'string',

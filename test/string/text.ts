@@ -1,0 +1,770 @@
+import test from '../shared/test.js'
+import { italy } from '../shared/examples.js'
+import { deepEqual } from '../shared/assert.js'
+import { notEqual } from 'node:assert'
+import { checksum as q2checksum } from '../../src/db-query/query/index.js'
+import { testDb } from '../shared/index.js'
+
+await test('simple', async (t) => {
+  const db = await testDb(t, {
+    locales: {
+      en: {},
+      it: { fallback: ['en'] },
+      fi: { fallback: ['en'] },
+    },
+    types: {
+      dialog: {
+        props: {
+          fun: {
+            type: 'string',
+            localized: true,
+          },
+        },
+      },
+    },
+  })
+
+  const dialogId = await db.create('dialog', {
+    fun: { en: '1', it: italy, fi: '3' },
+  })
+
+  await db.drain()
+
+  deepEqual(
+    await db.query('dialog').include('id', 'fun').get(),
+    [
+      {
+        id: dialogId,
+        fun: {
+          en: '1',
+          it: italy,
+          fi: '3',
+        },
+      },
+    ],
+    'Initial dialog with fun property',
+  )
+
+  deepEqual(
+    await db.query('dialog').include('id').get(),
+    [
+      {
+        id: dialogId,
+      },
+    ],
+    'Dialog with only id included',
+  )
+
+  deepEqual(
+    await db.query('dialog').locale('it').include('id', 'fun').get(),
+    [
+      {
+        id: dialogId,
+        fun: italy,
+      },
+    ],
+    'Dialog with locale set to it',
+  )
+
+  deepEqual(
+    await db
+      .query('dialog')
+      .locale('it')
+      .include('id', 'fun')
+      .filter('fun', 'includes', 'fliperdieflaperdiefloep', { lowerCase: true })
+      .get(),
+    [],
+    'Filter fun with non-existent text',
+  )
+
+  deepEqual(
+    await db
+      .query('dialog')
+      .include('id', 'fun')
+      .filter('fun', 'includes', 'italy', { lowerCase: true })
+      .get(),
+    [
+      {
+        id: dialogId,
+        fun: {
+          en: '1',
+          it: italy,
+          fi: '3',
+        },
+      },
+    ],
+    'Filter fun with text italy',
+  )
+
+  deepEqual(
+    await db
+      .query('dialog')
+      .locale('it')
+      .include('id', 'fun')
+      .filter('fun', 'includes', 'italy', { lowerCase: true })
+      .get(),
+    [
+      {
+        id: dialogId,
+        fun: italy,
+      },
+    ],
+    'Filter fun with text italy and locale set to it',
+  )
+
+  deepEqual(
+    await db
+      .query('dialog')
+      .include('id', 'fun')
+      .filter('fun.en', 'includes', 'italy', { lowerCase: true })
+      .get(),
+    [],
+    'Filter fun.en with text italy',
+  )
+
+  deepEqual(
+    await db
+      .query('dialog')
+      .include('id', 'fun')
+      .filter('fun.it', 'includes', 'italy', { lowerCase: true })
+      .get(),
+    [
+      {
+        id: dialogId,
+        fun: {
+          en: '1',
+          it: italy,
+          fi: '3',
+        },
+      },
+    ],
+    'Filter fun.it with text italy',
+  )
+
+  deepEqual(
+    await db
+      .query('dialog')
+      .locale('en')
+      .include('id', 'fun')
+      .filter('fun.it', 'includes', 'italy', { lowerCase: true })
+      .get(),
+    [
+      {
+        id: 1,
+        fun: '1',
+      },
+    ],
+    'Filter fun.it with text italy and locale set to en',
+  )
+
+  const mrSnurfInFinland = await db.create(
+    'dialog',
+    {
+      fun: 'mr snurf in finland',
+    },
+    { locale: 'fi' },
+  )
+
+  deepEqual(
+    await db.query('dialog').include('id', 'fun').locale('fi').get(),
+    [
+      {
+        id: dialogId,
+        fun: '3',
+      },
+      {
+        id: mrSnurfInFinland,
+        fun: 'mr snurf in finland',
+      },
+    ],
+    'Dialog with mr snurf in finland',
+  )
+
+  await db.update(
+    'dialog',
+    mrSnurfInFinland,
+    {
+      fun: 'mr snurf in finland!',
+    },
+    { locale: 'fi' },
+  )
+
+  deepEqual(
+    await db.query('dialog').include('id', 'fun').locale('fi').get(),
+    [
+      {
+        id: dialogId,
+        fun: '3',
+      },
+      {
+        id: mrSnurfInFinland,
+        fun: 'mr snurf in finland!',
+      },
+    ],
+    'Updated mr snurf in finland',
+  )
+
+  const derpderp = await db.create('dialog', {})
+
+  deepEqual(
+    await db.query('dialog', mrSnurfInFinland).get(),
+    {
+      id: mrSnurfInFinland,
+      fun: {
+        fi: 'mr snurf in finland!',
+        en: '',
+        it: '',
+      },
+    },
+    'Query mr snurf in finland',
+  )
+
+  deepEqual(
+    await db.query('dialog', derpderp).get(),
+    {
+      id: derpderp,
+      fun: {
+        en: '',
+        it: '',
+        fi: '',
+      },
+    },
+    'Query empty dialog',
+  )
+
+  deepEqual(
+    await db
+      .query('dialog')
+      .locale('fi')
+      .include('id', 'fun')
+      .filter('fun', '=', '3', { lowerCase: true })
+      .get(),
+    [
+      {
+        id: dialogId,
+        fun: '3',
+      },
+    ],
+    'Exact match on fi',
+  )
+
+  deepEqual(
+    await db
+      .query('dialog')
+      .locale('fi')
+      .include('id', 'fun')
+      .filter('fun', '=', 'mr snurf in finland!', { lowerCase: true })
+      .get(),
+    [
+      {
+        id: 2,
+        fun: 'mr snurf in finland!',
+      },
+    ],
+    'Exact match on fi #2',
+  )
+
+  await db.update('dialog', mrSnurfInFinland, {
+    fun: { en: 'drink some tea!' },
+  })
+
+  deepEqual(
+    await db
+      .query('dialog')
+      .include('fun.en')
+      .filter('fun', '=', 'mr snurf in finland!', { lowerCase: true })
+      .get(),
+    [
+      {
+        id: 2,
+        fun: { en: 'drink some tea!' },
+      },
+    ],
+    'Include specific language',
+  )
+})
+
+await test('sort', async (t) => {
+  const db = await testDb(t, {
+    locales: {
+      en: {},
+      it: { fallback: ['en'] },
+      fi: { fallback: ['en'] },
+    },
+    types: {
+      dialog: {
+        snurf: 'string',
+        fun: {
+          type: 'string',
+          localized: true,
+        },
+      },
+    },
+  })
+
+  await db.query('dialog').locale('fi').sort('fun', 'desc').get()
+
+  const id1 = await db.create('dialog', {
+    fun: { en: '3 en', fi: '1' },
+    snurf: '1',
+  })
+
+  const id2 = await db.create('dialog', {
+    fun: { en: '2 en', fi: '2' },
+    snurf: '2',
+  })
+
+  const id3 = await db.create('dialog', {
+    fun: { en: '1 en', fi: '3' },
+    snurf: '3',
+  })
+
+  const id4 = await db.create('dialog', {})
+
+  const id5 = await db.create('dialog', {
+    fun: { it: 'derp' },
+    snurf: '4',
+  })
+
+  deepEqual(
+    await db
+      .query('dialog')
+      .include('fun')
+      .locale('fi')
+      .sort('fun', 'desc')
+      .get(),
+    [
+      {
+        id: 3,
+        fun: '3',
+      },
+      {
+        id: 2,
+        fun: '2',
+      },
+      {
+        id: 1,
+        fun: '1',
+      },
+      {
+        id: 4,
+        fun: '',
+      },
+      {
+        id: 5,
+        fun: '',
+      },
+    ],
+    'Sort 1',
+  )
+
+  deepEqual(
+    await db.query('dialog').include('fun').sort('fun.fi', 'desc').get(),
+    [
+      { id: 3, fun: { en: '1 en', fi: '3', it: '' } },
+      { id: 2, fun: { en: '2 en', fi: '2', it: '' } },
+      { id: 1, fun: { en: '3 en', fi: '1', it: '' } },
+      { id: 4, fun: { en: '', it: '', fi: '' } },
+      { id: 5, fun: { en: '', it: 'derp', fi: '' } },
+    ],
+  )
+
+  deepEqual(
+    await db
+      .query('dialog')
+      .locale('en')
+      .include('fun')
+      .sort('fun', 'desc')
+      .get(),
+    [
+      { id: 1, fun: '3 en' },
+      { id: 2, fun: '2 en' },
+      { id: 3, fun: '1 en' },
+      { id: 4, fun: '' },
+      { id: 5, fun: '' },
+    ],
+  )
+
+  await db.update('dialog', id5, {
+    fun: { fi: '0' },
+  })
+
+  deepEqual(
+    await db
+      .query('dialog')
+      .locale('fi')
+      .include('fun')
+      .sort('fun', 'desc')
+      .get(),
+    [
+      {
+        id: 3,
+        fun: '3',
+      },
+      {
+        id: 2,
+        fun: '2',
+      },
+      {
+        id: 1,
+        fun: '1',
+      },
+      {
+        id: 5,
+        fun: '0',
+      },
+      {
+        id: 4,
+        fun: '',
+      },
+    ],
+  )
+
+  await db.delete('dialog', id5)
+
+  deepEqual(
+    await db
+      .query('dialog')
+      .locale('fi')
+      .include('fun')
+      .sort('fun', 'desc')
+      .get(),
+    [
+      {
+        id: 3,
+        fun: '3',
+      },
+      {
+        id: 2,
+        fun: '2',
+      },
+      {
+        id: 1,
+        fun: '1',
+      },
+      {
+        id: 4,
+        fun: '',
+      },
+    ],
+  )
+
+  deepEqual(await db.query('dialog').locale('fi').sort('snurf', 'desc').get(), [
+    { id: 3, fun: '3', snurf: '3' },
+    { id: 2, fun: '2', snurf: '2' },
+    { id: 1, fun: '1', snurf: '1' },
+    { id: 4, snurf: '', fun: '' },
+  ])
+
+  db.update('dialog', id1, {
+    fun: null,
+  })
+
+  await db.drain()
+
+  db.update('dialog', id1, {
+    snurf: null,
+  })
+
+  await db.drain()
+
+  deepEqual(await db.query('dialog').locale('fi').sort('snurf', 'desc').get(), [
+    { id: 3, fun: '3', snurf: '3' },
+    { id: 2, fun: '2', snurf: '2' },
+    { id: 1, fun: '', snurf: '' },
+    { id: 4, snurf: '', fun: '' },
+  ])
+
+  deepEqual(await db.query('dialog').locale('fi').sort('fun').get(), [
+    { id: 4, snurf: '', fun: '' },
+    { id: 1, fun: '', snurf: '' },
+    { id: 2, fun: '2', snurf: '2' },
+    { id: 3, fun: '3', snurf: '3' },
+  ])
+
+  db.update('dialog', id3, {
+    fun: null,
+  })
+
+  await db.drain()
+
+  deepEqual(await db.query('dialog').locale('fi').sort('fun').get(), [
+    { id: 4, snurf: '', fun: '' },
+    { id: 3, snurf: '3', fun: '' },
+    { id: 1, snurf: '', fun: '' },
+    { id: 2, fun: '2', snurf: '2' },
+  ])
+
+  db.update(
+    'dialog',
+    id3,
+    {
+      fun: '0',
+    },
+    { locale: 'fi' },
+  )
+  await db.drain()
+
+  deepEqual(await db.query('dialog').locale('fi').sort('fun').get(), [
+    { id: 4, snurf: '', fun: '' },
+    { id: 1, snurf: '', fun: '' },
+    { id: 3, snurf: '3', fun: '0' },
+    { id: 2, fun: '2', snurf: '2' },
+  ])
+
+  db.update(
+    'dialog',
+    id3,
+    {
+      fun: null,
+    },
+    { locale: 'fi' },
+  )
+  await db.drain()
+
+  deepEqual(
+    await db.query('dialog').locale('fi').sort('fun').get(),
+    [
+      { id: 4, snurf: '', fun: '' },
+      { id: 3, snurf: '3', fun: '' },
+      { id: 1, snurf: '', fun: '' },
+      { id: 2, fun: '2', snurf: '2' },
+    ],
+    'After removal of a whole field',
+  )
+
+  db.update('dialog', id3, {
+    fun: {
+      fi: '0',
+    },
+  })
+  await db.drain()
+
+  deepEqual(
+    await db.query('dialog').locale('fi').sort('fun').get(),
+    [
+      { id: 4, snurf: '', fun: '' },
+      { id: 1, snurf: '', fun: '' },
+      { id: 3, snurf: '3', fun: '0' },
+      { id: 2, fun: '2', snurf: '2' },
+    ],
+    'Fun dialog',
+  )
+
+  db.update('dialog', id3, {
+    fun: {
+      fi: 'a',
+    },
+  })
+  await db.drain()
+
+  db.update('dialog', id3, {
+    fun: {
+      fi: null,
+    },
+  })
+  await db.drain()
+
+  deepEqual(
+    await db.query('dialog').locale('fi').sort('fun').get(),
+    [
+      { id: 4, snurf: '', fun: '' },
+      { id: 3, snurf: '3', fun: '' },
+      { id: 1, snurf: '', fun: '' },
+      { id: 2, fun: '2', snurf: '2' },
+    ],
+    'setting lang in object to null',
+  )
+})
+
+await test('in object only', async (t) => {
+  const db = await testDb(t, {
+    locales: {
+      en: {},
+      it: {},
+    },
+    types: {
+      user: {
+        dict: {
+          type: 'object',
+          props: {
+            nice: {
+              type: 'string',
+              localized: true,
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const user1 = await db.create('user', {
+    dict: {
+      nice: {
+        en: 'a',
+      },
+    },
+  })
+
+  deepEqual(await db.query('user', user1).get(), {
+    id: 1,
+    dict: { nice: { en: 'a', it: '' } },
+  })
+})
+
+await test('correct return from obj', async (t) => {
+  const db = await testDb(t, {
+    locales: {
+      en: {},
+      it: {},
+    },
+    types: {
+      user: {
+        name: {
+          type: 'string',
+          localized: true,
+        },
+        dict: {
+          type: 'object',
+          props: {
+            nice: {
+              type: 'string',
+              localized: true,
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const user1 = await db.create('user', {
+    dict: {
+      nice: {
+        en: 'cool guy',
+      },
+    },
+  })
+
+  deepEqual(await db.query('user', user1).get(), {
+    id: 1,
+    dict: { nice: { en: 'cool guy', it: '' } },
+    name: { en: '', it: '' },
+  })
+})
+
+await test('clear field', async (t) => {
+  const db = await testDb(t, {
+    locales: {
+      en: {},
+      it: {},
+    },
+    types: {
+      user: {
+        name: {
+          type: 'string',
+          localized: true,
+        },
+      },
+    },
+  })
+
+  const user1 = await db.create('user', {
+    name: { en: 'coolnameEN', it: 'coolnameIT' },
+  })
+
+  deepEqual(await db.query('user', user1).get(), {
+    id: 1,
+    name: { en: 'coolnameEN', it: 'coolnameIT' },
+  })
+
+  await db.update(
+    'user',
+    user1,
+    {
+      name: '',
+    },
+    { locale: 'en' },
+  )
+
+  deepEqual(await db.query('user', user1).get(), {
+    id: 1,
+    name: { en: '', it: 'coolnameIT' },
+  })
+})
+
+await test('text and compression', async (t) => {
+  const db = await testDb(t, {
+    locales: {
+      en: {},
+      it: {},
+    },
+    types: {
+      user: {
+        article: {
+          type: 'string',
+          localized: true,
+        },
+      },
+    },
+  })
+
+  const user1 = await db.create('user', {
+    article: { en: italy, it: 'cool' },
+  })
+
+  deepEqual(await db.query('user', user1).get(), {
+    id: 1,
+    article: { en: italy, it: 'cool' },
+  })
+
+  await db.update(
+    'user',
+    user1,
+    {
+      article: '',
+    },
+    { locale: 'en' },
+  )
+
+  deepEqual(await db.query('user', user1).get(), {
+    id: 1,
+    article: { en: '', it: 'cool' },
+  })
+})
+
+await test('text and crc32', async (t) => {
+  const db = await testDb(t, {
+    locales: {
+      en: {},
+      it: {},
+    },
+    types: {
+      user: {
+        article: {
+          type: 'string',
+          localized: true,
+        },
+      },
+    },
+  })
+
+  const user1 = await db.create('user', {
+    article: {
+      en: '',
+      it: 'a',
+    },
+  })
+
+  const checksum = q2checksum(await db.query('user', user1).get())
+
+  await db.update('user', user1, {
+    article: {
+      en: '',
+      it: 'b',
+    },
+  })
+
+  const checksum2 = q2checksum(await db.query('user', user1).get())
+
+  notEqual(checksum, checksum2, 'Checksum is not the same')
+})

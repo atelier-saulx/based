@@ -4,7 +4,6 @@ const selva = @import("selva.zig");
 const t = @import("../types.zig");
 const Node = @import("node.zig");
 const Schema = @import("schema.zig");
-const Modify = @import("../modify/common.zig");
 const DbCtx = @import("../db/ctx.zig").DbCtx;
 
 pub const ReferenceSmall = selva.ReferenceSmall;
@@ -12,17 +11,17 @@ pub const ReferenceLarge = selva.ReferenceLarge;
 pub const ReferenceAny = selva.ReferenceAny;
 pub const References = selva.References;
 
-pub inline fn preallocReferences(ctx: *Modify.ModifyCtx, len: u64) void {
-    _ = selva.c.selva_fields_prealloc_refs(ctx.db.selva.?, ctx.node.?, ctx.fieldSchema.?, len);
+pub inline fn preallocReferences2(db: *DbCtx, node: Node.Node, fieldSchema: Schema.FieldSchema, len: u64) void {
+    _ = selva.c.selva_fields_prealloc_refs(db.selva, node, fieldSchema, len);
 }
 
 pub inline fn getReference(node: Node.Node, fieldSchema: Schema.FieldSchema) ?ReferenceLarge {
     return selva.c.selva_fields_get_reference(node, fieldSchema);
 }
 
-pub fn deleteReference(ctx: *Modify.ModifyCtx, node: Node.Node, fieldSchema: Schema.FieldSchema, id: u32) !void {
+pub fn deleteReference(db: *DbCtx, node: Node.Node, fieldSchema: Schema.FieldSchema, id: u32) !void {
     try errors.selva(selva.c.selva_fields_del_ref(
-        ctx.db.selva,
+        db.selva,
         node,
         fieldSchema,
         id,
@@ -30,7 +29,7 @@ pub fn deleteReference(ctx: *Modify.ModifyCtx, node: Node.Node, fieldSchema: Sch
 
     const efc = selva.c.selva_get_edge_field_constraint(fieldSchema);
     const dstType = efc.*.dst_node_type;
-    selva.markDirty(ctx, dstType, id);
+    selva.markDirty(db, dstType, id);
 }
 
 pub fn referencesHas(refs: References, dstNodeId: u32) bool {
@@ -48,15 +47,15 @@ pub inline fn referencesGet(refs: ?References, dstNodeId: u32) ReferenceAny {
 // comptime desc: bool = false,
 //. add to the iterators
 
-pub fn ReferencesIterator(comptime desc: bool) type {
+pub fn ReferencesIterator(comptime order: t.Order) type {
     return struct {
         refs: References,
         dstType: Node.Type,
         i: u32 = 0,
-        pub fn next(self: *ReferencesIterator(desc)) ?Node.Node {
+        pub fn next(self: *ReferencesIterator(order)) ?Node.Node {
             // assert self.refs.size == selva.c.SELVA_NODE_REFERENCE_SMALL and
             if (self.i < self.refs.nr_refs) {
-                const index = if (desc) self.refs.nr_refs - self.i else self.i;
+                const index = if (order == .desc) self.refs.nr_refs - self.i else self.i;
                 const ref = self.refs.unnamed_0.small[index];
                 const node = Node.getNode(self.dstType, ref.dst);
                 self.i += 1;
@@ -73,15 +72,15 @@ pub const ReferencesIteratorEdgesResult = struct {
     edge: Node.Node,
 };
 
-pub fn ReferencesIteratorEdges(comptime desc: bool) type {
+pub fn ReferencesIteratorEdges(comptime order: t.Order) type {
     return struct {
         refs: References,
         dstType: Node.Type,
         edgeType: Node.Type,
         i: u32 = 0,
-        pub fn nextRef(self: *ReferencesIteratorEdges(desc)) ?ReferencesIteratorEdgesResult {
+        pub fn nextRef(self: *ReferencesIteratorEdges(order)) ?ReferencesIteratorEdgesResult {
             if (self.i < self.refs.nr_refs) {
-                const index = if (desc) self.refs.nr_refs - self.i else self.i;
+                const index = if (order == .desc) self.refs.nr_refs - self.i - 1 else self.i;
                 const ref = self.refs.unnamed_0.large[index];
                 const node = Node.getNode(self.dstType, ref.dst);
                 const edgeNode = Node.getNode(self.edgeType, ref.edge);
@@ -90,13 +89,14 @@ pub fn ReferencesIteratorEdges(comptime desc: bool) type {
                     if (edgeNode) |n2| {
                         return ReferencesIteratorEdgesResult{ .node = n1, .edge = n2 };
                     }
+                    // no edge but node exsits
                 }
             }
             return null;
         }
-        pub fn next(self: *ReferencesIteratorEdges(desc)) ?Node.Node {
+        pub fn next(self: *ReferencesIteratorEdges(order)) ?Node.Node {
             if (self.i < self.refs.nr_refs) {
-                const index = if (desc) self.refs.nr_refs - self.i else self.i;
+                const index = if (order == .desc) self.refs.nr_refs - self.i - 1 else self.i;
                 const ref = self.refs.unnamed_0.large[index];
                 const node = Node.getNode(self.dstType, ref.dst);
                 self.i = self.i + 1;
@@ -110,35 +110,35 @@ pub fn ReferencesIteratorEdges(comptime desc: bool) type {
 }
 
 pub fn getReferences(
-    comptime desc: bool,
-    comptime edge: bool,
+    comptime order: t.Order,
+    comptime edge: t.Edge,
     db: *DbCtx,
     node: Node.Node,
     fieldSchema: Schema.FieldSchema,
-) if (edge == false) ?ReferencesIterator(desc) else ?ReferencesIteratorEdges(desc) {
+) if (edge == .noEdge) ?ReferencesIterator(order) else ?ReferencesIteratorEdges(order) {
     const refs = selva.c.selva_fields_get_references(node, fieldSchema);
     if (refs == null or fieldSchema.type != selva.c.SELVA_FIELD_TYPE_REFERENCES) {
         return null;
     }
     const dstType = Node.getRefDstType(db, fieldSchema) catch return null;
-    if (edge) {
+    if (edge == .edge) {
         const edgeType = Node.getEdgeType(db, fieldSchema) catch return null;
-        return ReferencesIteratorEdges(desc){ .refs = refs, .dstType = dstType, .edgeType = edgeType };
+        return ReferencesIteratorEdges(order){ .refs = refs, .dstType = dstType, .edgeType = edgeType };
     } else {
-        return ReferencesIterator(desc){ .refs = refs, .dstType = dstType };
+        return ReferencesIterator(order){ .refs = refs, .dstType = dstType };
     }
 }
 
 pub fn iterator(
-    comptime desc: bool,
-    comptime edge: bool,
+    comptime order: t.Order,
+    comptime edge: t.Edge,
     db: *DbCtx,
     node: Node.Node,
     prop: u8,
     typeEntry: selva.Type,
-) !if (edge == false) ReferencesIterator(desc) else ReferencesIteratorEdges(desc) {
+) !if (edge == .noEdge) ReferencesIterator(order) else ReferencesIteratorEdges(order) {
     const fieldSchema = try Schema.getFieldSchema(typeEntry, prop);
-    const it = getReferences(desc, edge, db, node, fieldSchema);
+    const it = getReferences(order, edge, db, node, fieldSchema);
     if (it) |r| {
         return r;
     } else {
@@ -146,15 +146,15 @@ pub fn iterator(
     }
 }
 
-pub inline fn clearReferences(ctx: *Modify.ModifyCtx, node: Node.Node, fieldSchema: Schema.FieldSchema) void {
-    selva.c.selva_fields_clear_references(ctx.db.selva, node, fieldSchema);
+pub fn clearReferences(db: *DbCtx, node: Node.Node, fieldSchema: Schema.FieldSchema) void {
+    selva.c.selva_fields_clear_references(db.selva, node, fieldSchema);
 }
 
-pub fn writeReference(ctx: *Modify.ModifyCtx, src: Node.Node, fieldSchema: Schema.FieldSchema, dst: Node.Node) !?ReferenceLarge {
+pub fn writeReference(db: *DbCtx, src: Node.Node, fieldSchema: Schema.FieldSchema, dst: Node.Node) !?ReferenceLarge {
     var refAny: selva.c.SelvaNodeReferenceAny = undefined;
 
     errors.selva(selva.c.selva_fields_reference_set(
-        ctx.db.selva,
+        db.selva,
         src,
         fieldSchema,
         dst,
@@ -178,22 +178,21 @@ pub fn writeReference(ctx: *Modify.ModifyCtx, src: Node.Node, fieldSchema: Schem
     return refAny.p.large;
 }
 
-pub fn putReferences(ctx: *Modify.ModifyCtx, node: Node.Node, fieldSchema: Schema.FieldSchema, ids: []u32) !void {
-    try errors.selva(selva.c.selva_fields_references_insert_tail(ctx.db.selva, node, fieldSchema, try Node.getRefDstType(ctx.db, fieldSchema), ids.ptr, ids.len));
-
+pub fn putReferences(db: *DbCtx, node: Node.Node, fieldSchema: Schema.FieldSchema, ids: []u32) !void {
+    try errors.selva(selva.c.selva_fields_references_insert_tail(db.selva, node, fieldSchema, try Node.getRefDstType(db, fieldSchema), ids.ptr, ids.len));
     const efc = selva.c.selva_get_edge_field_constraint(fieldSchema);
     const dstType = efc.*.dst_node_type;
     for (ids) |id| {
-        selva.markDirty(ctx, dstType, id);
+        selva.markDirty(db, dstType, id);
     }
 }
 
 // @param index 0 = first; -1 = last.
-pub fn insertReference(ctx: *Modify.ModifyCtx, node: Node.Node, fieldSchema: Schema.FieldSchema, dstNode: Node.Node, index: isize, reorder: bool) !selva.c.SelvaNodeReferenceAny {
-    const te_dst = selva.c.selva_get_type_by_node(ctx.db.selva, dstNode);
+pub fn insertReference(db: *DbCtx, node: Node.Node, fieldSchema: Schema.FieldSchema, dstNode: Node.Node, index: isize, reorder: bool) !selva.c.SelvaNodeReferenceAny {
+    const te_dst = selva.c.selva_get_type_by_node(db.selva, dstNode);
     var ref: selva.c.SelvaNodeReferenceAny = undefined;
     const insertFlags: selva.c.selva_fields_references_insert_flags = if (reorder) selva.c.SELVA_FIELDS_REFERENCES_INSERT_FLAGS_REORDER else 0;
-    const code = selva.c.selva_fields_references_insert(ctx.db.selva, node, fieldSchema, index, insertFlags, te_dst, dstNode, &ref);
+    const code = selva.c.selva_fields_references_insert(db.selva, node, fieldSchema, index, insertFlags, te_dst, dstNode, &ref);
 
     if (code != selva.c.SELVA_EEXIST) {
         try errors.selva(code);
@@ -202,7 +201,7 @@ pub fn insertReference(ctx: *Modify.ModifyCtx, node: Node.Node, fieldSchema: Sch
         // relevant when updating
         const efc = selva.c.selva_get_edge_field_constraint(fieldSchema);
         const dstType = efc.*.dst_node_type;
-        selva.markDirty(ctx, dstType, Node.getNodeId(dstNode));
+        selva.markDirty(db, dstType, Node.getNodeId(dstNode));
     }
 
     return ref;

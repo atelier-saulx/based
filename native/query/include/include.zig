@@ -8,8 +8,8 @@ const Fields = @import("../../selva/fields.zig");
 const opts = @import("opts.zig");
 const append = @import("append.zig");
 const t = @import("../../types.zig");
-const multiple = @import("../multiple.zig");
-const single = @import("../single.zig");
+const Multiple = @import("../multiple/references.zig");
+const Single = @import("../single.zig");
 const References = @import("../../selva/references.zig");
 const aggregateRefs = @import("../aggregates/references.zig");
 
@@ -22,7 +22,7 @@ inline fn get(typeEntry: Node.Type, node: Node.Node, header: anytype) ![]u8 {
     );
 }
 
-pub fn recursionErrorBoundary(
+pub fn recursionErrorBoundarySingleRef(
     cb: anytype,
     node: Node.Node,
     ctx: *Query.QueryCtx,
@@ -31,7 +31,21 @@ pub fn recursionErrorBoundary(
     index: *usize,
 ) void {
     cb(ctx, q, node, typeEntry, index) catch |err| {
-        std.debug.print("Include: recursionErrorBoundary: Error {any} \n", .{err});
+        std.debug.print("Include Reference: recursionErrorBoundary: Error {any} \n", .{err});
+    };
+}
+
+pub fn recursionErrorBoundaryRefs(
+    cb: anytype,
+    comptime edge: t.EdgeType,
+    node: Node.Node,
+    ctx: *Query.QueryCtx,
+    q: []u8,
+    typeEntry: Node.Type,
+    index: *usize,
+) void {
+    cb(edge, ctx, q, node, typeEntry, index) catch |err| {
+        std.debug.print("Include References: recursionErrorBoundary: Error {any} \n", .{err});
     };
 }
 
@@ -41,25 +55,26 @@ pub fn include(
     q: []u8,
     typeEntry: Node.Type,
 ) !void {
-    // comptime {
-    //     // This funciton has a lot of recursion so you need to increase the allowed branch eval amount
-    //     @setEvalBranchQuota(1000);
-    // }
-
     var i: usize = 0;
+
     while (i < q.len) {
         const op: t.IncludeOp = @enumFromInt(q[i]);
 
         switch (op) {
-            // add .referenceEdge?
             .reference => {
-                recursionErrorBoundary(single.reference, node, ctx, q, typeEntry, &i);
+                recursionErrorBoundarySingleRef(Single.reference, node, ctx, q, typeEntry, &i);
             },
             .referenceEdge => {
-                recursionErrorBoundary(single.referenceEdge, node, ctx, q, typeEntry, &i);
+                recursionErrorBoundarySingleRef(Single.referenceEdge, node, ctx, q, typeEntry, &i);
             },
             .references => {
-                recursionErrorBoundary(multiple.references, node, ctx, q, typeEntry, &i);
+                recursionErrorBoundaryRefs(Multiple.references, .noEdge, node, ctx, q, typeEntry, &i);
+            },
+            .referencesEdge => {
+                recursionErrorBoundaryRefs(Multiple.references, .edge, node, ctx, q, typeEntry, &i);
+            },
+            .referencesEdgeInclude => {
+                recursionErrorBoundaryRefs(Multiple.references, .includeEdge, node, ctx, q, typeEntry, &i);
             },
             .partial => {
                 const header = utils.readNext(t.IncludePartialHeader, q, &i);
@@ -71,33 +86,35 @@ pub fn include(
                 }
             },
             .meta => {
-                const header = utils.readNext(t.IncludeMetaHeader, q, &i);
+                // just make this into include
+                const header = utils.readNext(t.IncludeHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
                 switch (header.propType) {
-                    t.PropType.binary, t.PropType.string, t.PropType.json, t.PropType.alias => {
+                    .binary, .string, .json, .alias => {
                         try append.meta(ctx.thread, header.prop, value);
                     },
-                    t.PropType.text => {
+                    .stringLocalized, .jsonLocalized => {
                         var iter = Fields.textIterator(value);
                         while (iter.next()) |textValue| {
                             try append.meta(ctx.thread, header.prop, textValue);
                         }
                     },
                     else => {
-                        // No usefull metainfo for non-selvaString props yet
+                        // No useful metainfo for non-selvaString props yet
                     },
                 }
             },
             .metaWithOpts => {
-                var header = utils.readNext(t.IncludeMetaHeader, q, &i);
+                var header = utils.readNext(t.IncludeHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
                 switch (header.propType) {
-                    t.PropType.text => {
-                        // can be optmized... read next is quite slow because pointer
+                    .stringLocalized, .jsonLocalized => {
                         var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
                         try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.meta);
                     },
-                    else => {},
+                    else => {
+                        // Only for fallbacks and single lang
+                    },
                 }
             },
             .defaultWithOpts => {
@@ -105,11 +122,10 @@ pub fn include(
                 const value = try get(typeEntry, node, &header);
                 var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
                 switch (header.propType) {
-                    t.PropType.binary, t.PropType.string, t.PropType.json => {
+                    .binary, .string, .json => {
                         try opts.string(ctx.thread, header.prop, value, &optsHeader);
                     },
-                    t.PropType.text,
-                    => {
+                    .stringLocalized, .jsonLocalized => {
                         try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.string);
                     },
                     else => {
@@ -121,21 +137,24 @@ pub fn include(
                 const header = utils.readNext(t.IncludeHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
                 switch (header.propType) {
-                    t.PropType.text,
-                    => {
+                    .stringLocalized, .jsonLocalized => {
                         var iter = Fields.textIterator(value);
                         while (iter.next()) |textValue| {
                             try append.stripCrc32(ctx.thread, header.prop, textValue);
                         }
                     },
-                    t.PropType.binary, t.PropType.string, t.PropType.json => {
-                        // utils.printString("derp", value);
+                    .binary, .string, .json => {
                         try append.stripCrc32(ctx.thread, header.prop, value);
                     },
-                    t.PropType.microBuffer, t.PropType.vector, t.PropType.colVec => {
+                    .microBuffer, .vector, .colVec => {
                         // Fixed size
                         try ctx.thread.query.append(header.prop);
-                        try ctx.thread.query.append(value);
+                        if (value.len == 0) {
+                            const fs = try Schema.getFieldSchema(typeEntry, header.prop);
+                            _ = try ctx.thread.query.reserve(fs.unnamed_0.smb.len);
+                        } else {
+                            try ctx.thread.query.append(value);
+                        }
                     },
                     else => {
                         try append.default(ctx.thread, header.prop, value);
@@ -152,7 +171,6 @@ pub fn include(
             },
             .referencesAggregation => {
                 try aggregateRefs.aggregateRefsProps(ctx, q, node, typeEntry, &i);
-                i += q.len - i;
             },
         }
     }

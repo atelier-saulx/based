@@ -286,17 +286,6 @@ await db.query('item').sort('value').get()
 
 ## Performance Considerations
 
-### Index Creation
-
-```javascript
-// Explicit index creation (shown in test)
-db.server.createSortIndex('user', 'age')
-db.server.createSortIndex('user', 'name')
-
-// Index removal
-db.server.destroySortIndex('user', 'age')
-```
-
 ## Advanced Patterns
 
 ### Sorting with Range Limiting

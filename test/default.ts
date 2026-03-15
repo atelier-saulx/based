@@ -1,23 +1,7 @@
-import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 import { convertToTimestamp } from '../src/utils/index.js'
-
-const derp = new Set([
-  '$nice',
-  '$role',
-  '$count',
-  '$score',
-  '$flag',
-  '$amount',
-  '$big',
-  '$huge',
-  '$max',
-  '$label',
-  '$bin',
-  '$timestamp',
-  '$enum',
-])
+import { testDb } from './shared/index.js'
 
 const defaultTimestamp = '2023-03-15T12:00:00.000Z'
 const defaultJson = { enabled: true, value: 10 }
@@ -25,14 +9,8 @@ const defaultBinary = new Uint8Array([1, 2, 3])
 const defaultText = { en: 'Default Label' }
 
 await test('edges', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
   // Add all supported data types as edge properties (no date/text)
-  await db.setSchema({
+  const client = await testDb(t, {
     types: {
       user: {
         props: {
@@ -61,11 +39,11 @@ await test('edges', async (t) => {
     },
   })
 
-  const userId = await db.create('user', {
-    friends: [db.create('user')],
+  const userId = await client.create('user', {
+    friends: [client.create('user', {})],
   })
 
-  deepEqual(await db.query('user', userId).include('friends.**').get(), {
+  deepEqual(await client.query('user', userId).include('friends.**').get(), {
     id: 2,
     friends: [
       {
@@ -92,13 +70,13 @@ await test('edges', async (t) => {
     ],
   })
 
-  await db.update('user', userId, {
+  await client.update('user', userId, {
     friends: {
       update: [{ id: 1, $role: 'derp' }],
     },
   })
 
-  deepEqual(await db.query('user', userId).include('friends.**').get(), {
+  deepEqual(await client.query('user', userId).include('friends.**').get(), {
     id: 2,
     friends: [
       {
@@ -125,13 +103,13 @@ await test('edges', async (t) => {
     ],
   })
 
-  await db.update('user', userId, {
+  await client.update('user', userId, {
     friends: {
       update: [{ id: 1, $nice: false }],
     },
   })
 
-  deepEqual(await db.query('user', userId).include('friends.**').get(), {
+  deepEqual(await client.query('user', userId).include('friends.**').get(), {
     id: 2,
     friends: [
       {
@@ -160,13 +138,7 @@ await test('edges', async (t) => {
 })
 
 await test('separate', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: {
       en: {},
       fi: {},
@@ -184,7 +156,8 @@ await test('separate', async (t) => {
             default: 'Default Name',
           },
           flap: {
-            type: 'text',
+            type: 'string',
+            localized: true,
             default: {
               en: 'Untitled',
               fi: 'Nimeton',
@@ -236,13 +209,7 @@ await test('separate', async (t) => {
 })
 
 await test('default values for all props in user type', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: {
       en: {},
     },
@@ -266,6 +233,7 @@ await test('default values for all props in user type', async (t) => {
             default: defaultTimestamp,
           },
           level: {
+            type: 'enum',
             enum: ['low', 'medium', 'high'],
             default: 'medium',
           },
@@ -277,12 +245,9 @@ await test('default values for all props in user type', async (t) => {
             type: 'binary',
             default: defaultBinary,
           },
-          slug: {
-            type: 'alias',
-            default: 'default-slug',
-          },
           label: {
-            type: 'text',
+            type: 'string',
+            localized: true,
             default: defaultText,
           },
           friends: {
@@ -294,6 +259,7 @@ await test('default values for all props in user type', async (t) => {
             // default: [], // something in there
           },
           meta: {
+            type: 'object',
             props: {
               rating: {
                 type: 'uint8',
@@ -323,7 +289,6 @@ await test('default values for all props in user type', async (t) => {
       level: 'medium',
       config: defaultJson,
       avatar: defaultBinary,
-      slug: 'default-slug',
       label: defaultText,
       friends: [],
       meta: { rating: 5, notes: 'Default Note' },
@@ -345,7 +310,7 @@ await test('default values for all props in user type', async (t) => {
   deepEqual(
     await db.query('user', userNullId).get(),
     {
-      id: 2,
+      id: userNullId,
       label: { en: 'Default Label' },
       isNice: true,
       count: 42,
@@ -355,26 +320,63 @@ await test('default values for all props in user type', async (t) => {
       name: 'Default Name',
       config: { enabled: true, value: 10 },
       avatar: new Uint8Array([1, 2, 3]),
-      slug: 'default-slug',
+    },
+    'User created with explicit null overrides',
+  )
+
+  const userNullId2 = await db.create('user', {
+    name: 'ha',
+    count: 1,
+    isNice: false,
+    config: { enabled: false, value: 1 },
+    avatar: new Uint8Array([5]),
+    level: 'low',
+    label: { en: 'wow' },
+    meta: { rating: 1, notes: 'haha' },
+    eventTime: 0,
+  })
+  await db.update('user', userNullId2, {
+    name: null,
+    count: null,
+    isNice: null,
+    config: null,
+    avatar: null,
+    level: null,
+    label: null,
+    eventTime: null,
+    meta: { rating: null, notes: null },
+  })
+
+  deepEqual(
+    await db.query('user', userNullId2).get(),
+    {
+      id: userNullId2,
+      label: { en: 'Default Label' },
+      isNice: true,
+      count: 42,
+      eventTime: 1678881600000,
+      level: 'medium',
+      meta: { rating: 5, notes: 'Default Note' },
+      name: 'Default Name',
+      config: { enabled: true, value: 10 },
+      avatar: new Uint8Array([1, 2, 3]),
     },
     'User created with explicit null overrides',
   )
 })
 
 await test('negative default values for numeric types', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
           negativeNumber: {
             type: 'number',
             default: -42,
+          },
+          negativeInt8: {
+            type: 'int8',
+            default: -127,
           },
           negativeInt16: {
             type: 'int16',
@@ -384,7 +386,6 @@ await test('negative default values for numeric types', async (t) => {
             type: 'int32',
             default: -123456,
           },
-          // int8 already tested with negative value in edges test
           // uint types shouldn't have negative defaults
         },
       },
@@ -398,6 +399,7 @@ await test('negative default values for numeric types', async (t) => {
     {
       id: userId,
       negativeNumber: -42,
+      negativeInt8: -127,
       negativeInt16: -1234,
       negativeInt32: -123456,
     },
@@ -406,6 +408,7 @@ await test('negative default values for numeric types', async (t) => {
 
   const userOverrideId = await db.create('user', {
     negativeNumber: -100,
+    negativeInt8: -50,
     negativeInt16: -2000,
     negativeInt32: -500000,
   })
@@ -414,6 +417,7 @@ await test('negative default values for numeric types', async (t) => {
     await db.query('user', userOverrideId).get(),
     {
       id: 2,
+      negativeInt8: -50,
       negativeNumber: -100,
       negativeInt16: -2000,
       negativeInt32: -500000,
@@ -423,13 +427,7 @@ await test('negative default values for numeric types', async (t) => {
 })
 
 await test('object', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       snurp: {
         preferences: {
@@ -452,8 +450,8 @@ await test('object', async (t) => {
     {
       id: snurpId,
       preferences: {
-        units: undefined,
-        theme: undefined,
+        units: null,
+        theme: null,
         toursEnabled: true,
         analyticsEnabled: false,
       },

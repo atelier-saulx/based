@@ -19,7 +19,7 @@ export class BasedQuery extends BasedQueryAbstract {
   public payload: any
   public name: string
   public ctx: Context<InternalSessionClient>
-  public attachedCtx: AttachedCtx
+  public attachedCtx!: AttachedCtx
   public id: number
   public route: BasedRoute<'query'>
 

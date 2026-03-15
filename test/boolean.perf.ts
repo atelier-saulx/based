@@ -1,15 +1,9 @@
-import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
+import { testDb } from './shared/index.js'
 import { perf } from './shared/assert.js'
 
 await test('create 1m booleans', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       test: {
         boolean: 'boolean',

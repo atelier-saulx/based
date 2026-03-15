@@ -1,0 +1,198 @@
+import {
+  PropDef,
+  PropTree,
+  TypeDef,
+  isPropDef,
+} from '../../../schema/defs/index.js'
+import { getByPath, setByPath } from '../../../utils/path.js'
+import {
+  IncludeOp,
+  LangCode,
+  MAIN_PROP,
+  PropType,
+  pushIncludeHeader,
+  pushIncludePartialHeader,
+  pushIncludePartialProp,
+} from '../../../zigTsExports.js'
+import { Ctx, Include, QueryAst } from '../ast.js'
+import { references } from '../multiple.js'
+import { readPropDef } from '../readSchema.js'
+import { reference } from '../single.js'
+import { includeMultiLocalizedProp, includeProp } from './prop.js'
+
+type WalkCtx = {
+  tree: PropTree
+  main: { prop: PropDef; include: Include }[]
+}
+
+const includeMainProps = (
+  ctx: Ctx,
+  props: { prop: PropDef; include: Include }[],
+  typeDef: TypeDef,
+) => {
+  props.sort((a, b) =>
+    a.prop.start < b.prop.start ? -1 : a.prop.start === b.prop.start ? 0 : 1,
+  )
+  let i = 0
+  for (const { include, prop } of props) {
+    if (prop.size === 0) continue
+    // TODO HANDLE META
+    ctx.readSchema.main.props[i] = readPropDef(prop, ctx)
+    ctx.readSchema.main.len += prop.size
+    i += prop.size
+  }
+  if (props.length === typeDef.main.length) {
+    pushIncludeHeader(ctx.query, {
+      op: IncludeOp.default,
+      prop: 0,
+      propType: PropType.microBuffer,
+    })
+  } else {
+    pushIncludePartialHeader(ctx.query, {
+      op: IncludeOp.partial,
+      prop: MAIN_PROP,
+      propType: PropType.microBuffer,
+      amount: props.length,
+    })
+    for (const { prop, include } of props) {
+      pushIncludePartialProp(ctx.query, {
+        start: prop.start,
+        size: prop.size,
+      })
+    }
+  }
+}
+
+const expandEdges = (astProp: QueryAst, prop: PropDef) => {
+  if (astProp.props?.['*']?.include && prop.edges) {
+    if (!astProp.edges) {
+      astProp.edges = {}
+    }
+    for (const edge of prop.edges?.props.values()) {
+      if (!getByPath(astProp.edges, edge.path)) {
+        setByPath(astProp.edges, edge.path, { include: {} })
+      }
+    }
+  }
+}
+
+const walkProp = (
+  astProp: QueryAst,
+  ctx: Ctx,
+  typeDef: TypeDef,
+  walkCtx: WalkCtx,
+  field: string,
+) => {
+  const { main, tree } = walkCtx
+  const prop = tree.props.get(field)
+  const include = astProp.include
+  if (isPropDef(prop)) {
+    if (prop.type === PropType.references) {
+      references(astProp, ctx, prop)
+    } else if (prop.type === PropType.reference) {
+      reference(astProp, ctx, prop)
+    } else if (
+      prop.type === PropType.jsonLocalized ||
+      prop.type === PropType.stringLocalized
+    ) {
+      if (include) {
+        // Cannot have top include + individual languages
+        includeProp(ctx, prop, include)
+      } else {
+        const includes: Include[] = []
+        for (const lang in astProp.props) {
+          const langInclude = astProp.props[lang].include
+          if (langInclude) {
+            const langCode = LangCode[lang]
+            if (!langCode || !ctx.locales[langCode]) {
+              throw new Error(`Filter language not supported ${lang}`)
+            }
+            includes.push({ ...langInclude, langCode })
+          }
+        }
+        includeMultiLocalizedProp(ctx, prop, includes)
+      }
+    } else if (include) {
+      if (prop.id === 0) {
+        main.push({ prop, include })
+      } else {
+        includeProp(ctx, prop, include)
+      }
+    }
+  } else if (prop) {
+    walk(astProp, ctx, typeDef, {
+      main,
+      tree: prop,
+    })
+  } else {
+    throw new Error(`Prop does not exist ${field}`)
+  }
+}
+
+const walk = (
+  ast: QueryAst,
+  ctx: Ctx,
+  typeDef: TypeDef,
+  walkCtx: WalkCtx,
+  fromRef?: PropDef,
+) => {
+  if (ast.include) {
+    ast.props ??= {}
+    ast.props['*'] ??= {}
+    ast.props['*'].include ??= {}
+  } else if (!ast.props && !ast.edges) {
+    ast.props = { '*': { include: {} } }
+  }
+
+  if (ast.props?.['*'] && fromRef) {
+    expandEdges(ast, fromRef)
+  }
+  // if ast.include.glob === '*' include all from schema
+  // same for ast.include.glob === '**'
+
+  if (ast.props) {
+    for (const field in ast.props) {
+      const astProp = ast.props[field]
+      if (field === 'id') {
+        continue
+      }
+      if (field === '*') {
+        for (const [field, prop] of walkCtx.tree.props) {
+          if (!('ref' in prop) && !(field in ast.props)) {
+            walkProp(astProp, ctx, typeDef, walkCtx, field)
+          }
+        }
+      } else if (field === '**') {
+        for (const [field, prop] of typeDef.tree.props) {
+          if (!(field in ast.props)) {
+            walkProp(astProp, ctx, typeDef, walkCtx, field)
+          }
+        }
+      } else {
+        walkProp(astProp, ctx, typeDef, walkCtx, field)
+      }
+    }
+  }
+  return walkCtx
+}
+
+export const include = (
+  ast: QueryAst,
+  ctx: Ctx,
+  typeDef: TypeDef,
+  fromRef?: PropDef,
+): number => {
+  const startIndex = ctx.query.length
+  const { main } = walk(
+    ast,
+    ctx,
+    typeDef,
+    {
+      main: [],
+      tree: typeDef.tree,
+    },
+    fromRef,
+  )
+  if (main.length) includeMainProps(ctx, main, typeDef)
+  return ctx.query.length - startIndex
+}

@@ -3,12 +3,13 @@ import {
   AggItem,
   Item,
   Meta,
-  ReaderSchema,
-  ReaderSchemaEnum,
+  ReadMeta,
+  ReadSchema,
+  ReadSchemaEnum,
   ReadInstruction,
 } from './types.js'
 import { readAggregate } from './aggregate.js'
-import { addLangMetaProp, addMetaProp, addProp } from './addProps.js'
+import { addMetaProp, addProp } from './addProps.js'
 import { readProp } from './prop.js'
 import { readMain } from './main.js'
 import { undefinedProps } from './undefined.js'
@@ -19,50 +20,11 @@ import {
   readIncludeResponseMeta,
   ReadOp,
 } from '../../zigTsExports.js'
+import { readMeta } from './meta.js'
 
 export * from './types.js'
 export * from './string.js'
 export * from './schema/deserialize.js'
-
-const meta: ReadInstruction = (q, result, i, item) => {
-  const metaResponse: IncludeResponseMeta = readIncludeResponseMeta(
-    result,
-    i - 1,
-  )
-  const prop = metaResponse.prop
-  const propDef = q.props[prop]
-  const lang = metaResponse.lang
-  const propType = propDef.typeIndex
-
-  if (propDef.meta == 1 || propDef.meta === 3) {
-    propDef.readBy = q.readId
-  }
-
-  const meta: Meta = {
-    crc32: metaResponse.crc32,
-    compressed: metaResponse.compressed,
-    size: metaResponse.size,
-    checksum: combineToNumber(metaResponse.crc32, metaResponse.size),
-    compressedSize: metaResponse.size,
-  }
-
-  if (lang !== 0) {
-    meta.lang = propDef.locales![lang]
-  }
-
-  i += IncludeResponseMetaByteSize - 1
-  if (meta.compressed) {
-    meta.compressedSize = readUint32(result, i)
-    i += 4
-  }
-
-  if (propType === PropType.text && propDef.locales && propDef.meta! < 3) {
-    addLangMetaProp(propDef, meta, item, lang)
-  } else {
-    addMetaProp(propDef, meta, item)
-  }
-  return i
-}
 
 const aggregation: ReadInstruction = (q, result, i, item) => {
   let field = result[i]
@@ -109,19 +71,20 @@ const references: ReadInstruction = (q, result, i, item) => {
 }
 
 const edge: ReadInstruction = (q, result, i, item) => {
-  return readInstruction(result[i], q.edges!, result, i + 1, item)
+  const size = readUint32(result, i)
+  i += 4
+  return readProps(q.edges!, result, i, i + size, item)
 }
 
 const readInstruction = (
   instruction: number,
-  q: ReaderSchema,
+  q: ReadSchema,
   result: Uint8Array,
   i: number,
   item: Item,
 ): number => {
-  console.log(result)
   if (instruction === ReadOp.meta) {
-    return meta(q, result, i, item)
+    return readMeta(q, result, i, item)
   } else if (instruction === ReadOp.aggregation) {
     return aggregation(q, result, i, item)
   } else if (instruction === ReadOp.reference) {
@@ -138,7 +101,7 @@ const readInstruction = (
 }
 
 export const readProps = (
-  q: ReaderSchema,
+  q: ReadSchema,
   result: Uint8Array,
   offset: number,
   end: number,
@@ -162,10 +125,11 @@ export const readProps = (
 }
 
 export const resultToObject = (
-  q: ReaderSchema,
+  q: ReadSchema,
   result: Uint8Array,
   end: number,
   offset: number = 0,
+  items: AggItem | [Item] = [],
 ) => {
   if (q.aggregate) {
     return readAggregate(q, result, 0, result.byteLength - 4)
@@ -174,13 +138,12 @@ export const resultToObject = (
   const len = readUint32(result, offset)
 
   if (len === 0) {
-    if (q.type === ReaderSchemaEnum.single) {
+    if (q.type === ReadSchemaEnum.single) {
       return null
     }
-    return []
+    return items
   }
 
-  let items: AggItem | [Item] = []
   let i = 5 + offset
 
   const readHook = q.hook
@@ -209,7 +172,7 @@ export const resultToObject = (
     }
   }
 
-  if (q.type === ReaderSchemaEnum.single) {
+  if (q.type === ReadSchemaEnum.single) {
     return items[0]
   }
 
@@ -217,11 +180,11 @@ export const resultToObject = (
 }
 
 export const readId = (
-  q: ReaderSchema,
+  q: ReadSchema,
   result: Uint8Array,
   offset: number = 0,
 ) => {
-  if (q.type === ReaderSchemaEnum.single && !q.aggregate) {
+  if (q.type === ReadSchemaEnum.single && !q.aggregate) {
     let i = 5 + offset
     return readUint32(result, i)
   }

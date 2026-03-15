@@ -1,17 +1,10 @@
-import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
+import { testDb } from '../shared/index.js'
 import { deepEqual, isSorted } from '../shared/assert.js'
 
 await test('numbers', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
   const animals = ['pony', 'whale', 'dolphin', 'dog']
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       example: {
         props: {
@@ -50,13 +43,18 @@ await test('numbers', async (t) => {
     animalsResult.push(animal)
   }
 
-  await db.drain()
-
   await db.update('example', 1, {
     u32: { increment: 100 },
   })
 
   isSorted(await db.query('example').sort('u32').include('u32').get(), 'u32')
+
+  await db.update('example', 5, {
+    u32: { increment: 100 },
+  })
+
+  isSorted(await db.query('example').sort('u32').include('u32').get(), 'u32')
+
   isSorted(
     await db.query('example').sort('boolean').include('boolean').get(),
     'boolean',
@@ -69,6 +67,7 @@ await test('numbers', async (t) => {
     await db.query('example').sort('number').include('number').get(),
     'number',
   )
+
   isSorted(
     await db.query('example').sort('timestamp').include('timestamp').get(),
     'timestamp',
@@ -80,15 +79,17 @@ await test('numbers', async (t) => {
       .sort('enum')
       .include('enum')
       .get()
-      .then((v) => v.toObject().map((v) => v.enum)),
+      .then((v) => v.map((v) => v.enum)),
     animalsResult.sort((a, b) => animals.indexOf(a) - animals.indexOf(b)),
   )
-  db.delete('example', 1)
+
+  await db.delete('example', 1)
+
   isSorted(await db.query('example').sort('u32').include('u32').get(), 'u32')
 
   await db
     .query('example')
     .include('enum')
     .get()
-    .then((v) => v.toObject().map((v) => v.enum))
+    .then((v) => v.map((v) => v.enum))
 })

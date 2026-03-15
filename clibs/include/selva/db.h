@@ -23,18 +23,16 @@ struct selva_string;
 
 struct selva_dump_common_data {
     /**
-     * Schema ids.
+     * Schema id.
      * Pointer to data returned here when loading; Data read from here when saving.
      */
-    node_id_t *ids_data __pcounted_by(ids_len);
-    size_t ids_len;
+    node_id_t max_id;
 
     /**
      * Info about all blocks related to this dump.
      * Only on load.
      */
     struct selva_dump_block {
-        node_type_t type;
         block_id_t block;
     } *blocks __pcounted_by(blocks_len);
     size_t blocks_len;
@@ -51,7 +49,7 @@ struct selva_dump_common_data {
  * Create a new DB instance.
  */
 SELVA_EXPORT
-struct SelvaDb *selva_db_create(void);
+struct SelvaDb *selva_db_create(size_t len, uint8_t schema[len]);
 
 /**
  * Destroy a DB instance.
@@ -65,18 +63,14 @@ void selva_db_destroy(struct SelvaDb *db) __attribute__((nonnull));
 SELVA_EXPORT
 int selva_db_chdir(struct SelvaDb *db, const char *pathname_str, size_t pathname_len) __attribute__((nonnull));
 
-/**
- * Create a new node type with a schema.
- * @param type must not exist before.
- */
 SELVA_EXPORT
-int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *schema_buf, size_t schema_len) __attribute__((nonnull));
+void selva_db_set_subs_hook(struct SelvaDb *db, selva_db_subs_hook_t hook, void *ctx);
 
 /**
  * Save the common/shared data of the database.
  */
 SELVA_EXPORT
-int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *com) __attribute__((nonnull));
+int selva_dump_save_common(struct SelvaDb *db, struct SelvaTypeEntry *te, struct selva_dump_common_data *com) __attribute__((nonnull));
 
 /**
  * Save a nodes block starting from start.
@@ -85,106 +79,71 @@ SELVA_EXPORT
 int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i) __attribute__((nonnull));
 
 SELVA_EXPORT
-int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *com) __attribute__((nonnull));
+int selva_dump_load_common(struct SelvaDb *db, struct SelvaTypeEntry *te, struct selva_dump_common_data *com) __attribute__((nonnull));
+
+/**
+ * This must be called after every selva_dump_load_common().
+ */
+SELVA_EXPORT
+void selva_dump_deinit_common(struct selva_dump_common_data *com);
 
 SELVA_EXPORT
 int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i, char *errlog_buf, size_t errlog_size) __attribute__((nonnull));
+
+SELVA_EXPORT
+inline node_type_t selva_get_max_type(const struct SelvaDb *db) [[reproducible]];
 
 /**
  * Find a type by type id.
  */
 SELVA_EXPORT
-struct SelvaTypeEntry *selva_get_type_by_index(const struct SelvaDb *db, node_type_t type) __attribute__((nonnull));
+inline struct SelvaTypeEntry *selva_get_type_by_index(struct SelvaDb *db, node_type_t type) [[reproducible]];
 
 /**
  * Get the type for node.
  */
 SELVA_EXPORT
-struct SelvaTypeEntry *selva_get_type_by_node(const struct SelvaDb *db, struct SelvaNode *node) __attribute__((nonnull, pure));
+inline struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node) [[reproducible]];
 
 SELVA_EXPORT
-inline node_type_t selva_get_type(const struct SelvaTypeEntry *te)
-#ifndef __zig
-{
-    return te->type;
-}
-#else
-;
-#endif
+inline struct SelvaDb *selva_get_db_by_te(struct SelvaTypeEntry *te);
 
 SELVA_EXPORT
-void selva_foreach_block(struct SelvaDb *db, enum SelvaTypeBlockStatus or_mask, void (*cb)(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start), void *ctx);
+inline node_type_t selva_get_type(const struct SelvaTypeEntry *te) [[reproducible]];
 
 SELVA_EXPORT
-inline block_id_t selva_get_nr_blocks(const struct SelvaTypeEntry *te)
-#ifndef __zig
-{
-    return te->blocks->len;
-}
-#else
-;
-#endif
+inline block_id_t selva_get_nr_blocks(const struct SelvaTypeEntry *te);
 
 SELVA_EXPORT
-inline block_id_t selva_get_block_capacity(const struct SelvaTypeEntry *te)
-#ifndef __zig
-{
-    return te->blocks->block_capacity;
-}
-#else
-;
-#endif
+inline block_id_t selva_get_block_capacity(const struct SelvaTypeEntry *te);
 
-inline block_id_t selva_node_id2block_i3(block_id_t block_capacity, node_id_t node_id)
+#define SELVA_NODE_ID2BLOCK_I3(block_capacity, node_id) \
+    (((node_id - 1) - ((node_id - 1) % block_capacity)) / block_capacity)
+
+static inline block_id_t selva_node_id2block_i3(block_id_t block_capacity, node_id_t node_id)
 {
     assert(node_id > 0);
-    return ((node_id - 1) - ((node_id - 1) % block_capacity)) / block_capacity;
+    return SELVA_NODE_ID2BLOCK_I3(block_capacity, node_id);
 }
 
 SELVA_EXPORT
-inline block_id_t selva_node_id2block_i(const struct SelvaTypeBlocks *blocks, node_id_t node_id)
-#ifndef __zig
-{
-    return selva_node_id2block_i3(blocks->block_capacity, node_id);
-}
-#else
-;
-#endif
+inline block_id_t selva_node_id2block_i(const struct SelvaTypeBlocks *blocks, node_id_t node_id);
 
 SELVA_EXPORT
-inline block_id_t selva_node_id2block_i2(const struct SelvaTypeEntry *te, node_id_t node_id)
-#ifndef __zig
-{
-    return selva_node_id2block_i(te->blocks, node_id);
-}
-#else
-;
-#endif
+inline block_id_t selva_node_id2block_i2(const struct SelvaTypeEntry *te, node_id_t node_id);
 
 SELVA_EXPORT
-inline node_id_t selva_block_i2start(const struct SelvaTypeEntry *te, block_id_t block_i)
-#ifndef __zig
-{
-    block_id_t block_capacity = te->blocks->block_capacity;
-    node_id_t start = block_i * block_capacity + 1;
-    return start;
-}
-#else
-;
-#endif
+inline node_id_t selva_block_i2start(const struct SelvaTypeEntry *te, block_id_t block_i);
 
 SELVA_EXPORT
-inline node_id_t selva_block_i2end(const struct SelvaTypeEntry *te, block_id_t block_i)
-#ifndef __zig
-{
-    block_id_t block_capacity = te->blocks->block_capacity;
-    node_id_t start = block_i * block_capacity + 1;
-    node_id_t end = start + block_capacity - 1;
-    return end;
-}
-#else
-;
-#endif
+inline node_id_t selva_block_i2end(const struct SelvaTypeEntry *te, block_id_t block_i);
+
+SELVA_EXPORT
+inline void selva_foreach_block(
+        struct SelvaDb *db,
+        struct SelvaTypeEntry *te,
+        enum SelvaTypeBlockStatus or_mask,
+        void (*cb)(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start), void *ctx);
 
 /**
  * \addtogroup block_status
@@ -192,62 +151,27 @@ inline node_id_t selva_block_i2end(const struct SelvaTypeEntry *te, block_id_t b
  */
 
 SELVA_EXPORT
-inline enum SelvaTypeBlockStatus selva_block_status_get(const struct SelvaTypeEntry *te, block_id_t block_i)
-#ifndef __zig
-{
-    return atomic_load(&te->blocks->blocks[block_i].status.atomic);
-}
-#else
-;
-#endif
+inline enum SelvaTypeBlockStatus selva_block_status_get(const struct SelvaTypeEntry *te, block_id_t block_i);
 
 SELVA_EXPORT
-inline void selva_block_status_replace(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus status)
-#ifndef __zig
-{
-    atomic_store_explicit(&te->blocks->blocks[block_i].status.atomic, (uint32_t)status, memory_order_seq_cst);
-}
-#else
-;
-#endif
+inline void selva_block_status_replace(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus status);
 
 /**
  * OR mask to the status.
  * @returns the previous status.
  */
 SELVA_EXPORT
-inline enum SelvaTypeBlockStatus selva_block_status_set(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask)
-#ifndef __zig
-{
-    return atomic_fetch_or_explicit(&te->blocks->blocks[block_i].status.atomic, (uint32_t)mask, memory_order_seq_cst);
-}
-#else
-;
-#endif
+inline enum SelvaTypeBlockStatus selva_block_status_set(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask);
 
 /**
  * Reset mask flags from the status.
  * @returns the previous status.
  */
 SELVA_EXPORT
-inline enum SelvaTypeBlockStatus selva_block_status_reset(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask)
-#ifndef __zig
-{
-    return atomic_fetch_and_explicit(&te->blocks->blocks[block_i].status.atomic, ~(uint32_t)mask, memory_order_seq_cst);
-}
-#else
-;
-#endif
+inline enum SelvaTypeBlockStatus selva_block_status_reset(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask);
 
 SELVA_EXPORT
-inline bool selva_block_status_eq(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask)
-#ifndef __zig
-{
-    return (atomic_load(&te->blocks->blocks[block_i].status.atomic) & (uint32_t)mask) == (uint32_t)mask;
-}
-#else
-;
-#endif
+inline bool selva_block_status_eq(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask);
 
 SELVA_EXPORT
 size_t selva_get_type_status(const struct SelvaTypeEntry *te, size_t len, uint8_t packed_statuses[len]);
@@ -261,90 +185,34 @@ size_t selva_get_type_status(const struct SelvaTypeEntry *te, size_t len, uint8_
  */
 SELVA_EXPORT
 __attribute__((nonnull, pure))
-inline const struct SelvaNodeSchema *selva_get_ns_by_te(const struct SelvaTypeEntry *te)
-#ifndef __zig
-{
-    return &te->ns;
-}
-#else
-;
-#endif
+inline const struct SelvaNodeSchema *selva_get_ns_by_te(const struct SelvaTypeEntry *te);
 
 SELVA_EXPORT
-inline const struct SelvaFieldSchema *get_fs_by_fields_schema_field(const struct SelvaFieldsSchema *fields_schema, field_t field)
-#ifndef __zig
-{
-    if (!fields_schema || field >= fields_schema->nr_fields) {
-        return nullptr;
-    }
-
-    return &fields_schema->field_schemas[field];
-}
-#else
-;
-#endif
+inline const struct SelvaFieldSchema *get_fs_by_fields_schema_field(const struct SelvaFieldsSchema *fields_schema, field_t field);
 
 /**
  * Get the field schema for field.
  */
 SELVA_EXPORT
 __attribute__((nonnull, pure))
-inline const struct SelvaFieldSchema *selva_get_fs_by_te_field(const struct SelvaTypeEntry *te, field_t field)
-#ifndef __zig
-{
-    return get_fs_by_fields_schema_field(&te->ns.fields_schema, field);
-}
-#else
-;
-#endif
+inline const struct SelvaFieldSchema *selva_get_fs_by_te_field(const struct SelvaTypeEntry *te, field_t field);
 
 /**
  * Get the field schema for field.
  */
 SELVA_EXPORT
 __attribute__((nonnull, pure))
-inline const struct SelvaFieldSchema *selva_get_fs_by_ns_field(const struct SelvaNodeSchema *ns, field_t field)
-#ifndef __zig
-{
-    return get_fs_by_fields_schema_field(&ns->fields_schema, field);
-}
-#else
-;
-#endif
+inline const struct SelvaFieldSchema *selva_get_fs_by_ns_field(const struct SelvaNodeSchema *ns, field_t field);
 
 /**
  * Get the field schema for field.
  */
 SELVA_EXPORT
 __attribute__((nonnull, pure))
-inline const struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field)
-#ifndef __zig
-{
-    struct SelvaTypeEntry *type;
-
-    type = selva_get_type_by_node(db, node);
-    if (!type) {
-        return nullptr;
-    }
-
-    return selva_get_fs_by_ns_field(&type->ns, field);
-}
-#else
-;
-#endif
+inline const struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field);
 
 SELVA_EXPORT
-#if __has_c_attribute(reproducible)
-[[reproducible]]
-#endif
-inline enum SelvaFieldType selva_get_fs_type(const struct SelvaFieldSchema *fs)
-#ifndef __zig
-{
-    return fs->type;
-}
-#else
-;
-#endif
+inline enum SelvaFieldType selva_get_fs_type(const struct SelvaFieldSchema *fs) [[reproducible]];
 
 /**
  * Get the EdgeFieldConstraint from a ref field schema.
@@ -355,28 +223,10 @@ inline enum SelvaFieldType selva_get_fs_type(const struct SelvaFieldSchema *fs)
 SELVA_EXPORT
 __attribute__((returns_nonnull))
 __attribute__((nonnull))
-inline const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const struct SelvaFieldSchema *fs)
-#ifndef __zig
-{
-    assert(fs->type == SELVA_FIELD_TYPE_REFERENCE ||
-           fs->type == SELVA_FIELD_TYPE_REFERENCES);
-    return &fs->edge_constraint;
-}
-#else
-;
-#endif
+inline const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const struct SelvaFieldSchema *fs);
 
 SELVA_EXPORT
-inline const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaDb *db, const struct EdgeFieldConstraint *efc)
-#ifndef __zig
-{
-    struct SelvaTypeEntry *te = selva_get_type_by_index(db, efc->edge_node_type);
-
-    return (te) ? &selva_get_ns_by_te(te)->fields_schema : nullptr;
-}
-#else
-;
-#endif
+inline const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaDb *db, const struct EdgeFieldConstraint *efc);
 
 /**
  * Strategy for adding new node expires.
@@ -397,14 +247,19 @@ enum selva_expire_node_strategy {
     SELVA_EXPIRE_NODE_STRATEGY_CANCEL_OLD = 2,
 };
 
+struct SelvaExpireNodeRes {
+    node_type_t type;
+    node_id_t id;
+};
+
 SELVA_EXPORT
 void selva_expire_node(struct SelvaDb *db, node_type_t type, node_id_t node_id, int64_t ts, enum selva_expire_node_strategy stg);
 
 SELVA_EXPORT
-void selva_expire_node_cancel(struct SelvaDb *db, node_type_t type, node_id_t node_id);
+void selva_expire_node_cancel(struct SelvaTypeEntry *te, node_id_t node_id);
 
 SELVA_EXPORT
-void selva_db_expire_tick(struct SelvaDb *db, int64_t now);
+struct SelvaExpireNodeRes selva_db_expire_pop(struct SelvaDb *db, int64_t now);
 
 /**
  * Delete a node.
@@ -480,28 +335,14 @@ size_t selva_node_count(const struct SelvaTypeEntry *type) __attribute__((nonnul
  */
 SELVA_EXPORT
 __attribute__((nonnull, pure))
-inline node_id_t selva_get_node_id(const struct SelvaNode *node)
-#ifndef __zig
-{
-    return node->node_id;
-}
-#else
-;
-#endif
+inline node_id_t selva_get_node_id(const struct SelvaNode *node);
 
 /**
  * Get the type of of node.
  */
 SELVA_EXPORT
 __attribute__((nonnull, pure))
-inline node_type_t selva_get_node_type(const struct SelvaNode *node)
-#ifndef __zig
-{
-    return node->type;
-}
-#else
-;
-#endif
+inline node_type_t selva_get_node_type(const struct SelvaNode *node);
 
 /**
  * \addtogroup node_hash
@@ -561,16 +402,11 @@ struct SelvaNodeRes selva_get_alias(struct SelvaTypeEntry *type, struct SelvaAli
 
 /**
  * Get alias by destination id.
- * This may not seem very useful but this is actually the way that allows you to
- * traverse all aliases to the given node_id by following the `next` pointer or
- * by calling selva_get_next_alias().
  */
 SELVA_EXPORT
 const struct SelvaAlias *selva_get_alias_by_dest(struct SelvaAliases *aliases, node_id_t dest);
 
-SELVA_EXPORT
-const struct SelvaAlias *selva_get_next_alias(const struct SelvaAlias *alias);
-
+/* TODO Is this needed as a separate func? */
 SELVA_EXPORT
 const char *selva_get_alias_name(const struct SelvaAlias *alias, size_t *len) __attribute__((nonnull, pure));
 
@@ -582,3 +418,181 @@ struct SelvaAliases *selva_get_aliases(struct SelvaTypeEntry *type, field_t fiel
  */
 SELVA_EXPORT
 void selva_remove_all_aliases(struct SelvaTypeEntry *type, node_id_t node_id);
+
+/*
+ * Inline functions that can be inlined only in C.
+ */
+#ifndef __zig
+inline node_type_t selva_get_max_type(const struct SelvaDb *db)
+{
+    assert(db->types[db->nr_types - 1].type == db->nr_types);
+    return db->nr_types;
+}
+
+inline struct SelvaTypeEntry *selva_get_type_by_index(struct SelvaDb *db, node_type_t type)
+{
+    return (type == 0 || (size_t)type - 1 >= db->nr_types) ? nullptr : &db->types[type - 1];
+}
+
+inline struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node)
+{
+    assert((size_t)node->type - 1 < db->nr_types);
+    return &db->types[node->type - 1];
+}
+
+inline struct SelvaDb *selva_get_db_by_te(struct SelvaTypeEntry *te)
+{
+    return containerof(te, struct SelvaDb, types[te->type - 1]);
+}
+
+inline node_type_t selva_get_type(const struct SelvaTypeEntry *te)
+{
+    return te->type;
+}
+
+inline block_id_t selva_get_nr_blocks(const struct SelvaTypeEntry *te)
+{
+    return te->blocks->len;
+}
+
+inline block_id_t selva_get_block_capacity(const struct SelvaTypeEntry *te)
+{
+    return te->blocks->block_capacity;
+}
+
+inline block_id_t selva_node_id2block_i(const struct SelvaTypeBlocks *blocks, node_id_t node_id)
+{
+    return SELVA_NODE_ID2BLOCK_I3(blocks->block_capacity, node_id);
+}
+
+inline block_id_t selva_node_id2block_i2(const struct SelvaTypeEntry *te, node_id_t node_id)
+{
+    return selva_node_id2block_i(te->blocks, node_id);
+}
+
+inline node_id_t selva_block_i2start(const struct SelvaTypeEntry *te, block_id_t block_i)
+{
+    block_id_t block_capacity = te->blocks->block_capacity;
+    node_id_t start = block_i * block_capacity + 1;
+    return start;
+}
+
+inline node_id_t selva_block_i2end(const struct SelvaTypeEntry *te, block_id_t block_i)
+{
+    block_id_t block_capacity = te->blocks->block_capacity;
+    node_id_t start = block_i * block_capacity + 1;
+    node_id_t end = start + block_capacity - 1;
+    return end;
+}
+
+inline void selva_foreach_block(
+        struct SelvaDb *db,
+        struct SelvaTypeEntry *te,
+        enum SelvaTypeBlockStatus or_mask,
+        void (*cb)(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start), void *ctx)
+{
+    struct SelvaTypeBlocks *blocks = te->blocks;
+
+    for (block_id_t block_i = 0; block_i < blocks->len; block_i++) {
+        struct SelvaTypeBlock *block = &blocks->blocks[block_i];
+
+        /*
+         * Note that we call it or_mask because the cb() is called if any
+         * bit of the mask is set in the status.
+         */
+        if (atomic_load_explicit(&block->status.atomic, memory_order_consume) & or_mask) {
+            cb(ctx, db, te, block_i, selva_block_i2start(te, block_i));
+        }
+    }
+}
+
+inline enum SelvaTypeBlockStatus selva_block_status_get(const struct SelvaTypeEntry *te, block_id_t block_i)
+{
+    return atomic_load(&te->blocks->blocks[block_i].status.atomic);
+}
+
+inline void selva_block_status_replace(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus status)
+{
+    atomic_store_explicit(&te->blocks->blocks[block_i].status.atomic, (uint32_t)status, memory_order_seq_cst);
+}
+
+inline enum SelvaTypeBlockStatus selva_block_status_set(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask)
+{
+    return atomic_fetch_or_explicit(&te->blocks->blocks[block_i].status.atomic, (uint32_t)mask, memory_order_seq_cst);
+}
+
+inline enum SelvaTypeBlockStatus selva_block_status_reset(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask)
+{
+    return atomic_fetch_and_explicit(&te->blocks->blocks[block_i].status.atomic, ~(uint32_t)mask, memory_order_seq_cst);
+}
+
+inline bool selva_block_status_eq(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask)
+{
+    return (atomic_load(&te->blocks->blocks[block_i].status.atomic) & (uint32_t)mask) == (uint32_t)mask;
+}
+
+inline const struct SelvaNodeSchema *selva_get_ns_by_te(const struct SelvaTypeEntry *te)
+{
+    return &te->ns;
+}
+
+inline const struct SelvaFieldSchema *get_fs_by_fields_schema_field(const struct SelvaFieldsSchema *fields_schema, field_t field)
+{
+    if (!fields_schema || field >= fields_schema->nr_fields) {
+        return nullptr;
+    }
+
+    return &fields_schema->field_schemas[field];
+}
+
+inline const struct SelvaFieldSchema *selva_get_fs_by_te_field(const struct SelvaTypeEntry *te, field_t field)
+{
+    return get_fs_by_fields_schema_field(&te->ns.fields_schema, field);
+}
+
+inline const struct SelvaFieldSchema *selva_get_fs_by_ns_field(const struct SelvaNodeSchema *ns, field_t field)
+{
+    return get_fs_by_fields_schema_field(&ns->fields_schema, field);
+}
+
+inline const struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field)
+{
+    struct SelvaTypeEntry *type;
+
+    type = selva_get_type_by_node(db, node);
+    if (!type) {
+        return nullptr;
+    }
+
+    return selva_get_fs_by_ns_field(&type->ns, field);
+}
+
+inline enum SelvaFieldType selva_get_fs_type(const struct SelvaFieldSchema *fs)
+{
+    return fs->type;
+}
+
+inline const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const struct SelvaFieldSchema *fs)
+{
+    assert(fs->type == SELVA_FIELD_TYPE_REFERENCE ||
+           fs->type == SELVA_FIELD_TYPE_REFERENCES);
+    return &fs->edge_constraint;
+}
+
+inline const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaDb *db, const struct EdgeFieldConstraint *efc)
+{
+    struct SelvaTypeEntry *te = selva_get_type_by_index(db, efc->edge_node_type);
+
+    return (te) ? &selva_get_ns_by_te(te)->fields_schema : nullptr;
+}
+
+inline node_id_t selva_get_node_id(const struct SelvaNode *node)
+{
+    return node->node_id;
+}
+
+inline node_type_t selva_get_node_type(const struct SelvaNode *node)
+{
+    return node->type;
+}
+#endif

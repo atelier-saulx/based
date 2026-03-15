@@ -144,8 +144,8 @@ pub fn addIdSubscription(
     }
 }
 
-pub fn removeIdSubscription(ctx: *DbCtx, subId: u32, typeId: u16, id: u32) void {
-    if (ctx.subscriptions.types.get(typeId)) |typeSubs| {
+pub fn removeIdSubscription(db: *DbCtx, thread: *Thread.Thread, subId: u32, typeId: u16, id: u32) void {
+    if (thread.subscriptions.types.get(typeId)) |typeSubs| {
         if (id >= typeSubs.minId and typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1) {
             if (typeSubs.idSubs.getEntry(id)) |idSub| {
                 var subs = idSub.value_ptr.*;
@@ -153,8 +153,8 @@ pub fn removeIdSubscription(ctx: *DbCtx, subId: u32, typeId: u16, id: u32) void 
                 while (i < subs.len) {
                     if (subs[i].subId == subId) {
                         // ----------
-                        ctx.allocator.destroy(subs[i]);
-                        _ = ctx.subscriptions.subsHashMap.remove(subId);
+                        db.allocator.destroy(subs[i]);
+                        _ = thread.subscriptions.subsHashMap.remove(subId);
 
                         if (subs.len == 1) {
                             _ = typeSubs.idSubs.remove(id);
@@ -254,7 +254,7 @@ pub fn removeIdSubscription(ctx: *DbCtx, subId: u32, typeId: u16, id: u32) void 
                         }
                     }
 
-                    removeSubTypeIfEmpty(ctx, typeId, typeSubs);
+                    removeSubTypeIfEmpty(thread, typeId, typeSubs);
 
                     break;
                 } else {

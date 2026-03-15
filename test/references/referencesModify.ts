@@ -1,15 +1,10 @@
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
+import { testDb } from '../shared/index.js'
 import { deepEqual } from '../shared/assert.js'
 
 await test('references modify', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -51,7 +46,7 @@ await test('references modify', async (t) => {
   await db.drain()
 
   deepEqual(
-    (await db.query('user').include('*', 'friends').get()).toObject(),
+    await db.query('user').include('*', 'friends').get(),
     [
       { id: 1, name: 'bob', friends: [] },
       { id: 2, name: 'marie', friends: [{ id: 3, name: 'john' }] },
@@ -69,7 +64,7 @@ await test('references modify', async (t) => {
   await db.drain()
 
   deepEqual(
-    (await db.query('user').include('*', 'friends').get()).toObject(),
+    await db.query('user').include('*', 'friends').get(),
     [
       { id: 1, name: 'bob', friends: [{ id: 3, name: 'john' }] },
       { id: 2, name: 'marie', friends: [{ id: 3, name: 'john' }] },
@@ -90,7 +85,7 @@ await test('references modify', async (t) => {
   })
 
   deepEqual(
-    (await db.query('user').include('*', 'friends').get()).toObject(),
+    await db.query('user').include('*', 'friends').get(),
     [
       { id: 1, name: 'bob', friends: [] },
       { id: 2, name: 'marie', friends: [] },
@@ -101,13 +96,7 @@ await test('references modify', async (t) => {
 })
 
 await test('references modify 2', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       a: {
         name: 'string',
@@ -148,13 +137,7 @@ await test('references modify 2', async (t) => {
 })
 
 await test('reference move', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       a: {
         name: 'string',
@@ -200,35 +183,19 @@ await test('reference move', async (t) => {
     bees: [b2],
   })
 
-  deepEqual(
-    (await db.query('a').include('bees').get()).toObject()[0].bees[0].id,
-    2,
-  )
+  deepEqual((await db.query('a').include('bees').get())[0].bees[0].id, 2)
 
   await db.update('a', a, {
     bees: [b2, b2],
   })
-  deepEqual(
-    (await db.query('a').include('bees').get()).toObject()[0].bees.length,
-    1,
-  )
-  deepEqual(
-    (await db.query('a').include('bees').get()).toObject()[0].bees[0].id,
-    2,
-  )
+  deepEqual((await db.query('a').include('bees').get())[0].bees.length, 1)
+  deepEqual((await db.query('a').include('bees').get())[0].bees[0].id, 2)
 })
 
 // https://linear.app/1ce/issue/FDN-1735
 
 await test('try to modify undefined refs', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       movie: {
         name: 'string',
@@ -261,7 +228,7 @@ await test('try to modify undefined refs', async (t) => {
     genre: 'Crime',
   })
   const a1 = db.create('actor', { name: 'Uma Thurman', movies: [m1, m2] })
-  const a2 = db.create('actor', { name: 'Jonh Travolta', movies: [m2] })
+  db.create('actor', { name: 'John Travolta', movies: [m2] })
 
   //await db.query('movie').include('*', '**').get().inspect()
 

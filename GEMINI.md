@@ -81,18 +81,14 @@ const a = (ctx) => {
 - Prefer self-documenting code (clear variable names, etc.).
 - If you must add a comment, keep it minimal and explain the _why_, not the _what_.
 
-## Running db Tests
+## Running Tests
 
-The following instructions apply only to the `@based/db` package. Other packages have their own test runners.
+The project uses a custom test runner. **Always use `npm test`** to run tests. Do **NOT** use `npx tsx` or `node` directly on test files.
 
-The `db` package uses a custom test runner. To run the tests, you can use `npm run test` from the `packages/db` directory, or `npm run test -w @based/db` from the root of the project. You can pass arguments to filter the tests.
+You can run tests from the root simply with `npm test`. You can pass arguments to filter the tests.
 
 ```bash
-# From packages/db
-npm run test -- [filters]
-
-# From root
-npm run test -w @based/db -- [filters]
+npm test [filter]
 ```
 
 There is also a `test-fast` script that skips the build step.
@@ -111,28 +107,23 @@ You can filter which tests to run by providing one or more filter arguments.
 
 - **Run all tests:**
   ```bash
-  # from packages/db
-  npm run test
+  npm test
+  ```
+- **Run tests for a specific file or folder (e.g. `query/ast`):**
+  ```bash
+  npm test query/ast
   ```
 - **Run all tests and stop on the first failure:**
   ```bash
-  # from packages/db
-  npm run test -- stopOnFail
-  ```
-- **Run tests in files with "view" in the path:**
-  ```bash
-  # from packages/db
-  npm run test -- view
+  npm test stopOnFail
   ```
 - **Run tests with "observe" in the name, in files with "view" in the path:**
   ```bash
-  # from packages/db
-  npm run test -- view:observe
+  npm test view:observe
   ```
 - **Run all tests 10 times:**
   ```bash
-  # from packages/db
-  npm run test -- 10
+  npm test 10
   ```
 
 ## Zig version

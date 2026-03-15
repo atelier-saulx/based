@@ -31,24 +31,23 @@
 #define USE_DUMP_MAGIC_FIELD_BEGIN 0
 #define PRINT_SAVE_TIME 0
 
-#define FNAME_COMMON_SDB "common.sdb"
+#define FNAME_COMMON_SDB_FMT "%" PRIu16 "_common.sdb"
 #define FNAME_BLOCK_SDB_FMT "%" PRIu16 "_%" PRIu32 ".sdb"
 
 /*
  * Pick 32-bit primes for these.
  */
-#define DUMP_MAGIC_SCHEMA       3360690301 /* common.sdb */
 #define DUMP_MAGIC_EXPIRE       2147483647 /* common.sdb */
-#define DUMP_MAGIC_COMMON_IDS   2974848157 /* common.sdb */
+#define DUMP_MAGIC_ALIASES      4019181209 /* common.sdb */
+#define DUMP_MAGIC_COMMON_MAX_ID 2974848157 /* common.sdb */
 #define DUMP_MAGIC_COMMON_BLOCKS 2734165127 /* common.sdb */
-#define DUMP_MAGIC_TYPES        3550908863 /* [block].sdb */
+#define DUMP_MAGIC_TYPE         3550908863 /* [block].sdb */
 #define DUMP_MAGIC_NODE         3323984057
 #define DUMP_MAGIC_FIELDS       3126175483
 #if USE_DUMP_MAGIC_FIELD_BEGIN
 #define DUMP_MAGIC_FIELD_BEGIN  3734376047
 #endif
 #define DUMP_MAGIC_FIELD_END    2944546091
-#define DUMP_MAGIC_ALIASES      4019181209
 #define DUMP_MAGIC_COLVEC       1901731729
 #define DUMP_MAGIC_BLOCK_HASH   2898966349
 
@@ -215,8 +214,8 @@ static void save_node_fields(struct selva_io *io, const struct SelvaFieldsSchema
     io->sdb_write(&((sdb_nr_fields_t){ fields->nr_fields }), sizeof(sdb_nr_fields_t), 1, io);
 
     for (field_t field = 0; field < nr_fields; field++) {
-        const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(schema, field);
-        struct SelvaFieldInfo *nfo = &fields->fields_map[field];
+        auto fs = get_fs_by_fields_schema_field(schema, field);
+        auto nfo = &fields->fields_map[field];
         enum SelvaFieldType type = nfo->in_use ? fs->type : SELVA_FIELD_TYPE_NULL;
 
 #if USE_DUMP_MAGIC_FIELD_BEGIN
@@ -244,7 +243,6 @@ static void save_node_fields(struct selva_io *io, const struct SelvaFieldsSchema
             io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof(uint8_t), fs->smb.len, io);
             break;
         case SELVA_FIELD_TYPE_ALIAS:
-        case SELVA_FIELD_TYPE_ALIASES:
         case SELVA_FIELD_TYPE_COLVEC:
             /* NOP */
             break;
@@ -264,78 +262,25 @@ static void save_node(struct selva_io *io, struct SelvaDb *db, struct SelvaNode 
     save_node_fields(io, schema, node);
 }
 
-static void save_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, node_id_t node_id)
-{
-    const sdb_nr_aliases_t nr_aliases = te->ns.nr_aliases;
-
-    write_dump_magic(io, DUMP_MAGIC_ALIASES);
-    io->sdb_write(&nr_aliases, sizeof(nr_aliases), 1, io);
-
-    for (size_t i = 0; i < nr_aliases; i++) {
-        struct SelvaAliases *aliases = &te->aliases[i];
-        const struct SelvaAlias *alias_first;
-        const struct SelvaAlias *alias;
-        sdb_nr_aliases_t nr_aliases_by_dest = 0;
-
-        alias_first = alias = selva_get_alias_by_dest(aliases, node_id);
-        while (alias) {
-            nr_aliases_by_dest++;
-            alias = alias->next;
-        }
-
-        io->sdb_write(&nr_aliases_by_dest, sizeof(nr_aliases_by_dest), 1, io);
-
-        alias = alias_first;
-        while (alias) {
-            const char *name_str = alias->name;
-            const sdb_arr_len_t name_len = alias->name_len;
-
-            io->sdb_write(&name_len, sizeof(name_len), 1, io);
-            io->sdb_write(name_str, sizeof(*name_str), name_len, io);
-
-            alias = alias->next;
-        }
-    }
-}
-
-static void save_schema(struct selva_io *io, struct SelvaDb *db)
-{
-    const sdb_nr_types_t nr_types = db->types.count;
-    struct SelvaTypeEntry *te;
-
-    write_dump_magic(io, DUMP_MAGIC_SCHEMA);
-    io->sdb_write(&nr_types, sizeof(nr_types), 1, io);
-
-    RB_FOREACH(te, SelvaTypeEntryIndex, &db->types.index) {
-        node_type_t type = te->type;
-        const sdb_arr_len_t schema_len = te->schema_len;
-
-        io->sdb_write(&type, sizeof(type), 1, io);
-        io->sdb_write(&schema_len, sizeof(schema_len), 1, io);
-        io->sdb_write(te->schema_buf, sizeof(te->schema_buf[0]), te->schema_len, io);
-    }
-}
-
-static void save_expire(struct selva_io *io, struct SelvaDb *db)
+static void save_expire(struct selva_io *io, struct SelvaTypeEntry *te)
 {
 
     struct SVectorIterator it;
-    struct SelvaExpireToken *token;
-    const sdb_arr_len_t count = selva_expire_count(&db->expiring);
+    const sdb_arr_len_t count = selva_expire_count(&te->expiring);
 
     write_dump_magic(io, DUMP_MAGIC_EXPIRE);
     io->sdb_write(&count, sizeof(count), 1, io);
 
-    SVector_ForeachBegin(&it, &db->expiring.list);
+    SVector_ForeachBegin(&it, &te->expiring.list);
     while (!SVector_Done(&it)) {
+        struct SelvaExpireToken *token;
+
         token = SVector_Foreach(&it);
         do {
             struct SelvaDbExpireToken *dbToken = containerof(token, typeof(*dbToken), token);
-            node_type_t type = dbToken->type;
             node_id_t node_id = dbToken->node_id;
             int64_t expire = dbToken->token.expire;
 
-            io->sdb_write(&type, sizeof(type), 1, io);
             io->sdb_write(&node_id, sizeof(node_id), 1, io);
             io->sdb_write(&expire, sizeof(expire), 1, io);
         } while ((token = token->next));
@@ -343,15 +288,33 @@ static void save_expire(struct selva_io *io, struct SelvaDb *db)
 
 }
 
-static void save_common_ids(struct selva_io *io, const node_id_t *ids_data, size_t meta_len)
+static void save_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
 {
-    const sdb_arr_len_t len = meta_len;
+    write_dump_magic(io, DUMP_MAGIC_ALIASES);
 
-    write_dump_magic(io, DUMP_MAGIC_COMMON_IDS);
-    io->sdb_write(&len, sizeof(len), 1, io);
-    if (likely(len > 0)) {
-        io->sdb_write(ids_data, sizeof(node_id_t), len, io);
+    const size_t nr_fields = te->ns.nr_alias_fields;
+
+    for (size_t i = 0; i < nr_fields; i++) {
+        auto aliases = &te->aliases[i];
+        sdb_nr_aliases_t nr_aliases_by_name = aliases->nr_aliases;
+        struct SelvaAlias *alias;
+
+        io->sdb_write(&nr_aliases_by_name, sizeof(nr_aliases_by_name), 1, io);
+        RB_FOREACH(alias, SelvaAliasesByName, &aliases->alias_by_name) {
+            const char *name_str = alias->name;
+            const sdb_arr_len_t name_len = alias->name_len;
+
+            io->sdb_write(&name_len, sizeof(name_len), 1, io);
+            io->sdb_write(name_str, sizeof(*name_str), name_len, io);
+            io->sdb_write(&alias->dest, sizeof(alias->dest), 1, io);
+        }
     }
+}
+
+static void save_common_max_id(struct selva_io *io, const struct selva_dump_common_data *com)
+{
+    write_dump_magic(io, DUMP_MAGIC_COMMON_MAX_ID);
+    io->sdb_write(&com->max_id, sizeof(com->max_id), 1, io);
 }
 
 static void count_blocks(void *ctx, struct SelvaDb *, struct SelvaTypeEntry *, block_id_t, node_id_t)
@@ -359,34 +322,35 @@ static void count_blocks(void *ctx, struct SelvaDb *, struct SelvaTypeEntry *, b
     (*((sdb_arr_len_t *)ctx))++;
 }
 
-static void save_block_info(void *ctx, struct SelvaDb *, struct SelvaTypeEntry *te, block_id_t block, node_id_t start __unused)
+static void save_block_info(void *ctx, struct SelvaDb *, struct SelvaTypeEntry *, block_id_t block, node_id_t start __unused)
 {
     struct selva_io *io = (struct selva_io *)ctx;
 
-    io->sdb_write(&te->type, sizeof(te->type), 1, io);
     io->sdb_write(&block, sizeof(block), 1, io);
 }
 
-static void save_common_blocks(struct selva_io *io, struct SelvaDb *db, struct selva_dump_common_data *)
+static void save_common_blocks(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
     constexpr enum SelvaTypeBlockStatus mask = SELVA_TYPE_BLOCK_STATUS_FS | SELVA_TYPE_BLOCK_STATUS_INMEM;
     sdb_arr_len_t len = 0;
 
     write_dump_magic(io, DUMP_MAGIC_COMMON_BLOCKS);
-    selva_foreach_block(db, mask, count_blocks, &len);
+    selva_foreach_block(db, te, mask, count_blocks, &len);
     io->sdb_write(&len, sizeof(len), 1, io);
-    selva_foreach_block(db, mask, save_block_info, io);
+    selva_foreach_block(db, te, mask, save_block_info, io);
 }
 
-int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *com)
+int selva_dump_save_common(struct SelvaDb *db, struct SelvaTypeEntry *te, struct selva_dump_common_data *com)
 {
     struct selva_io io = {
         .errlog_buf = com->errlog_buf,
         .errlog_left = com->errlog_size,
     };
+    char filename[120];
     int err;
 
-    err = selva_io_init_file(&io, db->dirfd, FNAME_COMMON_SDB, SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
+    snprintf(filename, sizeof(filename), FNAME_COMMON_SDB_FMT, te->type);
+    err = selva_io_init_file(&io, db->dirfd, filename, SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
     if (err) {
         return err;
     }
@@ -394,10 +358,10 @@ int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *co
     /*
      * Save all the common data here that can't be split up.
      */
-    save_schema(&io, db);
-    save_expire(&io, db);
-    save_common_ids(&io, com->ids_data, com->ids_len);
-    save_common_blocks(&io, db, com);
+    save_expire(&io, te);
+    save_aliases(&io, te);
+    save_common_max_id(&io, com);
+    save_common_blocks(&io, db, te);
 
     db->sdb_version = io.sdb_version;
     selva_io_end(&io, nullptr);
@@ -418,8 +382,8 @@ static void selva_dump_save_colvec(struct selva_io *io, struct SelvaDb *, struct
     io->sdb_write(&block_i, sizeof(block_i), 1, io);
     static_assert(sizeof(block_i) == sizeof(uint32_t));
 
-    for (size_t i = 0; i < te->ns.nr_colvecs; i++) {
-        struct SelvaColvec *colvec = &te->col_fields.colvec[i];
+    for (size_t i = 0; i < te->ns.nr_colvec_fields; i++) {
+        auto colvec = &te->col_fields.colvec[i];
         uint8_t *slab = (uint8_t *)colvec->v[block_i];
         uint8_t slab_present = !!slab;
 
@@ -481,8 +445,7 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
         goto fail;
     }
 
-    write_dump_magic(&io, DUMP_MAGIC_TYPES);
-    io.sdb_write(&te->type, sizeof(te->type), 1, &io);
+    write_dump_magic(&io, DUMP_MAGIC_TYPE);
 
     selva_hash_state_t *hash_state = selva_hash_create_state();
     selva_hash_state_t *tmp_hash_state = selva_hash_create_state();
@@ -496,7 +459,6 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
         selva_hash128_t node_hash = selva_node_hash_update(db, te, node, tmp_hash_state);
         selva_hash_update(hash_state, &node_hash, sizeof(node_hash));
         save_node(&io, db, node);
-        save_aliases_node(&io, te, node->node_id);
     }
 
     /*
@@ -528,69 +490,6 @@ fail:
         atomic_store(&block->status.atomic, (uint32_t)(SELVA_TYPE_BLOCK_STATUS_FS | SELVA_TYPE_BLOCK_STATUS_INMEM));
     }
     return err;
-}
-
-__attribute__((warn_unused_result))
-static int load_schema(struct selva_io *io, struct SelvaDb *db)
-{
-    sdb_nr_types_t nr_types;
-
-    if (!read_dump_magic(io, DUMP_MAGIC_SCHEMA)) {
-        selva_io_errlog(io, "Invalid schema magic");
-        return SELVA_EINVAL;
-    }
-
-    if (io->sdb_read(&nr_types, sizeof(nr_types), 1, io) != 1) {
-        selva_io_errlog(io, "nr_types schema");
-        return SELVA_EINVAL;
-    }
-
-    for (size_t i = 0; i < nr_types; i++) {
-        node_type_t type;
-        __selva_autofree uint8_t *schema_buf;
-        sdb_arr_len_t schema_len;
-        int err;
-
-        io->sdb_read(&type, sizeof(type), 1, io);
-        io->sdb_read(&schema_len, sizeof(schema_len), 1, io);
-        schema_buf = selva_malloc(schema_len);
-        io->sdb_read(schema_buf, sizeof(schema_buf[0]), schema_len, io);
-
-        err = selva_db_create_type(db, type, schema_buf, schema_len);
-        if (err) {
-            selva_io_errlog(io, "Failed to create a node type entry: %s", selva_strerror(err));
-            return SELVA_EINVAL;
-        }
-    }
-
-    return 0;
-}
-
-__attribute__((warn_unused_result))
-static int load_expire(struct selva_io *io, struct SelvaDb *db)
-{
-    sdb_arr_len_t count;
-
-    if (!read_dump_magic(io, DUMP_MAGIC_EXPIRE)) {
-        selva_io_errlog(io, "Ivalid types magic");
-        return SELVA_EINVAL;
-    }
-
-    io->sdb_read(&count, sizeof(count), 1, io);
-
-    for (sdb_arr_len_t i = 0; i < count; i++) {
-        node_type_t type;
-        node_id_t node_id;
-        int64_t expire;
-
-        io->sdb_read(&type, sizeof(type), 1, io);
-        io->sdb_read(&node_id, sizeof(node_id), 1, io);
-        io->sdb_read(&expire, sizeof(expire), 1, io);
-
-        selva_expire_node(db, type, node_id, expire, SELVA_EXPIRE_NODE_STRATEGY_IGNORE);
-    }
-
-    return 0;
 }
 
 __attribute__((warn_unused_result))
@@ -675,7 +574,7 @@ static int load_field_reference(struct selva_io *io, struct SelvaNode *node, con
 
     io->sdb_read(&nr_refs, sizeof(nr_refs), 1, io);
     if (nr_refs) {
-        struct SelvaNodeLargeReference *ref = selva_fields_ensure_reference(node, fs);
+        auto ref = selva_fields_ensure_reference(node, fs);
 
         io->sdb_read(&ref->dst, sizeof(ref->dst), 1, io);
         io->sdb_read(&ref->edge, sizeof(ref->edge), 1, io);
@@ -696,7 +595,7 @@ static int load_field_references(struct selva_io *io, struct SelvaDb *db, struct
     }
 
     (void)selva_fields_prealloc_refs(db, node, fs, nr_refs);
-    struct SelvaNodeReferences *refs = selva_fields_get_references(node, fs);
+    auto refs = selva_fields_get_references(node, fs);
     if (!refs) {
         return SELVA_ENOENT;
     }
@@ -723,7 +622,7 @@ static int load_field_references(struct selva_io *io, struct SelvaDb *db, struct
 __attribute__((warn_unused_result))
 static int load_node_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te, struct SelvaNode *node)
 {
-    struct SelvaNodeSchema *ns = &te->ns;
+    auto ns = &te->ns;
     sdb_nr_fields_t nr_fields;
     int err = 0;
 
@@ -784,7 +683,6 @@ static int load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Selv
             err = load_field_micro_buffer(io, node, fs);
             break;
         case SELVA_FIELD_TYPE_ALIAS:
-        case SELVA_FIELD_TYPE_ALIASES:
             /* NOP */
             break;
         case SELVA_FIELD_TYPE_COLVEC:
@@ -825,8 +723,7 @@ static node_id_t load_node(struct selva_io *io, struct SelvaDb *db, struct Selva
         return SELVA_ENOENT;
     }
 
-    struct SelvaNode *node = res.node;
-    assert(node && node->type == te->type);
+    auto node = res.node;
     err = load_node_fields(io, db, te, node);
     if (err) {
         return 0;
@@ -836,55 +733,21 @@ static node_id_t load_node(struct selva_io *io, struct SelvaDb *db, struct Selva
 }
 
 __attribute__((warn_unused_result))
-static int load_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, node_id_t node_id)
-{
-    sdb_nr_aliases_t nr_aliases;
-
-    if (!read_dump_magic(io, DUMP_MAGIC_ALIASES)) {
-        selva_io_errlog(io, "Invalid aliases magic for type %d", te->type);
-        return SELVA_EINVAL;
-    }
-
-    io->sdb_read(&nr_aliases, sizeof(nr_aliases), 1, io);
-    for (sdb_nr_aliases_t i = 0; i < nr_aliases; i++) {
-        sdb_nr_aliases_t nr_aliases_by_dest;
-
-        io->sdb_read(&nr_aliases_by_dest, sizeof(nr_aliases_by_dest), 1, io);
-        for (size_t j = 0; j < nr_aliases_by_dest; j++) {
-            sdb_arr_len_t name_len;
-            struct SelvaAlias *alias;
-
-            io->sdb_read(&name_len, sizeof(name_len), 1, io);
-            alias = selva_malloc(sizeof_wflex(struct SelvaAlias, name, name_len));
-            alias->name_len = name_len;
-            io->sdb_read(alias->name, sizeof(char), name_len, io);
-            alias->dest = node_id;
-
-            selva_set_alias_p(&te->aliases[i], alias);
-        }
-    }
-
-    return 0;
-}
-
-__attribute__((warn_unused_result))
 static int load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
-    int err;
     sdb_nr_nodes_t nr_nodes;
 
     io->sdb_read(&nr_nodes, sizeof(nr_nodes), 1, io);
+    if (nr_nodes == 0) {
+        return 0;
+    }
+
     for (sdb_nr_nodes_t i = 0; i < nr_nodes; i++) {
         node_id_t node_id;
 
         node_id = load_node(io, db, te);
         if (unlikely(node_id == 0)) {
             return SELVA_EINVAL;
-        }
-
-        err = load_aliases_node(io, te, node_id);
-        if (err) {
-            return err;
         }
     }
 
@@ -903,7 +766,7 @@ static int load_colvec(struct selva_io *io, struct SelvaTypeEntry *te)
     io->sdb_read(&block_i, sizeof(block_i), 1, io);
     static_assert(sizeof(block_i) == sizeof(uint32_t));
 
-    for (size_t i = 0; i < te->ns.nr_colvecs; i++) {
+    for (size_t i = 0; i < te->ns.nr_colvec_fields; i++) {
         uint8_t slab_present;
 
         io->sdb_read(&slab_present, sizeof(slab_present), 1, io);
@@ -911,7 +774,7 @@ static int load_colvec(struct selva_io *io, struct SelvaTypeEntry *te)
             /*
              * Load the whole slab at once.
              */
-            struct SelvaColvec *colvec = &te->col_fields.colvec[i];
+            auto colvec = &te->col_fields.colvec[i];
             void *slab = colvec_init_slab(colvec, block_i);
             if (io->sdb_read(slab, colvec->slab_size, 1, io) != 1) {
                 selva_io_errlog(io, "colvec slab");
@@ -928,16 +791,8 @@ static int load_type(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEn
 {
     int err;
 
-    if (!read_dump_magic(io, DUMP_MAGIC_TYPES)) {
+    if (!read_dump_magic(io, DUMP_MAGIC_TYPE)) {
         selva_io_errlog(io, "Ivalid types magic");
-        return SELVA_EINVAL;
-    }
-
-    node_type_t type;
-    io->sdb_read(&type, sizeof(type), 1, io);
-
-    if (te->type != type) {
-        selva_io_errlog(io, "Invalid type found: %d != %d", type, te->type);
         return SELVA_EINVAL;
     }
 
@@ -948,36 +803,79 @@ static int load_type(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEn
 }
 
 __attribute__((warn_unused_result))
-static int load_common_ids(struct selva_io *io, struct selva_dump_common_data *com)
+static int load_expire(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
-    sdb_arr_len_t len;
-    node_id_t *data = nullptr;
+    sdb_arr_len_t count;
 
-    if (!read_dump_magic(io, DUMP_MAGIC_COMMON_IDS)) {
+    if (!read_dump_magic(io, DUMP_MAGIC_EXPIRE)) {
         selva_io_errlog(io, "Ivalid types magic");
         return SELVA_EINVAL;
     }
 
-    if (io->sdb_read(&len, sizeof(len), 1, io) != 1) {
-        selva_io_errlog(io, "%s: len", __func__);
-        return SELVA_EIO;
+    io->sdb_read(&count, sizeof(count), 1, io);
+
+    for (sdb_arr_len_t i = 0; i < count; i++) {
+        node_id_t node_id;
+        int64_t expire;
+
+        io->sdb_read(&node_id, sizeof(node_id), 1, io);
+        io->sdb_read(&expire, sizeof(expire), 1, io);
+
+        selva_expire_node(db, te->type, node_id, expire, SELVA_EXPIRE_NODE_STRATEGY_IGNORE);
     }
 
-    if (likely(len > 0)) {
-        data = selva_malloc(len * sizeof(node_id_t));
-        if (io->sdb_read(data, sizeof(node_id_t), len, io) != len) {
-            selva_io_errlog(io, "%s: load ids failed", __func__);
-            return SELVA_EIO;
-        }
-    }
-
-    com->ids_data = data;
-    com->ids_len = len;
     return 0;
 }
 
 __attribute__((warn_unused_result))
-static int load_common_blocks(struct selva_io *io, struct SelvaDb *db, struct selva_dump_common_data *com)
+static int load_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
+{
+    if (!read_dump_magic(io, DUMP_MAGIC_ALIASES)) {
+        selva_io_errlog(io, "Invalid aliases magic");
+        return SELVA_EINVAL;
+    }
+
+    const size_t nr_fields = te->ns.nr_alias_fields;
+
+    for (size_t i = 0; i < nr_fields; i++) {
+        sdb_nr_aliases_t nr_aliases_by_name;
+
+        io->sdb_read(&nr_aliases_by_name, sizeof(nr_aliases_by_name), 1, io);
+        for (size_t j = 0; j < nr_aliases_by_name; j++) {
+            sdb_arr_len_t name_len;
+            struct SelvaAlias *alias;
+
+            io->sdb_read(&name_len, sizeof(name_len), 1, io);
+            alias = selva_malloc(sizeof_wflex(struct SelvaAlias, name, name_len));
+            io->sdb_read(alias->name, sizeof(char), name_len, io);
+            alias->name_len = name_len;
+            io->sdb_read(&alias->dest, sizeof(alias->dest), 1, io);
+
+            selva_set_alias_p(&te->aliases[i], alias);
+        }
+    }
+
+    return 0;
+}
+
+__attribute__((warn_unused_result))
+static int load_common_max_id(struct selva_io *io, struct selva_dump_common_data *com)
+{
+    if (!read_dump_magic(io, DUMP_MAGIC_COMMON_MAX_ID)) {
+        selva_io_errlog(io, "Ivalid types magic");
+        return SELVA_EINVAL;
+    }
+
+    if (io->sdb_read(&com->max_id, sizeof(com->max_id), 1, io) != 1) {
+        selva_io_errlog(io, "%s: max_id", __func__);
+        return SELVA_EIO;
+    }
+
+    return 0;
+}
+
+__attribute__((warn_unused_result))
+static int load_common_blocks(struct selva_io *io, struct SelvaTypeEntry *te, struct selva_dump_common_data *com)
 {
     sdb_arr_len_t len;
 
@@ -997,13 +895,11 @@ static int load_common_blocks(struct selva_io *io, struct SelvaDb *db, struct se
     for (sdb_arr_len_t i = 0; i < len; i++) {
         struct selva_dump_block *bl = &com->blocks[i];
 
-        io->sdb_read(&bl->type, sizeof(bl->type), 1, io);
         io->sdb_read(&bl->block, sizeof(bl->block), 1, io);
 
         /*
          * Also update to the block status.
          */
-        struct SelvaTypeEntry *te = selva_get_type_by_index(db, bl->type);
         assert(te);
         if (likely(te && bl->block < te->blocks->len)) {
             selva_block_status_set(te, bl->block, SELVA_TYPE_BLOCK_STATUS_FS);
@@ -1013,28 +909,37 @@ static int load_common_blocks(struct selva_io *io, struct SelvaDb *db, struct se
     return 0;
 }
 
-int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *com)
+int selva_dump_load_common(struct SelvaDb *db, struct SelvaTypeEntry *te, struct selva_dump_common_data *com)
 {
     struct selva_io io = {
         .errlog_buf = com->errlog_buf,
         .errlog_left = com->errlog_size,
     };
+    char filename[120];
     int err;
 
-    err = selva_io_init_file(&io, db->dirfd, FNAME_COMMON_SDB, SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED);
+    snprintf(filename, sizeof(filename), FNAME_COMMON_SDB_FMT, te->type);
+    err = selva_io_init_file(&io, db->dirfd, filename, SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED);
     if (err) {
         return err;
     }
 
     db->sdb_version = io.sdb_version;
 
-    err = load_schema(&io, db);
-    err = err ?: load_expire(&io, db);
-    err = err ?: load_common_ids(&io, com);
-    err = err ?: load_common_blocks(&io, db, com);
+    err = err ?: load_expire(&io, db, te);
+    err = err ?: load_aliases(&io, te);
+    err = err ?: load_common_max_id(&io, com);
+    err = err ?: load_common_blocks(&io, te, com);
     selva_io_end(&io, nullptr);
 
     return err;
+}
+
+void selva_dump_deinit_common(struct selva_dump_common_data *com)
+{
+    selva_free(com->blocks);
+    com->blocks = nullptr;
+    com->blocks_len = 0;
 }
 
 int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i, char *errlog_buf, size_t errlog_size)
@@ -1063,7 +968,8 @@ int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
     }
 
     if (io.sdb_version > db->sdb_version) {
-        selva_io_errlog(&io, "SDB version mismatch! common: %"PRIu32" block: %"PRIu32, db->sdb_version, io.sdb_version);
+        selva_io_errlog(&io, "%s: SDB version mismatch! common_version: %"PRIu32" block_version: %"PRIu32,
+                        __func__ , db->sdb_version, io.sdb_version);
         err = SELVA_ENOTSUP;
         goto fail;
     }
@@ -1079,13 +985,15 @@ int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
     }
 
     if (!read_dump_magic(&io, DUMP_MAGIC_BLOCK_HASH)) {
-        selva_io_errlog(&io, "%s: Invalid block hash magic", __func__);
+        selva_io_errlog(&io, "%s: Invalid block hash magic (block: %u:%u)",
+                        __func__, (unsigned)te->type, (unsigned)block_i);
         err = SELVA_EINVAL;
         goto fail;
     }
 
     if (io.sdb_read(&old_hash, sizeof(old_hash), 1, &io) != 1) {
-        selva_io_errlog(&io, "%s: Failed to read the hash", __func__);
+        selva_io_errlog(&io, "%s: Failed to read the hash (block: %u:%u)",
+                        __func__, (unsigned)te->type, (unsigned)block_i);
         err = SELVA_EINVAL;
         goto fail;
     }
@@ -1107,8 +1015,9 @@ fail:
         selva_block_status_replace(te, block_i, prev_block_status);
     }
     if (old_hash != new_hash) {
-        selva_io_errlog(&io, "%s: Block hash mismatch! %.*s != %.*s",
+        selva_io_errlog(&io, "%s: Block hash mismatch (block: %u:%u)! %.*s != %.*s",
                         __func__,
+                        (unsigned)te->type, (unsigned)block_i,
                         SELVA_HASH_HEX_LEN, selva_hash_to_hex((char [SELVA_HASH_HEX_LEN]){ 0 }, old_hash),
                         SELVA_HASH_HEX_LEN, selva_hash_to_hex((char [SELVA_HASH_HEX_LEN]){ 0 }, new_hash));
         err = SELVA_EIO;

@@ -1,4 +1,5 @@
 const std = @import("std");
+const radix = @import("./radix.zig");
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const vectorLenU16 = std.simd.suggestVectorLength(u16).?;
 
@@ -12,10 +13,9 @@ pub const Sub = struct {
     subId: u32,
 };
 
-pub const IdSubs = std.AutoHashMap(u64, []*Sub);
-
+pub const IdSubs = std.AutoHashMap(u32, []*Sub);
 pub const SubHashMap = std.AutoHashMap(u32, *Sub);
-
+pub const AliasSubs = std.AutoHashMap(u8, *radix.RadixTree);
 pub const TypeSubscriptionCtx = struct {
     typeModified: bool,
     idBitSet: []u1,
@@ -25,6 +25,9 @@ pub const TypeSubscriptionCtx = struct {
     bitSetSize: u32,
     bitSetMin: u32,
     bitSetRatio: u32,
+    aliasSubs: AliasSubs,
+    // maybe remove?
+    multiSubsSize: u32,
 };
 
 pub const TypeSubMap = std.AutoHashMap(u16, *TypeSubscriptionCtx);

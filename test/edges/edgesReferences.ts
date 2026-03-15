@@ -1,15 +1,10 @@
-import { BasedDb } from '../../src/index.js'
+import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
+import { testDbClient, testDbServer } from '../shared/index.js'
 
 await test('multi reference', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -105,7 +100,7 @@ await test('multi reference', async (t) => {
       .query('article')
       .include('contributors.$age')
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [{ id: 1, contributors: [{ id: 1, $age: 66 }] }],
     'age 66',
   )
@@ -156,14 +151,8 @@ await test('multi reference', async (t) => {
   )
 })
 
-await test('multiple references', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+await test('multiple references', async (ts) => {
+  const db = await testDb(ts, {
     types: {
       country: {
         props: {
@@ -254,7 +243,7 @@ await test('multiple references', async (t) => {
       .query('article')
       .include('contributors.id')
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [
       { id: 1, contributors: [{ id: mrDerp }] },
       { id: 2, contributors: [{ id: mrFlap }] },
@@ -266,7 +255,7 @@ await test('multiple references', async (t) => {
       .query('article')
       .include('contributors.id', 'contributors.$countries.id')
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [
       {
         id: 1,
@@ -284,7 +273,7 @@ await test('multiple references', async (t) => {
       .query('article')
       .include('contributors.id', 'contributors.$countries.code')
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [
       {
         id: 1,
@@ -318,7 +307,7 @@ await test('multiple references', async (t) => {
       .query('article')
       .include('contributors.id', 'contributors.$countries')
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [
       {
         id: 1,
@@ -350,11 +339,12 @@ await test('multiple references', async (t) => {
   deepEqual(
     await db
       .query('article')
+      //@ts-ignore
       .include((t) => {
         t('contributors').include('$countries').include('name').sort('name')
       })
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [
       {
         id: 1,
@@ -362,7 +352,9 @@ await test('multiple references', async (t) => {
           {
             id: 1,
             $countries: [
+              //@ts-ignore
               { id: 1, code: 'uk', name: 'United Kingdom' },
+              //@ts-ignore
               { id: 2, code: 'de', name: 'Germany' },
             ],
             name: 'Mr Derp',
@@ -375,7 +367,9 @@ await test('multiple references', async (t) => {
           {
             id: 2,
             $countries: [
+              //@ts-ignore
               { id: 3, code: 'nl', name: 'Netherlands' },
+              //@ts-ignore
               { id: 2, code: 'de', name: 'Germany' },
             ],
             name: 'Mr Falp',
@@ -388,21 +382,24 @@ await test('multiple references', async (t) => {
   deepEqual(
     await db
       .query('article')
+      //@ts-ignore
       .include((t) => {
         t('contributors').include('name').filter('nationality', '=', nl)
       })
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [
       {
         id: 1,
         contributors: [
+          //@ts-ignore
           {
             id: 1,
             name: 'Mr Derp',
           },
         ],
       },
+      //@ts-ignore
       {
         id: 2,
         contributors: [],
@@ -413,6 +410,7 @@ await test('multiple references', async (t) => {
   deepEqual(
     await db
       .query('article')
+      //@ts-ignore
       .include((t) => {
         t('contributors')
           .include('name')
@@ -421,7 +419,7 @@ await test('multiple references', async (t) => {
           .filter('nationality', '=', nl)
       })
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [
       {
         id: 1,
@@ -430,12 +428,15 @@ await test('multiple references', async (t) => {
             id: 1,
             name: 'Mr Derp',
             $countries: [
+              //@ts-ignore
               { id: 1, code: 'uk', name: 'United Kingdom' },
+              //@ts-ignore
               { id: 2, code: 'de', name: 'Germany' },
             ],
           },
         ],
       },
+      //@ts-ignore
       {
         id: 2,
         contributors: [],
@@ -446,17 +447,19 @@ await test('multiple references', async (t) => {
   deepEqual(
     await db
       .query('article')
+      //@ts-ignore
       .include((s) => {
         s('contributors')
           .include('name')
+          //@ts-ignore
           .include((s) => {
+            //@ts-ignore
             s('$countries').include('code')
           })
           .sort('name')
           .filter('nationality', '=', nl)
       })
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -465,12 +468,15 @@ await test('multiple references', async (t) => {
             id: 1,
             name: 'Mr Derp',
             $countries: [
+              //@ts-ignore
               { id: 1, code: 'uk' },
+              //@ts-ignore
               { id: 2, code: 'de' },
             ],
           },
         ],
       },
+      //@ts-ignore
       { id: 2, contributors: [] },
     ],
   )
@@ -478,17 +484,20 @@ await test('multiple references', async (t) => {
   deepEqual(
     await db
       .query('article')
+      //@ts-ignore
       .include((s) => {
         s('contributors')
           .include('name')
+          //@ts-ignore
           .include((s) => {
+            //@ts-ignore
             s('$countries').include('code').filter('code', '=', 'de')
           })
           .sort('name')
           .filter('nationality', '=', nl)
       })
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [
       {
         id: 1,
@@ -496,10 +505,12 @@ await test('multiple references', async (t) => {
           {
             id: 1,
             name: 'Mr Derp',
+            //@ts-ignore
             $countries: [{ id: 2, code: 'de' }],
           },
         ],
       },
+      //@ts-ignore
       { id: 2, contributors: [] },
     ],
   )
@@ -507,17 +518,20 @@ await test('multiple references', async (t) => {
   deepEqual(
     await db
       .query('article')
+      //@ts-ignore
       .include((s) => {
         s('contributors')
           .include('name')
+          //@ts-ignore
           .include((s) => {
+            //@ts-ignore
             s('$countries').include('code').sort('code')
           })
           .sort('name')
           .filter('nationality', '=', nl)
       })
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [
       {
         id: 1,
@@ -526,27 +540,22 @@ await test('multiple references', async (t) => {
             id: 1,
             name: 'Mr Derp',
             $countries: [
+              //@ts-ignore
               { id: 2, code: 'de' },
+              //@ts-ignore
               { id: 1, code: 'uk' },
             ],
           },
         ],
       },
+      //@ts-ignore
       { id: 2, contributors: [] },
     ],
   )
 })
 
 await test('simple references', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       round: {
         name: 'alias',
@@ -582,7 +591,7 @@ await test('simple references', async (t) => {
   // const scenarioId3 = await db.create('scenario', { name: 'scenario' })
   const sequenceId = await db.create('sequence', { name: 'sequence' })
 
-  await db.save()
+  // await server.save()
 
   await db.update('phase', phaseId, {
     scenarios: {
@@ -601,13 +610,8 @@ await test('simple references', async (t) => {
 })
 
 await test('many to many', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  t.after(() => t.backup(db))
-
-  await db.start()
+  const server = await testDbServer(t)
+  const db = await testDbClient(server)
 
   await db.setSchema({
     types: {
@@ -659,4 +663,162 @@ await test('many to many', async (t) => {
     { id: 2, scenarios: [{ id: 1, name: 'phase' }] },
     { id: 3, scenarios: [{ id: 1, name: 'phase' }] },
   ])
+})
+
+await test.skip('references with edges in single node', async (t) => {
+  const db = await testDb(t, {
+    types: {
+      mission: {
+        props: {
+          name: 'string',
+          maps: {
+            items: {
+              ref: 'map',
+              prop: 'missions',
+              $attachedAt: 'timestamp',
+              $detachedAt: 'timestamp',
+            },
+          },
+        },
+      },
+      map: {
+        props: {
+          name: 'string',
+        },
+      },
+    },
+  })
+
+  const night1Start = new Date('2025-01-01 00:00:00+01:00')
+  const night1End = new Date('2025-01-01 06:00:00+01:00')
+  const night2Start = new Date('2025-01-02 00:00:00+01:00')
+  const night2End = new Date('2025-01-02 06:00:00+01:00')
+  const nightlyNoFlyZones = await db.create('map', {
+    name: 'dont fly here at night',
+  })
+
+  const multiDayMissionId = await db.create('mission', {
+    name: 'I span multiple days',
+    maps: [
+      {
+        id: nightlyNoFlyZones,
+        $attachedAt: night1Start.getTime(),
+        $detachedAt: night1End.getTime(),
+      },
+      {
+        id: nightlyNoFlyZones,
+        $attachedAt: night2Start.getTime(),
+        $detachedAt: night2End.getTime(),
+      },
+    ],
+  })
+
+  const missions = await db
+    .query('mission', multiDayMissionId)
+    .include('maps.id', 'maps.$attachedAt', 'maps.$detachedAt')
+    .get()
+
+  // This test fails.  The second entry overwrites the edge property.
+  // Refs may be keyed by Target Id causing an id collision.
+  // TODO: verify.
+
+  deepEqual(
+    missions?.maps,
+    [
+      {
+        id: nightlyNoFlyZones,
+        $attachedAt: night1Start.getTime(),
+        $detachedAt: night1End.getTime(),
+      },
+      {
+        id: nightlyNoFlyZones,
+        $attachedAt: night2Start.getTime(),
+        $detachedAt: night2End.getTime(),
+      },
+    ],
+    'can have a single map, being attached twice',
+  )
+})
+
+await test('reifing', async (t) => {
+  const db = await testDb(t, {
+    types: {
+      mission: {
+        props: {
+          name: 'string',
+          assignments: {
+            items: {
+              ref: 'assignment',
+              prop: 'mission',
+            },
+          },
+        },
+      },
+      assignment: {
+        props: {
+          attachedAt: 'timestamp',
+          detachedAt: 'timestamp',
+          map: {
+            ref: 'map',
+            prop: 'assignments',
+          },
+        },
+      },
+      map: {
+        props: {
+          name: 'string',
+        },
+      },
+    },
+  })
+
+  const night1Start = new Date('2025-01-01 00:00:00+01:00')
+  const night1End = new Date('2025-01-01 06:00:00+01:00')
+  const night2Start = new Date('2025-01-02 00:00:00+01:00')
+  const night2End = new Date('2025-01-02 06:00:00+01:00')
+
+  const nightlyNoFlyZones = await db.create('map', {
+    name: 'dont fly here at night',
+  })
+
+  const ref1 = await db.create('assignment', {
+    map: nightlyNoFlyZones,
+    attachedAt: night1Start.getTime(),
+    detachedAt: night1End.getTime(),
+  })
+  const ref2 = await db.create('assignment', {
+    map: nightlyNoFlyZones,
+    attachedAt: night2Start.getTime(),
+    detachedAt: night2End.getTime(),
+  })
+
+  const multiDayMissionId = await db.create('mission', {
+    name: 'I span multiple days',
+    assignments: [ref1, ref2],
+  })
+  const missions = await db
+    .query('mission')
+    .include(
+      'assignments.id',
+      'assignments.attachedAt',
+      'assignments.detachedAt',
+    )
+    .get()
+
+  deepEqual(
+    missions[0].assignments,
+    [
+      {
+        id: ref1,
+        detachedAt: night1End.getTime(),
+        attachedAt: night1Start.getTime(),
+      },
+      {
+        id: ref2,
+        detachedAt: night2End.getTime(),
+        attachedAt: night2Start.getTime(),
+      },
+    ],
+    'can have a single map, being attached twice',
+  )
 })

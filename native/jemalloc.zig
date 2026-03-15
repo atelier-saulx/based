@@ -17,7 +17,7 @@ pub const c = @cImport({
 });
 
 fn slicify(comptime T: type, ptr: *anyopaque, n: usize) []T {
-    const p: [*]T = @as([*]T, @alignCast(@ptrCast(ptr)));
+    const p: [*]T = @as([*]T, @ptrCast(@alignCast(ptr)));
     return p[0..n];
 }
 
@@ -26,6 +26,14 @@ fn valgrindMalloc(ptr: *anyopaque, len: usize) void {
         const buf = slicify(u8, ptr, len);
         _ = std.valgrind.memcheck.createBlock(buf, "Zig alloc");
         _ = std.valgrind.memcheck.makeMemUndefined(buf);
+    }
+}
+
+fn valgrindCalloc(ptr: *anyopaque, len: usize) void {
+    if (config.enable_debug and std.valgrind.runningOnValgrind() > 0) {
+        const buf = slicify(u8, ptr, len);
+        _ = std.valgrind.memcheck.createBlock(buf, "Zig alloc");
+        _ = std.valgrind.memcheck.makeMemDefined(buf);
     }
 }
 
@@ -41,7 +49,7 @@ pub fn create(comptime T: type) *T {
         const ptr = comptime std.mem.alignBackward(usize, std.math.maxInt(usize), @alignOf(T));
         return @ptrFromInt(ptr);
     }
-    const ptr: *T = @alignCast(@ptrCast(c.selva_aligned_alloc(@alignOf(T), @sizeOf(T)).?));
+    const ptr: *T = @ptrCast(@alignCast(c.selva_aligned_alloc(@alignOf(T), @sizeOf(T)).?));
     valgrindMalloc(ptr, @sizeOf(T));
     return ptr;
 }
@@ -51,7 +59,7 @@ pub fn alloc(comptime T: type, n: usize) []T {
 
     if (config.enable_debug) {
         const buf = slicify(u8, ptr, n * @sizeOf(T));
-        valgrindMalloc(buf.ptr, buf.len);
+        valgrindCalloc(buf.ptr, buf.len);
     }
 
     return slicify(T, ptr, n);
@@ -111,8 +119,7 @@ pub fn free(ptr: anytype) void {
             }
             return;
         },
-        else => {
-        }
+        else => {},
     }
     const info = @typeInfo(@TypeOf(ptr)).pointer;
     if (info.size == .one) {

@@ -15,7 +15,6 @@
 
 struct selva_string;
 
-RB_HEAD(SelvaTypeEntryIndex, SelvaTypeEntry);
 RB_HEAD(SelvaNodeIndex, SelvaNode);
 RB_HEAD(SelvaAliasesByName, SelvaAlias);
 RB_HEAD(SelvaAliasesByDest, SelvaAlias);
@@ -50,10 +49,8 @@ struct SelvaNode {
 static_assert(offsetof(struct SelvaNode, node_id) == 0);
 
 struct SelvaAlias {
-    RB_ENTRY(SelvaAlias) _entry1;
-    RB_ENTRY(SelvaAlias) _entry2;
-    struct SelvaAlias *prev;
-    struct SelvaAlias *next; /*!< Next alias for the same destination. */
+    RB_ENTRY(SelvaAlias) _entryByName;
+    RB_ENTRY(SelvaAlias) _entryByDest;
     node_id_t dest;
     uint32_t name_len;
     char name[] __counted_by(name_len);
@@ -78,8 +75,6 @@ struct SelvaTypeBlock {
 struct SelvaTypeEntry {
     node_type_t type;
 
-    RB_ENTRY(SelvaTypeEntry) _entry;
-
     /**
      * Node blocks in this type.
      */
@@ -90,11 +85,10 @@ struct SelvaTypeEntry {
     } *blocks;
     struct SelvaAliases {
         field_t field; /*!< Alias field. */
-        bool single; /*!< Only allow a single alias per node + field. */
         struct SelvaAliasesByName alias_by_name;
         struct SelvaAliasesByDest alias_by_dest;
         size_t nr_aliases; /*!< Number of aliases by name. */
-    } *aliases __pcounted_by(ns.nr_aliases);
+    } *aliases __pcounted_by(ns.nr_alias_fields);
     size_t nr_nodes; /*!< Number of nodes of this type. */
     struct mempool nodepool; /*!< Pool for struct SelvaNode of this type. */
 
@@ -112,6 +106,11 @@ struct SelvaTypeEntry {
      * RB_INSERT_NEXT() almost always as node_id normally grows monotonically.
      */
     struct SelvaNode *max_node;
+
+    /**
+     * Expiring nodes.
+     */
+    struct SelvaExpire expiring;
 
     /**
      * Copy of the original selvaBuffer tha was used to initialize this type.
@@ -145,34 +144,32 @@ struct SelvaDbExpireToken {
  */
 struct SelvaDb {
     /**
-     * SelvaTypeEntries.
-     */
-    struct {
-        struct SelvaTypeEntryIndex index;
-        struct mempool pool; /*!< types area allocated from here. */
-        size_t count; /*!< Total count of types. */
-    } types;
-
-    /**
-     * Expiring nodes.
-     */
-    struct SelvaExpire expiring;
-
-    /**
      * Backup directory file descriptor.
      */
     int dirfd;
 
+    selva_db_subs_hook_t subs_hook_fun;
+    void *subs_hook_ctx;
+
     uint32_t sdb_version; /*!< Current SDB version. Set on common load and save. 0 if not saved/loaded. */
+    size_t nr_types;
+    struct SelvaTypeEntry types[] __counted_by(nr_types);
 };
 
-RB_PROTOTYPE(SelvaTypeEntryIndex, SelvaTypeEntry, _entry, SelvaTypeEntry_cmp)
 RB_PROTOTYPE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_cmp)
-RB_PROTOTYPE(SelvaAliasesByName, SelvaAlias, _entry1, SelvaAlias_cmp_name)
-RB_PROTOTYPE(SelvaAliasesByDest, SelvaAlias, _entry2, SelvaAlias_cmp_dest)
+RB_PROTOTYPE(SelvaAliasesByName, SelvaAlias, _entryByName, SelvaAlias_cmp_name)
+RB_PROTOTYPE(SelvaAliasesByDest, SelvaAlias, _entryByDest, SelvaAlias_cmp_dest)
 int SelvaNode_cmp(const struct SelvaNode *a, const struct SelvaNode *b);
 int SelvaAlias_cmp_name(const struct SelvaAlias *a, const struct SelvaAlias *b);
 int SelvaAlias_cmp_dest(const struct SelvaAlias *a, const struct SelvaAlias *b);
+
+/**
+ * Call subscriptions hook.
+ * This hook function should be called whenever the observable state of the
+ * database is changed in Selva, especially when the change can't be detected
+ * or known in zig.
+ */
+void selva_subs(struct SelvaTypeEntry *type, node_id_t node_id);
 
 void selva_init_aliases(struct SelvaTypeEntry *type);
 
@@ -180,7 +177,7 @@ void selva_init_aliases(struct SelvaTypeEntry *type);
  * Free type->aliases.
  * All the aliases must be freed before calling this function.
  */
-void selva_destroy_aliases(struct SelvaTypeEntry *type);
+void selva_destroy_aliases(struct SelvaTypeEntry *te);
 
 /**
  * Set new alias.

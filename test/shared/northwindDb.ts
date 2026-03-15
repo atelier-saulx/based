@@ -1,5 +1,8 @@
-import { Schema, type SchemaIn } from '../../src/schema/index.js'
-import { BasedDb } from '../../src/index.js'
+import { ResolveSchema } from '../../dist/schema/index.js'
+import { type SchemaIn } from '../../src/schema/index.js'
+import { DbClient } from '../../src/sdk.js'
+import { testDb } from './index.js'
+import test from './test.js'
 
 const schCompanyName = { type: 'string', maxBytes: 40 } as const
 const schContactName = { type: 'string', maxBytes: 30 } as const
@@ -302,10 +305,10 @@ export const defaultSchema = Object.freeze({
 })
 
 export default async function createNorthwindDb(
-  db: BasedDb,
+  t: Parameters<Parameters<typeof test>[1]>[0],
   schema: SchemaIn = defaultSchema as SchemaIn,
-) {
-  await db.setSchema(schema)
+): Promise<DbClient<ResolveSchema<typeof schema>>> {
+  const db = await testDb(t, schema)
 
   // categories
   ;[
@@ -679,8 +682,7 @@ export default async function createNorthwindDb(
     [9, '48304'],
     [9, '55113'],
     [9, '55439'],
-  ].forEach((row) => db.upsert('territories', {
-    territoryId: row[1],
+  ].forEach((row) => db.upsert('territories', { territoryId: `${row[1]}` }, {
     employees: {
         add: [ row[0] ],
     },
@@ -1537,7 +1539,7 @@ export default async function createNorthwindDb(
     [11077, 'RATTC', 1, '1998-05-06', '1998-06-03', '', 2, 8.53, 'Rattlesnake Canyon Grocery', '2817 Milton Dr.', 'Albuquerque', 'NM', '87110', 'USA'],
   ].map(async (row) => db.create('orders', {
     id: row[0],
-    customer: await db.upsert('customers', { customerId: row[1] }),
+    customer: await db.upsert('customers', { customerId: `${row[1]}` }, {}),
     employee: row[2],
     orderStatus: (row[5] === '') ? 'created' : 'shipped',
     orderDate: row[3] && new Date(row[3]),
@@ -3924,4 +3926,6 @@ export default async function createNorthwindDb(
       { unsafe: true },
     ),
   )
+
+  return db
 }

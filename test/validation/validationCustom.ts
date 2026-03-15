@@ -1,17 +1,9 @@
-import { BasedDb } from '../../src/index.js'
 import { throws } from '../shared/assert.js'
+import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 
 await test('custom', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: { en: {}, de: {} },
     types: {
       user: {

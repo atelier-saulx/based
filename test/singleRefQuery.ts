@@ -1,15 +1,9 @@
 import { deepEqual } from './shared/assert.js'
-import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
+import { testDb } from './shared/index.js'
 
 await test('single reference query', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -114,7 +108,7 @@ await test('single reference query', async (t) => {
     .filter('user.myBlup.age', '=', 10)
     .get()
 
-  deepEqual(result2.toObject(), [
+  deepEqual(result2, [
     {
       id: 1,
       smurp: 0,
@@ -131,7 +125,7 @@ await test('single reference query', async (t) => {
     .include('lilBlup', 'flap')
     .get()
 
-  deepEqual(result.toObject(), [
+  deepEqual(result, [
     {
       id: 4,
       lilBlup: {

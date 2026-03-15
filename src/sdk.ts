@@ -1,2 +1,6 @@
 export * from './index.js'
-export * from './schema.js'
+export * from './client/index.js'
+export * from './functions/index.js'
+export * from './schema/index.js'
+export * from './react/index.js'
+// export * from './server/index.js'

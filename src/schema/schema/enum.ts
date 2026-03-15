@@ -11,7 +11,7 @@ export type EnumItem = string | number
 export type SchemaEnum<strict = false> = Base &
   RequiredIfStrict<{ type: 'enum' }, strict> & {
     default?: EnumItem
-    enum: EnumItem[]
+    enum: EnumItem[] | readonly EnumItem[]
   }
 
 const isEnumItem = (v: unknown): v is EnumItem =>

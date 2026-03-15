@@ -56,6 +56,7 @@ void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse)
 
     if (is_sparse) {
         hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
+        assert(len >= HLL_INIT_SIZE);
         hll->is_sparse = true;
         hll->precision = precision;
         hll->num_registers = 0;
@@ -65,6 +66,7 @@ void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse)
         (void)selva_string_append(hllss, nullptr, num_registers * sizeof(hll->registers[0]));
 
         hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
+        assert(len >= HLL_INIT_SIZE);
         hll->is_sparse = false;
         hll->precision = precision;
         hll->num_registers = num_registers;

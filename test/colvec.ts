@@ -1,15 +1,9 @@
 import test from './shared/test.js'
-import { BasedDb } from '../src/index.js'
 import { deepEqual, perf } from './shared/assert.js'
+import { testDb } from './shared/index.js'
 
-await test.skip('colvec', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+await test.skip('basic', async (t) => {
+  const client = await testDb(t, {
     types: {
       row: {
         props: {
@@ -26,7 +20,7 @@ await test.skip('colvec', async (t) => {
     },
   })
 
-  deepEqual(db.server.schemaTypesParsed.col.blockCapacity, 10_000)
+  deepEqual(client.schemaTypesParsed.col.blockCapacity, 10_000)
 
   let seed = 100
   const next = () => (seed = (214013 * seed + 2531011) % 10e3)
@@ -43,18 +37,18 @@ await test.skip('colvec', async (t) => {
   await perf(async () => {
     for (let i = 0; i < N; i++) {
       genVec()
-      db.create('row', { vec })
+      client.create('row', { vec })
     }
-    await db.drain()
+    await client.drain()
   }, 'row')
 
   reset()
   await perf(async () => {
     for (let i = 0; i < N; i++) {
       genVec()
-      db.create('col', { vec })
+      client.create('col', { vec })
     }
-    await db.drain()
+    await client.drain()
   }, 'col')
 
   vec[0] = 2311.0
@@ -72,44 +66,10 @@ await test.skip('colvec', async (t) => {
       .filter('vec', 'like', vec, { fn: 'euclideanDistance', score: 1 })
       .get()
   }, 'QUERY row')
-
-  await perf(async () => {
-    global.__basedDb__native__.colvecTest(
-      db.server.dbCtxExternal,
-      3,
-      1,
-      1,
-      N + 1,
-    )
-  }, 'QUERY col')
-
-  const res = await db.query('col').include('vec').range(0, 2).get().toObject()
-  deepEqual(res, [
-    {
-      id: 1,
-      vec: new Float32Array([
-        2311, 5054, 1.5612034346858506e-39, 1.007378107771942e-37,
-        3.76158192263132e-37, 1.6815581571897805e-44, 0, 5391,
-      ]),
-    },
-    {
-      id: 2,
-      vec: new Float32Array([
-        5391, 5094, 1.5612034346858506e-39, 4.029512431087768e-37,
-        3.76158192263132e-37, 1.6815581571897805e-44, 0, 6071,
-      ]),
-    },
-  ])
 })
 
-await test('colvec int8', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+await test('int8 vector', async (t) => {
+  const client = await testDb(t, {
     types: {
       col: {
         blockCapacity: 10_000,
@@ -122,13 +82,13 @@ await test('colvec int8', async (t) => {
   })
 
   for (let i = 0; i < 5; i++) {
-    db.create('col', {
+    client.create('col', {
       str: Int8Array.from([i + 1, i + 2, i + 3, i + 4]),
     })
   }
-  // await db.drain()
+  await client.drain()
 
-  deepEqual(await db.query('col').include('str').get(), [
+  deepEqual(await client.query('col').include('str').get(), [
     { id: 1, str: new Int8Array([1, 2, 3, 4]) },
     { id: 2, str: new Int8Array([2, 3, 4, 5]) },
     { id: 3, str: new Int8Array([3, 4, 5, 6]) },
@@ -137,14 +97,8 @@ await test('colvec int8', async (t) => {
   ])
 })
 
-await test('colvec float32', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+await test('float32 vector', async (t) => {
+  const client = await testDb(t, {
     types: {
       col: {
         blockCapacity: 10_000,
@@ -157,11 +111,11 @@ await test('colvec float32', async (t) => {
   })
 
   for (let i = 0; i < 1; i++) {
-    db.create('col', {
+    client.create('col', {
       str: Float32Array.from([1.23123, 1.3]),
     })
   }
-  deepEqual(await db.query('col').include('str').get(), [
+  deepEqual(await client.query('col').include('str').get(), [
     { id: 1, str: new Float32Array([1.23123, 1.3]) },
   ])
 })

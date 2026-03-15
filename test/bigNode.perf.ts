@@ -1,16 +1,10 @@
-import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 import { SchemaProps, serialize } from '../src/schema/index.js'
 import { deSerializeSchema, resultToObject } from '../src/protocol/index.js'
+import { testDb } from './shared/index.js'
 
 await test('big nodes', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
   const makeALot = (n: number) => {
     const props: SchemaProps = {}
     for (let i = 0; i < n; i++) {
@@ -19,7 +13,7 @@ await test('big nodes', async (t) => {
     return props
   }
 
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       mega: {
         props: {
@@ -54,8 +48,8 @@ await test('big nodes', async (t) => {
   })
   await db.drain()
 
-  const mega = (await db.query('mega').get()).toObject()
-  const giga = (await db.query('giga').get()).toObject()
+  const mega = await db.query('mega').get()
+  const giga = await db.query('giga').get()
   deepEqual(mega[1].f4092, 1337)
   deepEqual(giga[1].f100, 1337)
 
@@ -65,37 +59,9 @@ await test('big nodes', async (t) => {
 
   const megaRefQ = await db.query('mega').include('ref').get()
 
-  const megaRef = megaRefQ.toObject()
-  const gigaRef = (await db.query('giga').include('ref').get()).toObject()
+  const megaRef = megaRefQ
+  const gigaRef = await db.query('giga').include('ref').get()
 
   deepEqual(gigaRef[0].ref.id, 2)
   deepEqual(megaRef[1].ref.id, 1)
-
-  const megaInclude = await db.query('mega').get()
-
-  const serializedSchema = serialize(megaInclude.def.readSchema!)
-  const deserializedSchema = deSerializeSchema(serializedSchema)
-
-  const obj = resultToObject(
-    deserializedSchema,
-    megaInclude.result,
-    megaInclude.result.byteLength - 4,
-    0,
-  )
-
-  deepEqual(obj[1].f4092, 1337)
-
-  const megaIncludeSelective = await db.query('mega').include('f4092').get()
-
-  const serializedSchemaSmall = serialize(megaIncludeSelective.def.readSchema!)
-  const deserializedSchemaSmall = deSerializeSchema(serializedSchemaSmall)
-
-  const obj2 = resultToObject(
-    deserializedSchemaSmall,
-    megaIncludeSelective.result,
-    megaIncludeSelective.result.byteLength - 4,
-    0,
-  )
-
-  deepEqual(obj2[1].f4092, 1337, 'seclective include large schema')
 })

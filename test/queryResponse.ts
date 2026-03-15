@@ -1,17 +1,12 @@
-import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
+import { testDb } from './shared/index.js'
 import { equal } from './shared/assert.js'
 import { notEqual } from 'assert'
 import { extractNumber } from '../src/utils/index.js'
+import { checksum } from '../src/db-query/query/index.js'
 
 await test('correct version', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -29,7 +24,7 @@ await test('correct version', async (t) => {
 
   equal(
     extractNumber(response.version),
-    response.checksum,
+    checksum(response),
     'Checksum is recoverable from the 53 bit js version number',
   )
 

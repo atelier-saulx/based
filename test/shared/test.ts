@@ -1,9 +1,14 @@
 import { styleText } from 'node:util'
 import { fileURLToPath } from 'url'
 import { join, dirname, resolve } from 'path'
-import { BasedDb } from '../../src/index.js'
+import {
+  BasedDb,
+  DbClient,
+  DbServer,
+  getDefaultHooks,
+} from '../../src/index.js'
 import { deepEqual } from './assert.js'
-import { wait, bufToHex } from '../../src/utils/index.js'
+import { wait } from '../../src/utils/index.js'
 import fs from 'node:fs/promises'
 
 export const counts = {
@@ -29,7 +34,7 @@ const errors = new Set<string>()
 
 export type T = {
   after: (fn: () => Promise<void> | void, push?: boolean) => void
-  backup: (db: BasedDb) => Promise<void>
+  backup: (db: DbServer) => Promise<void>
   tmp: string
 }
 
@@ -61,7 +66,7 @@ const test: {
         afters.unshift(fn)
       }
     },
-    backup: async (db: BasedDb) => {
+    backup: async (db: DbServer) => {
       afters.push(async () => {
         try {
           await db.destroy()
@@ -72,17 +77,19 @@ const test: {
         return
       }
 
-      const fields = ['*', '**']
-      const make = async (db) => {
+      const make = async (db: DbServer) => {
+        const client = new DbClient({
+          hooks: getDefaultHooks(db),
+        })
         const checksums: any[] = []
         const data: any[] = []
         const counts: any[] = []
 
-        for (const type in db.server.schema?.types) {
-          let x = await db.query(type).include(fields).get()
-          checksums.push(x.checksum)
-          data.push(x.toObject())
-          counts.push(await db.query(type).count().get().toObject().count)
+        for (const type in db.schema?.types) {
+          let x = await client.query(type).include('*', '**').get()
+          checksums.push(x['checksum'])
+          data.push(x)
+          counts.push((await client.query(type).count().get()).count)
         }
 
         return [checksums, data, counts]
@@ -95,17 +102,15 @@ const test: {
       console.log(styleText('gray', `saved db ${performance.now() - d} ms`))
 
       const size = await dirSize(t.tmp)
-
-      const kbs = ~~(size / 1024)
-      if (kbs < 5000) {
-        console.log(styleText('gray', `backup size ${kbs}kb`))
-      } else {
-        console.log(styleText('gray', `backup size ${~~(kbs / 1024)}mb`))
-      }
+      const strSize =
+        size < 1_048_576
+          ? `${Math.ceil(size / 1024)} kiB`
+          : `${Math.ceil(size / 1_048_576)} MiB`
+      console.log(styleText('gray', `backup size ${strSize}`))
 
       await db.stop()
 
-      const newDb = new BasedDb({
+      const newDb = new DbServer({
         path: t.tmp,
       })
 
@@ -135,7 +140,7 @@ const test: {
           deepEqual(
             b[di],
             a[di],
-            `Mismatch after backup (len:${b.length}) ${Object.keys(db.server.schema!.types)[di]}`,
+            `Mismatch after backup (len:${b.length}) ${Object.keys(db.schema!.types)[di]}`,
           )
         }
         const ci = findFirstDiffPos(counts, c)
@@ -143,7 +148,7 @@ const test: {
           deepEqual(
             c[ci],
             counts[ci],
-            `Mismatching count after backup (len:${b.length}) ${Object.keys(db.server.schema!.types)[ci]}`,
+            `Mismatching count after backup (len:${b.length}) ${Object.keys(db.schema!.types)[ci]}`,
           )
         }
       }

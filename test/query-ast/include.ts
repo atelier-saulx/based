@@ -1,0 +1,208 @@
+import { QueryAst } from '../../src/db-query/ast/ast.js'
+import { astToQueryCtx } from '../../src/db-query/ast/toCtx.js'
+import {
+  resultToObject,
+  serializeReadSchema,
+  deSerializeSchema,
+} from '../../src/protocol/index.js'
+import { AutoSizedUint8Array } from '../../src/utils/AutoSizedUint8Array.js'
+import { writeUint32 } from '../../src/utils/uint8.js'
+import wait from '../../src/utils/wait.js'
+import { perf } from '../shared/perf.js'
+import test, { T } from '../shared/test.js'
+import { deflateSync } from 'zlib'
+import { fastPrng } from '../../src/utils/fastPrng.js'
+import { deepEqual, testDbClient, testDbServer } from '../shared/index.js'
+import { equal } from 'assert'
+import { SchemaIn } from '../../src/sdk.js'
+
+const generateMockEmbedding = (size = 768) => {
+  return {
+    probability: Math.random(),
+    embedding: Array.from({ length: size }, () => Math.random() * 2 - 1),
+  }
+}
+
+await test('include', async (t) => {
+  const server = await testDbServer(t, { noBackup: true })
+  const schema: SchemaIn = {
+    locales: {
+      en: true,
+      nl: { fallback: ['en'] },
+      fi: { fallback: ['en', 'nl'] },
+    },
+    // locales: ['nl', 'en', 'fr', 'aa', 'ab', 'el', 'fi', 'pt'],
+    types: {
+      friend: {
+        y: 'uint32',
+      },
+      user: {
+        aliasId: 'alias',
+        name: 'string',
+        big: { type: 'string', compression: 'none' },
+        localized: {
+          type: 'string',
+          localized: true,
+        },
+        personality: {
+          type: 'vector',
+          baseType: 'float32',
+          size: 768,
+        },
+        mrFriend: {
+          ref: 'user',
+          prop: 'mrFriend',
+          $level: 'uint32',
+        },
+        friends: {
+          items: {
+            ref: 'user',
+            prop: 'friends',
+            $level: 'string',
+          },
+        },
+        // ----------------------------
+        derp: { type: 'string', maxBytes: 64 },
+        x: 'boolean',
+        flap: 'uint32',
+        enum: ['ok', 'bad', 'great'],
+        y: 'uint32',
+        cook: {
+          type: 'object',
+          props: {
+            cookie: 'number',
+          },
+        },
+      },
+    },
+  } as const
+  const client = await testDbClient(server, schema)
+
+  let syntheticData = ''
+
+  for (let i = 0; i < 200; i++) {
+    syntheticData += 'ab '
+  }
+
+  const a = client.create('user', {
+    localized: {
+      en: 'mr jim EN',
+      nl: 'derpi yuz NL',
+    },
+    aliasId: 'jim',
+    derp: 'aaaaa',
+    y: 15,
+  })
+
+  const b = await client.create('user', {
+    name: 'mr snurf b',
+    localized: {
+      en: 'MR B ENG',
+    },
+    derp: 'aaaaa',
+    aliasId: 'snurf',
+    y: 15,
+    x: true,
+    big: 'mr giraffe man',
+    flap: 9999,
+    cook: {
+      cookie: 1234,
+    },
+    mrFriend: { id: a },
+  })
+
+  let d = Date.now()
+
+  const embeds: { probability: number; embedding: number[] }[] = []
+
+  const rand = fastPrng()
+  // const ids: number[] = []
+  for (let i = 0; i < 2; i++) {
+    // ids.push(i + 1)
+    const embedding = generateMockEmbedding()
+    embeds[i] = embedding
+    client.create('user', {
+      y: i,
+      aliasId: '#' + i,
+      derp: 'aaaaa',
+      personality: new Float32Array(embedding.embedding),
+      friends: [
+        { id: a, $level: rand(0, 200) + '' },
+        { id: b, $level: rand(0, 200) + '' },
+      ],
+    })
+  }
+
+  await client.drain()
+
+  const ast: QueryAst = {
+    type: 'user',
+    target: { aliasId: '#1' },
+    range: { start: 0, end: 1e6 },
+    filter: {
+      props: {
+        y: {
+          ops: [{ op: '>', val: 0 }],
+        },
+      },
+    },
+  }
+
+  console.dir(ast, { depth: 10 })
+
+  const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
+
+  console.log(deflateSync(ctx.query).byteLength, '/', ctx.query.byteLength)
+
+  const queries: any = []
+  for (let i = 0; i < 10; i++) {
+    const x = ctx.query.slice(0)
+    writeUint32(x, i + 1, 0)
+    queries.push(x)
+  }
+
+  console.log('START PERF', Date.now() - d, 'ms')
+  const sizes: Set<number> = new Set()
+  await perf.skip(
+    async () => {
+      const q: any = []
+      for (let i = 0; i < 5; i++) {
+        q.push(server.getQueryBuf(queries[i]))
+      }
+      const x = await Promise.all(q)
+      x.forEach((v) => sizes.add(v.byteLength))
+    },
+    'filter speed (5 cores) 25M / scan',
+    {
+      repeat: 10,
+    },
+  )
+
+  console.log(' PERF DONE', Date.now() - d, 'ms')
+
+  const readSchemaBuf = serializeReadSchema(ctx.readSchema)
+
+  const result = await server.getQueryBuf(ctx.query)
+  const obj = resultToObject(
+    deSerializeSchema(readSchemaBuf),
+    result,
+    result.byteLength - 4,
+  )
+
+  console.log('BLA:')
+  // console.dir(ctx.readSchema, { depth: 10 })
+  // console.log('-------------------------------')
+  // console.dir(deSerializeSchema(readSchemaBuf), { depth: 10 })
+  console.dir(obj, { depth: 10 })
+
+  equal(obj.length, 1)
+  equal(obj[0].id, 1)
+
+  // equal(obj[3].friends.length, 1)
+
+  deepEqual(obj, resultToObject(ctx.readSchema, result, result.byteLength - 4))
+
+  await wait(1000)
+
+  console.log('REACHED TILL END!', result.byteLength, sizes)
+})

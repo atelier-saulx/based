@@ -1,9 +1,9 @@
 import type { SchemaHooks } from '../../../schema/index.js'
 import {
-  ReaderAggregateSchema,
-  ReaderPropDef,
-  ReaderSchema,
-  ReaderSchemaEnum,
+  ReadAggregateSchema,
+  ReadProp,
+  ReadSchema,
+  ReadSchemaEnum,
   PROPERTY_BIT_MAP,
   DEF_BIT_MAP,
   GROUP_BY_BIT_MAP,
@@ -17,25 +17,25 @@ import {
   writeUint32,
 } from '../../../utils/index.js'
 
-export type ReaderSchema2 = {
+export type ReadSchema2 = {
   readId: number
-  props: { [prop: string]: ReaderPropDef }
-  main: { props: { [start: string]: ReaderPropDef }; len: number }
-  type: ReaderSchemaEnum
+  props: { [prop: string]: ReadProp }
+  main: { props: { [start: string]: ReadProp }; len: number }
+  type: ReadSchemaEnum
   refs: {
     [prop: string]: {
-      schema: ReaderSchema
-      prop: ReaderPropDef
+      schema: ReadSchema
+      prop: ReadProp
     }
   }
   hook?: SchemaHooks['read']
-  aggregate?: ReaderAggregateSchema
-  edges?: ReaderSchema
+  aggregate?: ReadAggregateSchema
+  edges?: ReadSchema
   search?: boolean
 }
 
 const serializeAggregate = (
-  agg: ReaderAggregateSchema['aggregates'][number],
+  agg: ReadAggregateSchema['aggregates'][number],
   blocks: Uint8Array[],
 ) => {
   const header = new Uint8Array(6)
@@ -77,7 +77,7 @@ const serializeEnum = (
 }
 
 const serializeAggregates = (
-  agg: ReaderAggregateSchema,
+  agg: ReadAggregateSchema,
   blocks: Uint8Array[],
 ) => {
   const header = new Uint8Array(5)
@@ -90,34 +90,34 @@ const serializeAggregates = (
     serializeAggregate(a, blocks)
   }
 
-  if (agg.groupBy) {
-    let options = 0
-    const opts = new Uint8Array([1, 0, agg.groupBy.typeIndex])
-    blocks.push(opts)
-    if ('stepRange' in agg.groupBy) {
-      options |= GROUP_BY_BIT_MAP.stepRange
-      const step = new Uint8Array(8)
-      writeDoubleLE(step, agg.groupBy.stepRange!, 0)
-      blocks.push(step)
+  if (agg.groupBy && agg.groupBy.length > 0) {
+    for (const g of agg.groupBy) {
+      let options = 0
+      const opts = new Uint8Array([1, 0, g.typeIndex])
+      blocks.push(opts)
+      if ('stepRange' in g) {
+        options |= GROUP_BY_BIT_MAP.stepRange
+        const step = new Uint8Array(8)
+        writeDoubleLE(step, g.stepRange!, 0)
+        blocks.push(step)
+      }
+      if ('stepType' in g) {
+        options |= GROUP_BY_BIT_MAP.stepType
+      }
+      if ('display' in g) {
+        options |= GROUP_BY_BIT_MAP.display
+        const displayString = JSON.stringify(g.display!.resolvedOptions())
+        const n = ENCODER.encode(displayString)
+        const sizeHeader = new Uint8Array(2)
+        writeUint16(sizeHeader, n.byteLength, 0)
+        blocks.push(sizeHeader, n)
+      }
+      if ('enum' in g) {
+        options |= GROUP_BY_BIT_MAP.enum
+        serializeEnum(g, blocks)
+      }
+      opts[0] = options
     }
-    if ('stepType' in agg.groupBy) {
-      options |= GROUP_BY_BIT_MAP.stepType
-    }
-    if ('display' in agg.groupBy) {
-      options |= GROUP_BY_BIT_MAP.display
-      const displayString = JSON.stringify(
-        agg.groupBy.display!.resolvedOptions(),
-      )
-      const n = ENCODER.encode(displayString)
-      const sizeHeader = new Uint8Array(2)
-      writeUint16(sizeHeader, n.byteLength, 0)
-      blocks.push(sizeHeader, n)
-    }
-    if ('enum' in agg.groupBy) {
-      options |= GROUP_BY_BIT_MAP.enum
-      serializeEnum(agg.groupBy, blocks)
-    }
-    opts[1] = options
   } else {
     blocks.push(new Uint8Array([0]))
   }
@@ -126,7 +126,7 @@ const serializeAggregates = (
 const serializeProp = (
   key: number,
   keySize: 1 | 2,
-  prop: ReaderPropDef,
+  prop: ReadProp,
   blocks: Uint8Array[],
 ) => {
   const header = new Uint8Array(3 + keySize)
@@ -136,7 +136,7 @@ const serializeProp = (
     writeUint16(header, key, 0)
   }
 
-  header[keySize] = prop.typeIndex
+  header[keySize] = prop.type
   // 2 opions
   header[keySize + 2] = prop.path.length
   blocks.push(header)
@@ -148,9 +148,8 @@ const serializeProp = (
   // Optional things
   let options = 0
   if ('meta' in prop) {
-    //   1 or 2
     options |= PROPERTY_BIT_MAP.meta
-    blocks.push(new Uint8Array([prop.meta!]))
+    blocks.push(new Uint8Array([prop.meta as number]))
   }
   if ('enum' in prop) {
     options |= PROPERTY_BIT_MAP.enum
@@ -161,12 +160,6 @@ const serializeProp = (
     // Size 8
     blocks.push(new Uint8Array([prop.vectorBaseType! - 1]))
   }
-  if ('cardinalityMode' in prop) {
-    blocks.push(new Uint8Array([prop.cardinalityMode!]))
-  }
-  if ('cardinalityPrecision' in prop) {
-    blocks.push(new Uint8Array([prop.cardinalityPrecision!]))
-  }
   if ('len' in prop) {
     options |= PROPERTY_BIT_MAP.len
     const len = new Uint8Array(2)
@@ -174,23 +167,41 @@ const serializeProp = (
     blocks.push(len)
   }
   if ('locales' in prop) {
-    options |= PROPERTY_BIT_MAP.locales
     const keys = Object.keys(prop.locales!)
+    const localesHasMeta = keys.find((k) => !!prop.locales![k].meta)
     const len = keys.length
-    const locales = new Uint8Array(len * 4 + 1)
     let i = 1
-    for (const key of keys) {
-      writeUint16(locales, Number(key), i)
-      ENCODER.encodeInto(prop.locales![key], locales.subarray(i + 2, i + 4))
-      i += 4
+    if (localesHasMeta) {
+      options |= PROPERTY_BIT_MAP.localesWithMeta
+      const locales = new Uint8Array(len * 5 + 1)
+      for (const key of keys) {
+        const lang = prop.locales![key]
+        locales[i] = lang.meta ?? 0
+        writeUint16(locales, Number(key), i + 1)
+        ENCODER.encodeInto(lang.name, locales.subarray(i + 3, i + 5))
+        i += 5
+      }
+      locales[0] = len
+      blocks.push(locales)
+    } else {
+      options |= PROPERTY_BIT_MAP.locales
+      const locales = new Uint8Array(len * 4 + 1)
+      for (const key of keys) {
+        writeUint16(locales, Number(key), i)
+        ENCODER.encodeInto(
+          prop.locales![key].name,
+          locales.subarray(i + 2, i + 4),
+        )
+        i += 4
+      }
+      locales[0] = len
+      blocks.push(locales)
     }
-    locales[0] = len
-    blocks.push(locales)
   }
   header[keySize + 1] = options
 }
 
-const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
+const innerSerialize = (schema: ReadSchema, blocks: Uint8Array[] = []) => {
   const top = new Uint8Array(2)
   top[0] = schema.type
 
@@ -278,6 +289,6 @@ const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
   return blocks
 }
 
-export const serializeReaderSchema = (schema: ReaderSchema) => {
+export const serializeReadSchema = (schema: ReadSchema) => {
   return concatUint8Arr(innerSerialize(schema))
 }

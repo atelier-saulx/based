@@ -9,7 +9,7 @@ import {
 } from './shared.js'
 import type { SchemaProp } from './prop.js'
 import { isHooks, type SchemaPropHooks } from './hooks.js'
-import { getValidator } from '../def/validation.js'
+import { defs, TypeDef } from '../defs/index.js'
 
 type Validation = (payload: any, schema: SchemaProp<true>) => boolean | string
 
@@ -54,20 +54,14 @@ export const parseBase = <T extends SchemaProp<true>>(
   assertExpectedProps(result, def)
 
   if ('default' in result && result.default !== undefined) {
-    // @ts-ignore
-    const validation = getValidator(result)
-    // @ts-ignore
-    const msg = `Default should be valid ${('format' in result && result.format) || result.type}`
-    if (isRecord(def.default)) {
-      for (const k in def.default) {
-        // @ts-ignore
-        assert(validation(def.default[k], result), msg)
-      }
-    } else {
-      // @ts-ignore
-      assert(validation(def.default, result), msg)
-    }
-
+    // TODO make this nicer
+    const PropDef = defs[result.type]
+    const spec = new PropDef(
+      result,
+      [],
+      new TypeDef('', { props: {} }, { hash: 0, types: {} }),
+    )
+    spec.validate(def.default)
     result.default = def.default
   }
 

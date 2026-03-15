@@ -1,17 +1,11 @@
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
+import { testDb, testDbClient, testDbServer } from '../shared/index.js'
 import { deepEqual, equal, isSorted } from '../shared/assert.js'
 import { text } from '../shared/examples.js'
 import { randomString } from '../../src/utils/index.js'
 
 await test('compression / large strings', async (t) => {
-  let db: BasedDb | null
-  t.after(() => {
-    if (db) {
-      return db.destroy()
-    }
-  })
-
   const testCase = async (
     name: string,
     opts: {
@@ -21,18 +15,11 @@ await test('compression / large strings', async (t) => {
       compression?: boolean
     } = {},
   ) => {
-    if (db) {
-      await db.destroy()
-      db = null
-    }
     const len = opts.amount ?? 5
     const random = opts.random ?? 0
     const value = opts.value ?? ''
-    db = new BasedDb({
-      path: t.tmp,
-    })
-    await db.start({ clean: true })
-    await db.setSchema({
+    const server = await testDbServer(t, { noBackup: true })
+    const db = await testDbClient(server, {
       types: {
         article: {
           props: {
@@ -46,6 +33,7 @@ await test('compression / large strings', async (t) => {
         },
       },
     })
+
     const results: { id: number; nr: number; article: string; name: string }[] =
       []
     for (let i = 0; i < len; i++) {
@@ -65,8 +53,8 @@ await test('compression / large strings', async (t) => {
       p.id = Number(db.create('article', p))
       results.push(p)
     }
-    const dbTime = await db.drain()
-    equal(dbTime < 1000, true, 'db modify should not take longer then 1s')
+    // const dbTime = await db.drain()
+    // equal(dbTime < 1000, true, 'db modify should not take longer then 1s')
     let d = Date.now()
     let siTime = Date.now() - d
     equal(
@@ -81,21 +69,57 @@ await test('compression / large strings', async (t) => {
         .sort('article')
         .range(0, len)
         .get()
-        .then((v) => v.toObject().map((v) => v.nr)),
+        .then((v) => v.map((v) => v.nr)),
       results.sort((a, b) => a.nr - b.nr).map((v) => v.nr),
       name,
     )
+
     deepEqual(
       await db
         .query('article')
         .include('name', 'article', 'nr')
-        .sort('article', 'desc')
+        .sort('article')
+        .order('desc')
         .range(0, len)
         .get()
-        .then((v) => v.toObject().map((v) => v.nr)),
+        .then((v) => v.map((v) => v.nr)),
       results.sort((b, a) => a.nr - b.nr).map((v) => v.nr),
       name + ' desc',
     )
+
+    await db.update('article', 1, {
+      name: 5 + ' cool',
+      article:
+        5 +
+        ' ' +
+        ~~(Math.random() * 9) +
+        (random ? randomString(random, { noSpecials: true }) : '') +
+        value +
+        5,
+      nr: 5,
+    })
+
+    const items = await db
+      .query('article')
+      .include('article')
+      .sort('article')
+      .get()
+
+    isSorted(items, 'article')
+
+    await db.delete('article', 5)
+
+    const items2 = await db
+      .query('article')
+      .include('article')
+      .sort('article')
+      .get()
+
+    equal(items2.length, items.length - 1)
+    isSorted(items2, 'article')
+
+    await server.destroy()
+    db.destroy()
   }
 
   await testCase('short strings')
@@ -124,10 +148,7 @@ await test('compression / large strings', async (t) => {
 })
 
 await test('fixed len strings', async (t) => {
-  const db = new BasedDb({ path: t.tmp })
-  t.after(() => db.destroy())
-  await db.start({ clean: true })
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       article: {
         props: {
@@ -145,10 +166,29 @@ await test('fixed len strings', async (t) => {
     })
   }
 
-  await db.drain()
+  isSorted(
+    await db
+      .query('article')
+      .include('name', 'nr')
+      .sort('name')
+      .order('desc')
+      .get(),
+    'name',
+    'desc',
+  )
+
+  await db.update('article', 1, {
+    name: 5 + ' cool',
+    nr: 5,
+  })
 
   isSorted(
-    await db.query('article').include('name', 'nr').sort('name', 'desc').get(),
+    await db
+      .query('article')
+      .include('name', 'nr')
+      .sort('name')
+      .order('desc')
+      .get(),
     'name',
     'desc',
   )

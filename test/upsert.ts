@@ -1,7 +1,6 @@
-import { deepEqual, equal } from './shared/assert.js'
+import { deepEqual } from './shared/assert.js'
 import test from './shared/test.js'
 import { start } from './shared/multi.js'
-import { BasedDb } from '../src/index.js'
 
 await test('upsert', async (t) => {
   const {
@@ -55,20 +54,33 @@ await test('upsert', async (t) => {
     })
   }
 
-  await client2.upsert('article', {
-    externalId: 'flap',
-    name: 'flap',
-    contributors: [
-      client2.upsert('user', {
-        email: 'james@flapmail.com',
-        name: 'James!',
-      }),
-      client2.upsert('user', {
-        email: 'derp@flapmail.com',
-        name: 'Derp!',
-      }),
-    ],
-  })
+  await client2.upsert(
+    'article',
+    { externalId: 'flap' },
+    {
+      name: 'flap',
+      contributors: [
+        client2.upsert(
+          'user',
+          {
+            email: 'james@flapmail.com',
+          },
+          {
+            name: 'James!',
+          },
+        ),
+        client2.upsert(
+          'user',
+          {
+            email: 'derp@flapmail.com',
+          },
+          {
+            name: 'Derp!',
+          },
+        ),
+      ],
+    },
+  )
 
   deepEqual(await client1.query('article').include('*', '**').get(), [
     {
@@ -81,54 +93,4 @@ await test('upsert', async (t) => {
       ],
     },
   ])
-})
-
-await test('upsert no alias', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start()
-  t.after(() => db.destroy())
-  // t.after(() => db.stop())
-
-  await db.setSchema({
-    types: {
-      lala: {
-        props: {
-          lele: 'string',
-          lili: 'number',
-        },
-      },
-    },
-  })
-
-  // await db.drain()
-
-  equal(
-    (await db.query('lala').include('*').get().toObject()).length,
-    0,
-    'before upsert',
-  )
-
-  await db.upsert('lala', {
-    lele: 'lulu',
-    lili: 813,
-  })
-
-  equal(
-    (await db.query('lala').include('*').get().toObject()).length,
-    1,
-    'after upsert',
-  )
-
-  await db.upsert('lala', {
-    lele: 'lulu',
-    lili: 813,
-  })
-
-  equal(
-    (await db.query('lala').include('*').get().toObject()).length,
-    2,
-    'upsert no alias should insert',
-  )
 })

@@ -3,7 +3,7 @@ import { join } from 'path'
 import { toCsvHeader, toCsvChunk } from './toCsv.js'
 import os from 'node:os'
 import { PropType, type PropTypeEnum } from '../zigTsExports.js'
-import { BasedDb } from '../index.js'
+import { DbServer } from '../db-server/index.js'
 
 let CHUNK_SIZE = 1025
 let OUTPUT_DIR = './tmp/export'
@@ -130,7 +130,7 @@ const getCsvFileName = (
 //  await db.server.unloadBlock(def.type, startNodeId)
 //}
 
-const db = new BasedDb({ path: './tmp' })
+const db = new DbServer({ path: './tmp' })
 
 await db.start({ noLoadDumps: true })
 

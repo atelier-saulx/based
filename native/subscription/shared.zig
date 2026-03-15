@@ -20,7 +20,7 @@ pub inline fn upsertSubType(
         typeSubs.idBitSet = jemalloc.alloc(u1, typeSubs.bitSetSize);
         @memset(typeSubs.idBitSet, 0);
         typeSubs.idSubs = Subscription.IdSubs.init(std.heap.raw_c_allocator);
-
+        typeSubs.aliasSubs = Subscription.AliasSubs.init(std.heap.raw_c_allocator);
         try thread.subscriptions.types.put(typeId, typeSubs);
     } else {
         typeSubs = thread.subscriptions.types.get(typeId).?;
@@ -36,6 +36,14 @@ pub inline fn removeSubTypeIfEmpty(
     if (typeSubs.idSubs.count() == 0 and typeSubs.multiSubsSize == 0) {
         if (thread.subscriptions.types.fetchRemove(typeId)) |removed_entry| {
             removed_entry.value.idSubs.deinit();
+
+            // var alias_iter = removed_entry.value.aliasSubs.valueIterator();
+            // while (alias_iter.next()) |alias_tree| {
+            //     jemalloc.free(alias_tree.*.memory.ptr);
+            //     jemalloc.free(alias_tree.*);
+            // }
+            // removed_entry.value.aliasSubs.deinit();
+
             jemalloc.free(removed_entry.value.idBitSet);
             jemalloc.free(removed_entry.value);
         }

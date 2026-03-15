@@ -1,15 +1,9 @@
-import { BasedDb } from '../../src/index.js'
+import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
 
 await test('multiple', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -160,7 +154,14 @@ await test('multiple', async (t) => {
       {
         id: 2,
         name: 'Typical Thursday',
-        contributors: [{ id: 1, $rating: 1, $rdy: false }],
+        contributors: [
+          {
+            id: 1,
+            $rating: 1,
+            $rdy: false,
+            $derp: '',
+          },
+        ],
       },
     ],
   )
@@ -196,20 +197,21 @@ await test('multiple', async (t) => {
       {
         id: 2,
         name: 'Typical Thursday',
-        contributors: [{ id: 1, $rating: 1, $rdy: false }],
+        contributors: [
+          {
+            id: 1,
+            $rating: 1,
+            $rdy: false,
+            $derp: '',
+          },
+        ],
       },
     ],
   )
 })
 
 await test('single', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -270,28 +272,19 @@ await test('single', async (t) => {
     ],
   )
 
-  deepEqual(
-    await db.query('article').include('contributor.$rdy').get().toObject(),
-    [
-      {
+  deepEqual(await db.query('article').include('contributor.$rdy').get(), [
+    {
+      id: 1,
+      contributor: {
         id: 1,
-        contributor: {
-          id: 1,
-          $rdy: true,
-        },
+        $rdy: true,
       },
-    ],
-  )
+    },
+  ])
 })
 
 await test('multi references update', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -345,7 +338,7 @@ await test('multi references update', async (t) => {
       .query('article')
       .include('contributors.$age')
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [{ id: 1, contributors: [{ id: 1, $age: 66 }] }],
     'age 66',
   )
@@ -367,7 +360,7 @@ await test('multi references update', async (t) => {
       .query('article')
       .include('contributors.$age')
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [{ id: 1, contributors: [{ id: 1, $age: 2 }] }],
     'age 2',
   )
@@ -377,20 +370,14 @@ await test('multi references update', async (t) => {
       .query('article')
       .include('contributors.$plonki')
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [{ id: 1, contributors: [{ id: 1, $plonki: 100 }] }],
     'plonki 100',
   )
 })
 
 await test('single ref update', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {},
       article: {

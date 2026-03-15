@@ -58,7 +58,7 @@ await test('schema with many uint8 fields', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
   const voteCountrySchema: any = countrySchema
 
@@ -158,7 +158,7 @@ await test('schema with many uint8 fields', async (t) => {
     //  ).execTime.toFixed(2),
     //  'ms',
     //)
-    const n = cnt.toObject().count
+    const n = cnt.count
     const grp = await db
       .query('vote')
       .groupBy('fromCountry')

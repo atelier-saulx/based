@@ -1,15 +1,9 @@
-import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
+import { testDb } from '../shared/index.js'
 import { deepEqual } from '../shared/assert.js'
 
 await test('binary sort', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       binary: {
         props: {
@@ -58,7 +52,12 @@ await test('binary sort', async (t) => {
   )
 
   deepEqual(
-    await db.query('binary').sort('data', 'desc').include('name', 'data').get(),
+    await db
+      .query('binary')
+      .sort('data')
+      .order('desc')
+      .include('name', 'data')
+      .get(),
     [
       { id: 2, name: 'second', data: buffer2 },
       { id: 1, name: 'first', data: buffer1 },

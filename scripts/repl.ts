@@ -30,7 +30,7 @@ const typeIndex2Align = {
   [PropType.boolean]: 'c',
   [PropType.enum]: 'c',
   [PropType.string]: 'l',
-  [PropType.text]: 'l',
+  [PropType.stringLocalized]: 'l',
   [PropType.reference]: 'l',
   [PropType.references]: 'l',
   [PropType.microBuffer]: 'l',
@@ -123,7 +123,7 @@ async function tabled(
           const value = k.includes('.')
             ? k.split('.').reduce((acc, cur) => acc[cur], v)
             : v[k]
-          if (schema.props[k].typeIndex === PropType.text) {
+          if (schema.props[k].typeIndex === PropType.stringLocalized) {
             return JSON.stringify(value)
           }
           return `${value}`

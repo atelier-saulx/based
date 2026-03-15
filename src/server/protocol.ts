@@ -12,11 +12,15 @@ import {
   FunctionClientSubType,
   FunctionClientType,
   resultToObject,
-  serializeReaderSchema,
+  serializeReadSchema,
   type FunctionServerType,
 } from '../protocol/index.js'
 import type { WebSocketSession } from '../functions/context.js'
-import { BasedQueryResponse } from '../db-client/query/BasedQueryResponse.js'
+import {
+  $buffer,
+  $schema,
+  isBasedQueryResponse,
+} from '../db-query/query/result.js'
 
 export const COMPRESS_FROM_BYTES = 150
 
@@ -170,8 +174,8 @@ export const valueToBufferV1 = (
   let buf: Uint8Array
   if (payload === undefined) {
     buf = new Uint8Array([])
-  } else if (payload instanceof BasedQueryResponse) {
-    buf = ENCODER.encode(payload.toJSON())
+    // } else if (isBasedQueryResponse(payload)) {
+    //   buf = ENCODER.encode(payload.toJSON())
   } else {
     try {
       buf = ENCODER.encode(JSON.stringify(payload))
@@ -236,9 +240,9 @@ export const valueToBuffer = (payload: any, deflate: boolean): ValueBuffer => {
     }
   }
 
-  if (payload instanceof BasedQueryResponse) {
-    const serializedSchema = serializeReaderSchema(payload.def.readSchema!)
-    const res = payload.result.subarray(0, -4) // minus 4 for hash
+  if (isBasedQueryResponse(payload)) {
+    const serializedSchema = serializeReadSchema(payload[$schema])
+    const res = payload[$buffer].subarray(0, -4) // minus 4 for hash
     // keep 4 for serializedSchema byteLength
     const buf = new Uint8Array(4 + serializedSchema.byteLength + res.byteLength)
     writeUint32(buf, serializedSchema.byteLength, 0)

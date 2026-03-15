@@ -11,7 +11,7 @@ pub fn blockHash(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op: t.OpType) !vo
     const resp = try thread.query.result(20, id, op);
     const start = utils.read(u32, q, 5);
     const typeCode = utils.read(u16, q, 9);
-    const typeEntry = selva.c.selva_get_type_by_index(ctx.selva.?, typeCode);
+    const typeEntry = selva.c.selva_get_type_by_index(ctx.selva, typeCode);
     var err: c_int = selva.c.SELVA_EINTYPE;
     if (typeEntry) |te| {
         var hash: SelvaHash128 = 0;
@@ -24,7 +24,7 @@ pub fn blockHash(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op: t.OpType) !vo
 pub fn blockStatuses(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op: t.OpType) !void {
     const id = utils.read(u32, q, 0);
     const typeCode = utils.read(u16, q, 5);
-    const typeEntry = selva.c.selva_get_type_by_index(ctx.selva.?, typeCode);
+    const typeEntry = selva.c.selva_get_type_by_index(ctx.selva, typeCode);
 
     if (typeEntry) |te| {
         const len: usize = selva.c.selva_get_nr_blocks(te);

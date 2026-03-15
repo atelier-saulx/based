@@ -2,7 +2,7 @@ import { readUint32, makeTmpBuffer, DECODER } from '../../utils/index.js'
 import { COMPRESSED, NOT_COMPRESSED } from './types.js'
 import { inflateSync } from 'fflate'
 
-const { getUint8Array: getTmpBuffer } = makeTmpBuffer(4096) // the usual page size?
+const { getUint8Array: getTmpBuffer } = makeTmpBuffer(4096) // The usual page size?
 
 export const decompress = (val: Uint8Array): string => {
   return readString(val, 0, val.length, false)

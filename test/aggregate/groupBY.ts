@@ -1,19 +1,9 @@
-import { equal } from 'node:assert'
-import { BasedDb } from '../../src/index.js'
-import { allCountryCodes } from '../shared/examples.js'
 import test from '../shared/test.js'
-import { throws, deepEqual } from '../shared/assert.js'
+import { deepEqual } from '../shared/assert.js'
+import { testDb } from '../shared/index.js'
 
 await test('sum group by', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       sequence: {
         props: {
@@ -56,14 +46,10 @@ await test('sum group by', async (t) => {
     country: 'aa',
     AU: 15,
   })
-  // const s = db.create('sequence', { votes: [nl1, nl2, au1] })
-  db.drain()
-  db.create('sequence', { votes: nl1 })
-  db.create('sequence', { votes: nl2 })
-  db.create('sequence', { votes: au1 })
+  const s = db.create('sequence', { votes: [nl1, nl2, au1] })
 
   deepEqual(
-    await db.query('vote').sum('NL', 'AU').groupBy('country').get().toObject(),
+    await db.query('vote').sum('NL', 'AU').groupBy('country').get(),
     {
       bb: { NL: { sum: 10 }, AU: { sum: 0 } },
       aa: { NL: { sum: 20 }, AU: { sum: 15 } },
@@ -72,7 +58,7 @@ await test('sum group by', async (t) => {
   )
 
   deepEqual(
-    await db.query('vote').groupBy('country').get().toObject(),
+    await db.query('vote').groupBy('country').get(),
     { bb: {}, aa: {} },
     'groupBy with no aggregation function',
   )
@@ -80,26 +66,18 @@ await test('sum group by', async (t) => {
   // deepEqual(
   //   await db
   //     .query('vote')
-  //     .filter('country', '=', 'bb')
+  //     .filter('country', '=', 'bb') // filter string not implemented yet
   //     .groupBy('country')
   //     .sum('NL', 'AU')
   //     .get()
-  //     .toObject(),
+  //     ,
   //   { bb: { NL: { sum: 10 }, AU: { sum: 0 } } },
   //   'filter, groupBy on single distinct value',
   // )
 })
 
 await test('count group by', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       sequence: {
         props: {
@@ -142,14 +120,10 @@ await test('count group by', async (t) => {
     country: 'aa',
     AU: 15,
   })
-  // const s = db.create('sequence', { votes: [nl1, nl2, au1] })
-  db.drain()
-  db.create('sequence', { votes: nl1 })
-  db.create('sequence', { votes: nl2 })
-  db.create('sequence', { votes: au1 })
+  const s = db.create('sequence', { votes: [nl1, nl2, au1] })
 
   deepEqual(
-    await db.query('vote').count().groupBy('country').get().toObject(),
+    await db.query('vote').count().groupBy('country').get(),
     {
       bb: {
         count: 1,
@@ -164,26 +138,18 @@ await test('count group by', async (t) => {
   // deepEqual(
   //   await db
   //     .query('vote')
-  //     .filter('country', '=', 'bb')
+  //     .filter('country', '=', 'bb') // filter string not implemented yet
   //     .groupBy('country')
   //     .count()
   //     .get()
-  //     .toObject(),
+  //     ,
   //   { bb: { count: 1 } },
   //   'count, filter, groupBy on single distinct value',
   // )
 })
 
 await test('variable key sum', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -241,60 +207,38 @@ await test('variable key sum', async (t) => {
     flap: 80,
   })
 
-  // const strudelArticle = db.create('article', {
-  //   name: 'The wonders of Strudel',
-  //   contributors: [mrSnurp, flippie, derpie, dinkelDoink],
-  // })
-  db.drain()
-  db.create('article', {
+  const strudelArticle = db.create('article', {
     name: 'The wonders of Strudel',
-    contributors: mrSnurp,
-  })
-  db.create('article', {
-    name: 'The wonders of Strudel',
-    contributors: flippie,
-  })
-  db.create('article', {
-    name: 'The wonders of Strudel',
-    contributors: derpie,
-  })
-  db.create('article', {
-    name: 'The wonders of Strudel',
-    contributors: dinkelDoink,
+    contributors: [mrSnurp, flippie, derpie, dinkelDoink],
   })
 
-  // const stupidity = db.create('article', {
-  //   name: 'Les lois fondamentales de la stupidité humaine',
-  //   contributors: [cipolla],
-  // })
-  db.create('article', {
+  const stupidity = db.create('article', {
     name: 'Les lois fondamentales de la stupidité humaine',
-    contributors: cipolla,
+    contributors: [cipolla],
   })
-
-  // deepEqual(
-  //   await db
-  //     .query('article')
-  //     .include((q) => q('contributors').sum('flap'), 'name')
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       name: 'The wonders of Strudel',
-  //       contributors: { flap: { sum: 100 } },
-  //     },
-  //     {
-  //       id: 2,
-  //       name: 'Les lois fondamentales de la stupidité humaine',
-  //       contributors: { flap: { sum: 80 } },
-  //     },
-  //   ],
-  //   'sum, branched query, var len string',
-  // )
 
   deepEqual(
-    await db.query('user').groupBy('name').sum('flap').get().toObject(),
+    await db
+      .query('article')
+      .include((q) => q('contributors').sum('flap'), 'name')
+      .get(),
+    [
+      {
+        id: 1,
+        name: 'The wonders of Strudel',
+        contributors: { flap: { sum: 100 } },
+      },
+      {
+        id: 2,
+        name: 'Les lois fondamentales de la stupidité humaine',
+        contributors: { flap: { sum: 80 } },
+      },
+    ],
+    'sum, branched query, var len string',
+  )
+
+  deepEqual(
+    await db.query('user').groupBy('name').sum('flap').get(),
     {
       Flippie: { flap: { sum: 20 } },
       'Carlo Cipolla': { flap: { sum: 80 } },
@@ -306,7 +250,7 @@ await test('variable key sum', async (t) => {
   )
 
   deepEqual(
-    await db.query('user').groupBy('country').sum('flap').get().toObject(),
+    await db.query('user').groupBy('country').sum('flap').get(),
     {
       $undefined: { flap: { sum: 40 } },
       NL: { flap: { sum: 30 } },
@@ -316,43 +260,34 @@ await test('variable key sum', async (t) => {
     'sum, groupBy, main, $undefined groupBy key',
   )
 
-  // deepEqual(
-  //   await db
-  //     .query('article')
-  //     .include((select) => {
-  //       select('contributors').groupBy('name').sum('flap')
-  //     })
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       contributors: {
-  //         Flippie: { flap: { sum: 20 } },
-  //         'Mr snurp': { flap: { sum: 10 } },
-  //         Derpie: { flap: { sum: 30 } },
-  //         'Dinkel Doink': { flap: { sum: 40 } },
-  //       },
-  //     },
-  //     {
-  //       id: 2,
-  //       contributors: {
-  //         'Carlo Cipolla': { flap: { sum: 80 } },
-  //       },
-  //     },
-  //   ],
-  //   'sum, branched query, groupBy, references',
-  // )
+  deepEqual(
+    await db
+      .query('article')
+      .include((select) => select('contributors').groupBy('name').sum('flap'))
+      .get(),
+    [
+      {
+        id: 1,
+        contributors: {
+          Flippie: { flap: { sum: 20 } },
+          'Mr snurp': { flap: { sum: 10 } },
+          Derpie: { flap: { sum: 30 } },
+          'Dinkel Doink': { flap: { sum: 40 } },
+        },
+      },
+      {
+        id: 2,
+        contributors: {
+          'Carlo Cipolla': { flap: { sum: 80 } },
+        },
+      },
+    ],
+    'sum, branched query, groupBy, references',
+  )
 })
 
 await test('group by unique numbers', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       trip: {
         pickup: 'timestamp',
@@ -448,22 +383,20 @@ await test('group by unique numbers', async (t) => {
 })
 
 await test.skip('groupBy ranges in numeric properties', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
-    types: {
-      trip: {
-        tripId: 'number',
-        pickup: 'timestamp',
-        dropoff: 'timestamp',
-        distance: 'number',
+  const db = await testDb(
+    t,
+    {
+      types: {
+        trip: {
+          tripId: 'number',
+          pickup: 'timestamp',
+          dropoff: 'timestamp',
+          distance: 'number',
+        },
       },
     },
-  })
+    { noBackup: true },
+  )
 
   for (let i = 0; i < 10; i++) {
     db.create('trip', {

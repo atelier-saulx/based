@@ -35,10 +35,10 @@ const native = {
     return db.modify(q, dbCtx)
   },
 
-  start: (bridge: (id: number, payload: any) => void, fsPath: string, nrThreads: number) => {
+  start: (bridge: (id: number, payload: any) => void, fsPath: string, nrThreads: number, selvaSchema: Uint8Array) => {
     const fsPathBuf = new Uint8Array(db.stringByteLength(fsPath))
     ENCODER.encodeInto(fsPath, fsPathBuf)
-    return db.start(bridge, fsPathBuf, nrThreads)
+    return db.start(bridge, fsPathBuf, nrThreads, selvaSchema)
   },
 
   stop: (dbCtx: any) => {
@@ -90,10 +90,6 @@ const native = {
 
   crc32: (buf: Uint8Array) => {
     return db.crc32(buf)
-  },
-
-  destroySortIndex: (buf: Uint8Array, dbCtx: any) => {
-    return db.destroySortIndex(dbCtx, buf)
   },
 
   xxHash64: (buf: Uint8Array, target: Uint8Array, index: number) => {

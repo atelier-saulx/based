@@ -1,5 +1,3 @@
-const Modify = @import("common.zig");
-const ModifyCtx = Modify.ModifyCtx;
 const std = @import("std");
 const selva = @import("../selva/selva.zig");
 const utils = @import("../utils.zig");
@@ -11,185 +9,153 @@ const t = @import("../types.zig");
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const vectorLenU16 = std.simd.suggestVectorLength(u16).?;
 
-pub const Op = enum(u8) {
-    update = 0,
-    create = 1,
-    deleteNode = 2,
-    deleteField = 3,
-    deleteFieldLang = 4,
-    updatePartial = 5,
-};
-
-pub const SubCtx = struct {
-    subTypes: ?*Subscription.TypeSubscriptionCtx, // prob want to add subs here
-    idSubs: ?[]*Subscription.Sub,
-    id: u32,
-    thread: *Thread.Thread,
-};
-
-pub fn checkId(
-    ctx: *SubCtx,
-) !void {
-    if (ctx.subTypes) |typeSubs| {
-        if (ctx.id >= typeSubs.minId and
-            typeSubs.idBitSet[(ctx.id - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1) // can remove the modulo ^2
-        {
-            if (typeSubs.idSubs.get(ctx.id)) |idSubs| {
-                ctx.idSubs = idSubs;
-            }
-        } else {
-            ctx.idSubs = null;
-        }
+inline fn markSingleSub(thread: *Thread.Thread, sub: *Subscription.Sub) void {
+    if (thread.subscriptions.singleIdMarked.len < thread.subscriptions.lastIdMarked + 1) {
+        thread.subscriptions.singleIdMarked = jemalloc.realloc(
+            thread.subscriptions.singleIdMarked,
+            thread.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE,
+        );
     }
+    thread.subscriptions.singleIdMarked[thread.subscriptions.lastIdMarked] = sub.subId;
+    thread.subscriptions.lastIdMarked += 1;
+    sub.marked = Subscription.SubStatus.marked;
 }
 
-pub fn stagePartial(ctx: *SubCtx, start: u16) void {
-    if (ctx.idSubs) |idSubs| {
-        var i: u32 = 0;
-        var f: @Vector(vectorLenU16, u16) = @splat(start);
-        f[vectorLenU16 - 1] = @intFromEnum(Subscription.SubPartialStatus.all);
-        while (i < idSubs.len) : (i += 1) {
-            if (idSubs[i].marked == Subscription.SubStatus.marked) {
-                continue;
-            }
-            if (@reduce(.Or, idSubs[i].partial == f)) {
-                if (ctx.thread.subscriptions.singleIdMarked.len < ctx.thread.subscriptions.lastIdMarked + 1) {
-                    ctx.thread.subscriptions.singleIdMarked = jemalloc.realloc(
-                        ctx.thread.subscriptions.singleIdMarked,
-                        ctx.thread.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE,
-                    );
-                }
-                ctx.thread.subscriptions.singleIdMarked[ctx.thread.subscriptions.lastIdMarked] = idSubs[i].subId;
-                ctx.thread.subscriptions.lastIdMarked += 1;
-                idSubs[i].marked = Subscription.SubStatus.marked;
-            }
-        }
-    }
-}
-
-pub fn stage(
-    ctx: *SubCtx,
-    comptime op: Op,
-) void {
-    var i: u32 = 0;
-    if (op == Op.deleteNode) {
-        if (ctx.idSubs) |idSubs| {
-            while (i < idSubs.len) : (i += 1) {
-                if (idSubs[i].marked == Subscription.SubStatus.marked) {
-                    continue;
-                }
-                if (ctx.thread.subscriptions.singleIdMarked.len < ctx.thread.subscriptions.lastIdMarked + 16) {
-                    ctx.thread.subscriptions.singleIdMarked = jemalloc.realloc(
-                        ctx.thread.subscriptions.singleIdMarked,
-                        ctx.thread.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE * 16,
-                    );
-                }
-                ctx.thread.subscriptions.singleIdMarked[ctx.thread.subscriptions.lastIdMarked] = idSubs[i].subId;
-                ctx.thread.subscriptions.lastIdMarked += 1;
-                idSubs[i].marked = Subscription.SubStatus.marked;
-            }
-        }
-    } else if (op != Op.create) {
-        if (ctx.idSubs) |idSubs| {
-            var f: @Vector(vectorLen, u8) = @splat(ctx.field);
-            f[vectorLen - 1] = @intFromEnum(Subscription.SubStatus.all);
-            while (i < idSubs.len) : (i += 1) {
-                if (idSubs[i].marked == Subscription.SubStatus.marked) {
-                    continue;
-                }
-                if (@reduce(.Or, idSubs[i].fields == f)) {
-                    if (ctx.thread.subscriptions.singleIdMarked.len < ctx.thread.subscriptions.lastIdMarked + 1) {
-                        ctx.thread.subscriptions.singleIdMarked = jemalloc.realloc(
-                            ctx.thread.subscriptions.singleIdMarked,
-                            ctx.thread.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE,
-                        );
-                    }
-                    ctx.thread.subscriptions.singleIdMarked[ctx.thread.subscriptions.lastIdMarked] = idSubs[i].subId;
-                    ctx.thread.subscriptions.lastIdMarked += 1;
-                    idSubs[i].marked = Subscription.SubStatus.marked;
-                }
-            }
-        }
-    }
-}
-
-pub fn suscription(thread: *Thread.Thread, batch: []u8) !void {
+pub fn subscription(thread: *Thread.Thread, buf: []u8) !void {
     if (thread.subscriptions.types.count() == 0) {
         return;
     }
-
-    const buf = batch[13 + 4 ..];
-    var ctx: SubCtx = .{
-        .idSubs = null,
-        .subTypes = null,
-        .id = 0,
-        .thread = thread,
-    };
-
-    var i: usize = 0;
+    var i: usize = utils.sizeOf(t.ModifyHeader);
     while (i < buf.len) {
-        const op: t.ModOp = @enumFromInt(buf[i]);
-        const data: []u8 = buf[i + 1 ..];
+        const op: t.Modify = @enumFromInt(buf[i]);
         switch (op) {
-            .padding => {
-                i += 1;
+            .create => {
+                const header = utils.read(t.ModifyCreateHeader, buf, i);
+                i += utils.sizeOf(t.ModifyCreateHeader);
+                i += header.size;
             },
-            .switchProp => {
-                i += 3;
+            .createRing => {
+                const header = utils.read(t.ModifyCreateRingHeader, buf, i);
+                i += utils.sizeOf(t.ModifyCreateRingHeader);
+                i += header.size;
             },
-            .deleteNode => {
-                // if (ctx.node) {
-                //     // subs.stage(ctx, subs.Op.deleteNode);
-                // }
-                i += 1;
-            },
-            .deleteTextField => {
-                // const lang: t.LangCode = @enumFromInt(data[0]);
-                i += 2;
-            },
-            .switchIdCreate => {
-                i += 1;
-            },
-            .switchIdCreateRing => {
-                i += 5;
-            },
-            .switchIdCreateUnsafe => {
-                i += 5;
-            },
-            .switchIdUpdate => {
-                const id = utils.read(u32, data, 0);
-                if (id != 0) {
-                    ctx.id = id;
-                    try checkId(&ctx);
+            .update => {
+                const header = utils.read(t.ModifyUpdateHeader, buf, i);
+                i += utils.sizeOf(t.ModifyUpdateHeader);
+                if (thread.subscriptions.types.get(header.type)) |typeSubs| {
+                    if (header.id >= typeSubs.minId and typeSubs.idBitSet[(header.id - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1) {
+                        if (typeSubs.idSubs.get(header.id)) |idSubs| {
+                            const data: []u8 = buf[i .. i + header.size];
+                            var j: usize = 0;
+                            while (j < data.len) {
+                                const propId = data[j];
+                                var k: usize = 0;
+                                if (propId == 0) {
+                                    const main = utils.readNext(t.ModifyMainHeader, data, &j);
+                                    j += main.size;
+                                    var f: @Vector(vectorLenU16, u16) = @splat(main.start);
+                                    f[vectorLenU16 - 1] = @intFromEnum(Subscription.SubPartialStatus.all);
+                                    while (k < idSubs.len) : (i += 1) {
+                                        if (idSubs[k].marked == Subscription.SubStatus.marked) continue;
+                                        if (@reduce(.Or, idSubs[k].partial == f)) markSingleSub(thread, idSubs[k]);
+                                    }
+                                } else {
+                                    const prop = utils.readNext(t.ModifyPropHeader, data, &j);
+                                    j += prop.size;
+                                    var f: @Vector(vectorLen, u8) = @splat(propId);
+                                    f[vectorLen - 1] = @intFromEnum(Subscription.SubStatus.all);
+                                    while (k < idSubs.len) : (k += 1) {
+                                        if (idSubs[k].marked == Subscription.SubStatus.marked) continue;
+                                        if (@reduce(.Or, idSubs[k].fields == f)) markSingleSub(thread, idSubs[k]);
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-                i += 5;
+                i += header.size;
             },
-            // .switchEdgeId => {
-            // },
-            .upsert => {},
-            .insert => {},
-            .switchType => {
-                const typeId = utils.read(u16, data, 0);
-                ctx.subTypes = ctx.thread.subscriptions.types.get(typeId);
-                i += 3;
+            .upsert => {
+                const header = utils.read(t.ModifyCreateHeader, buf, i);
+                i += utils.sizeOf(t.ModifyCreateHeader);
+                const target = buf[i .. i + header.size];
+                i += header.size;
+                const dataSize = utils.read(u32, buf, i);
+                i += 4;
+                const data = buf[i .. i + dataSize];
+                if (thread.subscriptions.types.get(header.type)) |typeSubs| {
+                    var x: usize = 0;
+                    while (x < target.len) {
+                        const prop = utils.readNext(t.ModifyPropHeader, target, &x);
+                        const value = target[x .. x + prop.size];
+                        if (prop.type == t.PropType.alias) {
+                            if (typeSubs.aliasSubs.get(prop.id)) |aliasSub| {
+                                const subIds = aliasSub.get(value);
+                                if (subIds.len == 0) continue;
+                                var j: usize = 0;
+                                while (j < data.len) {
+                                    const propId = data[j];
+                                    if (propId == 0) {
+                                        const main = utils.readNext(t.ModifyMainHeader, data, &j);
+                                        j += main.size;
+                                        var f: @Vector(vectorLenU16, u16) = @splat(main.start);
+                                        f[vectorLenU16 - 1] = @intFromEnum(Subscription.SubPartialStatus.all);
+                                        for (subIds) |subId| {
+                                            if (thread.subscriptions.subsHashMap.get(subId)) |sub| {
+                                                if (sub.marked == Subscription.SubStatus.marked) continue;
+                                                if (@reduce(.Or, sub.partial == f)) markSingleSub(thread, sub);
+                                            }
+                                        }
+                                    } else {
+                                        const prop2 = utils.readNext(t.ModifyPropHeader, data, &j);
+                                        j += prop2.size;
+                                        var f: @Vector(vectorLen, u8) = @splat(propId);
+                                        f[vectorLen - 1] = @intFromEnum(Subscription.SubStatus.all);
+                                        for (subIds) |subId| {
+                                            if (thread.subscriptions.subsHashMap.get(subId)) |sub| {
+                                                if (sub.marked == Subscription.SubStatus.marked) continue;
+                                                if (@reduce(.Or, sub.fields == f)) markSingleSub(thread, sub);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        x += prop.size;
+                    }
+                }
+                i += dataSize;
             },
-            .addEmptySort => {},
-            .addEmptySortText => {},
-            .delete => {},
-            .deleteSortIndex => {},
-            .createProp => {},
-            .updateProp => {},
-            .updatePartial => {},
-            .increment, .decrement => {
-                const fieldType: t.PropType = @enumFromInt(utils.read(u8, data, 0));
-                const propSize = t.PropType.size(fieldType);
-                const start = utils.read(u16, data, 1);
-                // std.debug.print("increment/decrement {s} {d}\n", .{ @tagName(fieldType), start });
-                stagePartial(&ctx, start);
-                i += propSize + 3 + 1;
+            .insert => {
+                const header = utils.read(t.ModifyCreateHeader, buf, i);
+                i += utils.sizeOf(t.ModifyCreateHeader);
+                i += header.size;
+                const dataSize = utils.read(u32, buf, i);
+                i += 4;
+                i += dataSize;
             },
-            .expire => {
-                i += 5;
+            .delete => {
+                const header = utils.read(t.ModifyDeleteHeader, buf, i);
+                if (thread.subscriptions.types.get(header.type)) |typeSubs| {
+                    if (header.id >= typeSubs.minId and typeSubs.idBitSet[(header.id - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1) {
+                        if (typeSubs.idSubs.get(header.id)) |idSubs| {
+                            var j: usize = 0;
+                            while (j < idSubs.len) : (j += 1) {
+                                if (idSubs[j].marked == Subscription.SubStatus.marked) continue;
+                                if (thread.subscriptions.singleIdMarked.len < thread.subscriptions.lastIdMarked + 16) {
+                                    thread.subscriptions.singleIdMarked = jemalloc.realloc(
+                                        thread.subscriptions.singleIdMarked,
+                                        thread.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE * 16,
+                                    );
+                                }
+                                thread.subscriptions.singleIdMarked[thread.subscriptions.lastIdMarked] = idSubs[j].subId;
+                                thread.subscriptions.lastIdMarked += 1;
+                                idSubs[j].marked = Subscription.SubStatus.marked;
+                            }
+                        }
+                    }
+                }
+                i += utils.sizeOf(t.ModifyDeleteHeader);
             },
         }
     }

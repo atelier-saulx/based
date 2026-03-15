@@ -1,11 +1,11 @@
 import type { PropTypeEnum, VectorBaseTypeEnum } from '../../../zigTsExports.js'
 import {
-  ReaderPropDef,
-  ReaderSchema,
+  ReadProp,
+  ReadSchema,
   PROPERTY_BIT_MAP,
   DEF_BIT_MAP,
   GROUP_BY_BIT_MAP,
-  type ReaderAggregateSchema,
+  type ReadAggregateSchema,
 } from '../types.js'
 import {
   DECODER,
@@ -34,9 +34,9 @@ const readPath = (
 const deserializeAggregate = (
   p: Uint8Array,
   off: number,
-): { agg: ReaderAggregateSchema['aggregates'][number]; size: number } => {
+): { agg: ReadAggregateSchema['aggregates'][number]; size: number } => {
   let index = off
-  const agg: ReaderAggregateSchema['aggregates'][number] = {
+  const agg: ReadAggregateSchema['aggregates'][number] = {
     type: p[index],
     resultPos: readUint32(p, index + 1),
     path: [],
@@ -51,12 +51,12 @@ const deserializeAggregate = (
 const deserializeAggregates = (
   p: Uint8Array,
   off: number,
-): { agg: ReaderAggregateSchema; size: number } => {
+): { agg: ReadAggregateSchema; size: number } => {
   const aggs = p[off]
   const totalResultsSize = readUint32(p, off + 1)
   let index = off + 5
   let count = 0
-  const result: ReaderAggregateSchema = {
+  const result: ReadAggregateSchema = {
     aggregates: [],
     totalResultsSize,
   }
@@ -70,55 +70,60 @@ const deserializeAggregates = (
   const hasGroup = p[index]
   index++
   if (hasGroup) {
-    const opts = p[index]
-    const groupBy: ReaderAggregateSchema['groupBy'] = {
-      typeIndex: p[index + 1] as PropTypeEnum,
-    }
-    index += 2
+    const groupBy: ReadAggregateSchema['groupBy'] = []
 
-    if (opts & GROUP_BY_BIT_MAP.stepRange) {
-      // prop.meta = p[index]
-      groupBy.stepRange = readDoubleLE(p, index)
-      index += 8
-    }
-
-    if (opts & GROUP_BY_BIT_MAP.stepType) {
-      groupBy.stepType = true
-    }
-
-    if (opts & GROUP_BY_BIT_MAP.display) {
-      groupBy.stepType = true
-      const size = readUint16(p, index)
+    for (let i = 0; i < hasGroup; i++) {
+      const opts = p[index]
+      const groupItem: any = {
+        typeIndex: p[index + 1] as PropTypeEnum,
+      }
       index += 2
-      const tmp = JSON.parse(DECODER.decode(p.subarray(index, index + size)))
-      groupBy.display = new Intl.DateTimeFormat(tmp.locale, tmp)
-      index += size
-    }
 
-    if (opts & GROUP_BY_BIT_MAP.enum) {
-      const useJSON = p[index] === 1
-      index += 1
-      if (useJSON) {
+      if (opts & GROUP_BY_BIT_MAP.stepRange) {
+        // prop.meta = p[index]
+        groupItem.stepRange = readDoubleLE(p, index)
+        index += 8
+      }
+
+      if (opts & GROUP_BY_BIT_MAP.stepType) {
+        groupItem.stepType = true
+      }
+
+      if (opts & GROUP_BY_BIT_MAP.display) {
+        groupItem.stepType = true
         const size = readUint16(p, index)
         index += 2
-        groupBy.enum = JSON.parse(
-          DECODER.decode(p.subarray(index, index + size)),
-        )
+        const tmp = JSON.parse(DECODER.decode(p.subarray(index, index + size)))
+        groupItem.display = new Intl.DateTimeFormat(tmp.locale, tmp)
         index += size
-      } else {
-        const len = p[index]
-        index++
-        let cnt = 0
-        groupBy.enum = new Array(len)
-        while (cnt !== len) {
-          const len = p[index]
-          groupBy.enum[cnt] = DECODER.decode(
-            p.subarray(index + 1, len + index + 1),
+      }
+
+      if (opts & GROUP_BY_BIT_MAP.enum) {
+        const useJSON = p[index] === 1
+        index += 1
+        if (useJSON) {
+          const size = readUint16(p, index)
+          index += 2
+          groupItem.enum = JSON.parse(
+            DECODER.decode(p.subarray(index, index + size)),
           )
-          index += len + 1
-          cnt++
+          index += size
+        } else {
+          const len = p[index]
+          index++
+          let cnt = 0
+          groupItem.enum = new Array(len)
+          while (cnt !== len) {
+            const len = p[index]
+            groupItem.enum[cnt] = DECODER.decode(
+              p.subarray(index + 1, len + index + 1),
+            )
+            index += len + 1
+            cnt++
+          }
         }
       }
+      groupBy.push(groupItem)
     }
 
     result.groupBy = groupBy
@@ -131,13 +136,13 @@ const deSerializeProp = (
   p: Uint8Array,
   off: number,
   keySize: 1 | 2,
-): { def: ReaderPropDef; size: number; key: number } => {
+): { def: ReadProp; size: number; key: number } => {
   const key = keySize === 1 ? p[off] : readUint16(p, off)
 
   const map = p[off + keySize + 1]
   const path = readPath(p, off + 2 + keySize)
-  const prop: ReaderPropDef = {
-    typeIndex: p[off + keySize] as PropTypeEnum,
+  const prop: ReadProp = {
+    type: p[off + keySize] as PropTypeEnum,
     path: path.path,
     readBy: 0,
   }
@@ -182,9 +187,10 @@ const deSerializeProp = (
     const end = p[index] * 4 + index + 1
     index++
     while (index < end) {
-      prop.locales[readUint16(p, index)] = DECODER.decode(
-        p.subarray(index + 2, index + 4),
-      )
+      prop.locales[readUint16(p, index)] = {
+        name: DECODER.decode(p.subarray(index + 2, index + 4)),
+        readBy: 0,
+      }
       index += 4
     }
   }
@@ -194,12 +200,12 @@ const deSerializeProp = (
 const deSerializeSchemaInner = (
   schema: Uint8Array,
   offset: number = 0,
-): { schema: ReaderSchema; size: number } => {
+): { schema: ReadSchema; size: number } => {
   let i = offset
 
   const map = schema[i + 1]
 
-  const s: Partial<ReaderSchema> = {
+  const s: Partial<ReadSchema> = {
     readId: 0,
     type: schema[i],
     search: (map & DEF_BIT_MAP.search) !== 0,
@@ -276,7 +282,7 @@ const deSerializeSchemaInner = (
     i += size
   }
 
-  return { schema: s as ReaderSchema, size: i - offset }
+  return { schema: s as ReadSchema, size: i - offset }
 }
 
 export const deSerializeSchema = (schema: Uint8Array, offset: number = 0) => {

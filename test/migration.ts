@@ -10,7 +10,7 @@ await test('migration', async (t) => {
 
   await db.start({ clean: true })
 
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
   await db.setSchema({
     version: '1.0.0',
@@ -85,7 +85,7 @@ await test('migration', async (t) => {
     await db.create('person', payload)
   }
 
-  // console.dir(await db.query('person').include('*', '**').get().toObject(), {
+  // console.dir(await db.query('person').include('*', '**').get(), {
   //   depth: null,
   // })
 
@@ -224,8 +224,8 @@ await test('migration', async (t) => {
     await db.setSchema(schema)
   }
 
-  const users = await db.query('user').get().toObject()
-  const people = await db.query('person').include('*', '**').get().toObject()
+  const users = await db.query('user').get()
+  const people = await db.query('person').include('*', '**').get()
 
   equal(users.length, 10)
   equal(people.length, 10)

@@ -86,29 +86,17 @@ extern const uint8_t selva_fields_text_tl_empty[_selva_lang_last][8];
 
 #define SELVA_FIELDS_TEXT_TL_EMPTY_LEN 6
 
-#if __has_c_attribute(unsequenced)
-[[unsequenced]]
-#else
-__purefn
-#endif
-size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs);
+size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs) [[unsequenced]];
 
-#if __has_c_attribute(reproducible)
-[[reproducible]]
-#endif
-void *selva_fields_nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo *nfo);
+void *selva_fields_nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo *nfo) [[reproducible]];
 
+/**
+ * Ensure that we have a reference struct.
+ * NOTE: This function doesn't create the necessary edge node.
+ */
 struct SelvaNodeLargeReference *selva_fields_ensure_reference(
         struct SelvaNode *node,
         const struct SelvaFieldSchema *fs);
-
-SELVA_EXPORT
-struct SelvaNode *selva_fields_ensure_ref_edge(
-        struct SelvaDb *db,
-        struct SelvaNode *node,
-        const struct EdgeFieldConstraint *efc,
-        struct SelvaNodeLargeReference *ref,
-        node_id_t edge_id);
 
 SELVA_EXPORT
 int selva_fields_get_mutable_string(
@@ -291,13 +279,6 @@ struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, const str
     __attribute__((nonnull));
 
 /**
- * Delete field.
- */
-SELVA_EXPORT
-int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
-    __attribute__((nonnull(1, 2, 3)));
-
-/**
  * Delete an edge from a references field.
  */
 SELVA_EXPORT
@@ -316,12 +297,32 @@ void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, c
 void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node, bool set_defaults)
     __attribute__((nonnull));
 
+/**
+ * Reset a field to the default value.
+ */
+SELVA_EXPORT
+void selva_fields_reset(struct SelvaDb *db, struct SelvaTypeEntry *te, struct SelvaNode *node, const struct SelvaFieldSchema *fs);
+
+/**
+ * Reset a micro buffer partially to the default value.
+ */
+SELVA_EXPORT
+void selva_fields_reset_smb(struct SelvaTypeEntry *te, struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t offset, size_t len);
+
+/**
+ * Reset text to default.
+ * To reset all.
+ *   1. number of lang codes to follow (reset all = `1`)
+ *   2. lang code(s) in an uint8_t array (`selva_lang_none` = `0` = reset all)
+ */
+SELVA_EXPORT
+void selva_fields_reset_text(struct SelvaDb *db, struct SelvaTypeEntry *te, struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t len, const enum selva_lang_code *langs);
+
 void selva_fields_flush(struct SelvaDb *db, struct SelvaNode *node);
 
 /**
  * Destroy all fields of a node.
  */
-SELVA_EXPORT
 void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node)
     __attribute__((nonnull(1, 2)));
 

@@ -1,14 +1,9 @@
-import { BasedDb } from '../../index.js'
 import { dirname, join } from 'path'
 import { Worker, MessageChannel } from 'node:worker_threads'
 import native from '../../native.js'
 import { DbServer } from '../index.js'
 import { fileURLToPath } from 'url'
-import {
-  setNativeSchema,
-  setSchemaOnServer,
-  writeSchemaFile,
-} from '../schema.js'
+import { setSchemaOnServer, writeSchemaFile } from '../schema.js'
 import { setToAwake, waitUntilSleeping } from './utils.js'
 import {
   semver,
@@ -107,7 +102,7 @@ export const migrate = async (
     return newMigrationInProgress
   }
 
-  const tmpDb = new BasedDb({
+  const tmpDb = new DbServer({
     path: '',
   })
 
@@ -122,8 +117,8 @@ export const migrate = async (
     return
   }
 
-  setSchemaOnServer(tmpDb.server, toSchema)
-  await setNativeSchema(tmpDb.server, toSchema)
+  setSchemaOnServer(tmpDb, toSchema)
+  //await setNativeSchema(tmpDb, toSchema)
 
   if (abort()) {
     await tmpDb.destroy()
@@ -131,7 +126,7 @@ export const migrate = async (
   }
 
   const fromCtx = server.dbCtxExternal
-  const toCtx = tmpDb.server.dbCtxExternal
+  const toCtx = tmpDb.dbCtxExternal
   const { port1, port2 } = new MessageChannel()
   const workerState = new Int32Array(new SharedArrayBuffer(4))
   const fromAddress = native.intFromExternal(fromCtx)
@@ -220,7 +215,7 @@ export const migrate = async (
 
   server.dbCtxExternal = toCtx
   setSchemaOnServer(server, toSchema)
-  tmpDb.server.dbCtxExternal = fromCtx
+  tmpDb.dbCtxExternal = fromCtx
   // TODO makes this SYNC
   // const promises: Promise<any>[] = [server.ioWorker, ...server.workers].map(
   //   (worker) => worker.updateCtx(toAddress),

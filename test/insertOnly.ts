@@ -1,16 +1,10 @@
-import { BasedDb } from '../src/index.js'
-import { throws } from './shared/assert.js'
+import { DbClient, DbServer, getDefaultHooks } from '../src/sdk.js'
+import { deepEqual, throws } from './shared/assert.js'
+import { testDb } from './shared/index.js'
 import test from './shared/test.js'
 
 await test('insert only => no delete', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(async () => t.backup(db))
-
-  await db.setSchema({
+  const client = await testDb(t, {
     types: {
       audit: {
         insertOnly: true,
@@ -21,21 +15,25 @@ await test('insert only => no delete', async (t) => {
     },
   })
 
-  const a = await db.create('audit', { v: 100 })
-  await db.create('audit', { v: 100 })
-  await throws(() => db.delete('audit', a))
+  const a = await client.create('audit', { v: 100 })
+  await client.create('audit', { v: 100 })
+  await throws(() => client.delete('audit', a))
+  deepEqual(await client.query('audit', a).get(), { id: 1, v: 100 })
 })
 
 await test('colvec requires insertOnly', async (t) => {
-  const db = new BasedDb({
+  const db = new DbServer({
     path: t.tmp,
   })
 
   await db.start({ clean: true })
   t.after(() => db.destroy())
+  const client = new DbClient({
+    hooks: getDefaultHooks(db),
+  })
 
   await throws(() =>
-    db.setSchema({
+    client.setSchema({
       types: {
         audit: {
           props: {

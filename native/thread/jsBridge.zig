@@ -20,7 +20,7 @@ fn callJsCallback(
     const responseFn = @as(*BridgeResponseStruct, @ptrCast(@alignCast(data.?)));
     const dbCtx = @as(*DbCtx, @ptrCast(@alignCast(ctx.?)));
 
-    if (dbCtx.selva == null) {
+    if (dbCtx.initialized == false) {
         std.debug.print("REMOVED DB firing bridge... {any} \n", .{responseFn});
         return;
     }
@@ -40,6 +40,7 @@ fn callJsCallback(
                 &arrayBuffer,
             );
             thread.*.modify.index = 0;
+            thread.*.modify.headerIndex = 0;
             var fnResponse: napi.Value = undefined;
             _ = napi.c.napi_create_uint32(env, @intFromEnum(responseFn.response), &fnResponse);
             var args = [_]napi.Value{ fnResponse, arrayBuffer };
@@ -61,6 +62,7 @@ fn callJsCallback(
                 &arrayBuffer,
             );
             thread.*.query.index = 0;
+            thread.*.query.headerIndex = 0;
             var fnResponse: napi.Value = undefined;
             _ = napi.c.napi_create_uint32(env, @intFromEnum(responseFn.response), &fnResponse);
             var args = [_]napi.Value{ fnResponse, arrayBuffer };
@@ -94,6 +96,8 @@ fn callJsCallback(
                 thread.flushed = true;
                 // thread.flushDone.signal();
                 thread.query.index = 0;
+                thread.*.query.headerIndex = 0;
+
                 // thread.mutex.unlock();
             }
             var fnResponse: napi.Value = undefined;
@@ -117,6 +121,8 @@ fn callJsCallback(
                 &arrayBuffer,
             );
             thread.*.modify.index = 0;
+            thread.*.modify.headerIndex = 0;
+
             var fnResponse: napi.Value = undefined;
             _ = napi.c.napi_create_uint32(env, @intFromEnum(responseFn.response), &fnResponse);
             var args = [_]napi.Value{ fnResponse, arrayBuffer };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 SAULX
+ * Copyright (c) 2024-2026 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -21,12 +21,13 @@
 #include "io.h"
 #include "schema.h"
 
-#define SCHEMA_MIN_SIZE                 8
-#define SCHEMA_OFF_BLOCK_CAPACITY       0 /*!< u32 */
-#define SCHEMA_OFF_NR_FIELDS            4 /*!< u8 */
-#define SCHEMA_OFF_NR_FIXED_FIELDS      5 /*!< u8 */
-#define SCHEMA_OFF_NR_VIRTUAL_FIELDS    6 /*!< u8 */
-#define SCHEMA_OFF_VERSION              7 /*!< u8 */
+struct SelvaSchemaHeader {
+    uint32_t block_capacity;
+    uint8_t nr_fields;
+    uint8_t nr_fixed_fields;
+    uint8_t nr_virtual_fields;
+    uint8_t sdb_version;
+} __packed;
 
 struct schemabuf_parser_ctx {
     struct SelvaTypeEntry *te;
@@ -37,6 +38,17 @@ struct schemabuf_parser_ctx {
     size_t colvec_index;
     unsigned version;
 };
+
+typedef uint8_t __attribute__((__hardbool__(0, 1))) schema_bool_t;
+static_assert(sizeof(schema_bool_t) == 1);
+
+#define COPY_TYPE_HEAD() do { \
+    if (ctx->len < sizeof(head)) { \
+        return SELVA_EINVAL; \
+    } \
+    memcpy(&head, ctx->buf + off, sizeof(head)); \
+    off += sizeof(head); \
+} while (0)
 
 
 static inline uint32_t calc_default_off(struct schemabuf_parser_ctx *ctx, size_t off)
@@ -51,37 +63,33 @@ static int type2fs_reserved(struct schemabuf_parser_ctx *, struct SelvaFieldsSch
 
 static int type2fs_micro_buffer(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
 {
-    uint16_t len;
-    size_t off = 1;
-    const size_t min_buf_len = 1 + sizeof(len) + (ctx->version >= 6);
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
+    struct {
+        enum SelvaFieldType type;
+        uint16_t len;
+        schema_bool_t has_default;
+    } __packed head;
+    size_t off = 0;
 
-    if (ctx->len < min_buf_len) {
-        return SELVA_EINVAL;
-    }
-
-    memcpy(&len, ctx->buf + off, sizeof(len));
-    off += sizeof(len);
+    COPY_TYPE_HEAD();
 
     *fs = (struct SelvaFieldSchema){
         .field = field,
         .type = SELVA_FIELD_TYPE_MICRO_BUFFER,
+        .default_off = 0,
         .smb = {
-            .len = len,
-            .default_off = 0,
+            .len = head.len,
         },
     };
 
-    if (ctx->version >= 6) {
-        if (ctx->buf[off++]) { /* has default */
-            if (ctx->len < off + len) {
-                return SELVA_EINVAL;
-            }
-
-            /* * Default is copied straight from the schema buffer. */
-            fs->smb.default_off = calc_default_off(ctx, off);
-            off += len;
+    if (head.has_default) {
+        if (ctx->len < off + head.len) {
+            return SELVA_EINVAL;
         }
+
+        /* Default is copied straight from the schema buffer. */
+        fs->default_off = calc_default_off(ctx, off);
+        off += head.len;
     }
 
     return off;
@@ -89,17 +97,15 @@ static int type2fs_micro_buffer(struct schemabuf_parser_ctx *ctx, struct SelvaFi
 
 static int type2fs_string(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
 {
-    size_t off = 1;
-    uint8_t fixed_len;
-    const size_t min_buf_len = 1 + sizeof(fixed_len) + (ctx->version >= 7);
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
+    struct {
+        enum SelvaFieldType type;
+        uint8_t fixed_len_hint;
+        uint32_t default_len;
+    } __packed head;
+    size_t off = 0;
 
-    if (ctx->len < min_buf_len) {
-        return SELVA_EINVAL;
-    }
-
-    memcpy(&fixed_len, ctx->buf + off, sizeof(fixed_len));
-    off += sizeof(fixed_len);
+    COPY_TYPE_HEAD();
 
     *fs = (struct SelvaFieldSchema){
         .field = field,
@@ -109,26 +115,19 @@ static int type2fs_string(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSc
              * We only allow very short strings to be stored as fixed embedded
              * strings. This is best to be aligned to 64-bit boundaries
              */
-            .fixed_len = fixed_len <= 48 ? fixed_len : 0,
+            .fixed_len = head.fixed_len_hint <= 48 ? head.fixed_len_hint : 0,
+            .default_len = head.default_len,
         },
     };
 
-    if (ctx->version >= 8) {
-        uint32_t default_len;
-
-        memcpy(&default_len, ctx->buf + off, sizeof(default_len));
-        off += sizeof(default_len);
-        fs->string.default_len = default_len;
-
-        if (default_len > 0) { /* has default */
-            if (ctx->len < off + default_len) {
-                return SELVA_EINVAL;
-            }
-
-            /* default is copied straight from the schema buffer. */
-            fs->string.default_off = calc_default_off(ctx, off);
-            off += default_len;
+    if (head.default_len > 0) { /* has default */
+        if (ctx->len < off + head.default_len) {
+            return SELVA_EINVAL;
         }
+
+        /* default is copied straight from the schema buffer. */
+        fs->default_off = calc_default_off(ctx, off);
+        off += head.default_len;
     }
 
     return off;
@@ -137,36 +136,37 @@ static int type2fs_string(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSc
 static int type2fs_text(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
 {
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
-    size_t off = 1;
+    struct {
+        enum SelvaFieldType type;
+        uint8_t nr_defaults;
+    } __packed head;
+    size_t off = 0;
+
+    COPY_TYPE_HEAD();
 
     *fs = (struct SelvaFieldSchema){
         .field = field,
         .type = SELVA_FIELD_TYPE_TEXT,
+        .text = {
+            .nr_defaults = head.nr_defaults,
+        },
     };
 
-    if (ctx->version >= 8) {
-        uint8_t nr_defaults;
+    if (head.nr_defaults > 0) { /* has defaults */
+        fs->default_off = (uint32_t)((ptrdiff_t)(ctx->buf - ctx->schema_buf) + off);
 
-        memcpy(&nr_defaults, ctx->buf + off, sizeof(nr_defaults));
-        off += sizeof(nr_defaults);
-        fs->text.nr_defaults = nr_defaults;
+        /*
+         * Iterate over the defaults and skip them.
+         */
+        for (size_t i = 0; i < head.nr_defaults; i++) {
+            uint32_t len;
 
-        if (nr_defaults > 0) { /* has defaults */
-            fs->text.defaults_off = (uint32_t)((ptrdiff_t)(ctx->buf - ctx->schema_buf) + off);
-
-            /*
-             * Iterate over the defaults and skip them.
-             */
-            for (size_t i = 0; i < nr_defaults; i++) {
-                uint32_t len;
-
-                if (ctx->len < off + sizeof(len)) {
-                    return SELVA_EINVAL;
-                }
-
-                memcpy(&len, ctx->buf + off, sizeof(len));
-                off += sizeof(len) + len;
+            if (ctx->len < off + sizeof(len)) {
+                return SELVA_EINVAL;
             }
+
+            memcpy(&len, ctx->buf + off, sizeof(len));
+            off += sizeof(len) + len;
         }
     }
 
@@ -175,9 +175,6 @@ static int type2fs_text(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
 
 static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field, enum SelvaFieldType type)
 {
-    const uint8_t *buf = ctx->buf;
-    size_t len = ctx->len;
-    size_t orig_len = ctx->len;
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
     struct {
         enum SelvaFieldType type;
@@ -186,35 +183,26 @@ static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
         field_t inverse_field;
         node_type_t edge_node_type;
         uint32_t capped;
-    } __packed constraints;
+    } __packed head;
+    size_t off = 0;
 
-    static_assert(sizeof(constraints) == 11);
+    COPY_TYPE_HEAD();
 
-    size_t copy_len = sizeof(constraints) - (ctx->version < 7) * sizeof_field(typeof(constraints), capped);
-    if (len < copy_len) {
-        return SELVA_EINVAL;
-    }
-
-    constraints.capped = 0;
-    memcpy(&constraints, buf, copy_len);
-    buf += copy_len;
-    len -= copy_len;
-
-    enum EdgeFieldConstraintFlag flags = constraints.flags & (EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT);
+    enum EdgeFieldConstraintFlag flags = head.flags & (EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT);
 
     *fs = (struct SelvaFieldSchema){
         .field = field,
         .type = type,
         .edge_constraint = {
             .flags = flags,
-            .inverse_field = constraints.inverse_field,
-            .dst_node_type = constraints.dst_node_type,
-            .edge_node_type = constraints.edge_node_type,
-            .limit = constraints.capped,
+            .inverse_field = head.inverse_field,
+            .dst_node_type = head.dst_node_type,
+            .edge_node_type = head.edge_node_type,
+            .limit = head.capped,
         },
     };
 
-    return orig_len - len;
+    return off;
 }
 
 static int type2fs_reference(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
@@ -230,27 +218,22 @@ static int type2fs_references(struct schemabuf_parser_ctx *ctx, struct SelvaFiel
 static int type2fs_alias(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
 {
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
+    struct {
+        enum SelvaFieldType type;
+    } __packed head;
+    size_t off = 0;
+
+    COPY_TYPE_HEAD();
 
     *fs = (struct SelvaFieldSchema){
         .field = field,
         .type = SELVA_FIELD_TYPE_ALIAS,
-        .alias_index = ctx->alias_index++,
+        .alias = {
+            .index = ctx->alias_index++,
+        },
     };
 
-    return 1;
-}
-
-static int type2fs_aliases(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
-{
-    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
-
-    *fs = (struct SelvaFieldSchema){
-        .field = field,
-        .type = SELVA_FIELD_TYPE_ALIASES,
-        .alias_index = ctx->alias_index++,
-    };
-
-    return 1;
+    return off;
 }
 
 static int type2fs_colvec(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
@@ -260,28 +243,36 @@ static int type2fs_colvec(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSc
         enum SelvaFieldType type;
         uint16_t vec_len; /*!< Length of a single vector. */
         uint16_t comp_size; /*!< Component size in the vector. */
-        uint8_t has_default;
-    } __packed spec = {};
-    size_t copy_len = sizeof(spec) + (ctx->version < 8) * -sizeof_field(typeof(spec), has_default);
+        schema_bool_t has_default;
+    } __packed head;
+    size_t off = 0;
 
-    if (ctx->len < sizeof(spec)) {
-        return SELVA_EINVAL;
-    }
-
-    memcpy(&spec, ctx->buf, copy_len);
+    COPY_TYPE_HEAD();
 
     *fs = (struct SelvaFieldSchema){
         .field = field,
         .type = SELVA_FIELD_TYPE_COLVEC,
+        .default_off = 0,
         .colvec = {
-            .vec_len = spec.vec_len,
-            .comp_size = spec.comp_size,
+            .vec_len = head.vec_len,
+            .comp_size = head.comp_size,
             .index = ctx->colvec_index++,
-            .default_off = (spec.has_default) ? calc_default_off(ctx, sizeof(spec)) : 0,
         },
     };
 
-    return copy_len;
+    if (head.has_default) {
+        size_t vec_size = head.vec_len * head.comp_size;
+
+        if (ctx->len < off + vec_size) {
+            return SELVA_EINVAL;
+        }
+
+        /* Default is copied straight from the schema buffer. */
+        fs->default_off = calc_default_off(ctx, off);
+        off += vec_size;
+    }
+
+    return off;
 }
 
 static struct schemabuf_parser {
@@ -316,10 +307,6 @@ static struct schemabuf_parser {
         .type = SELVA_FIELD_TYPE_ALIAS,
         .type2fs = type2fs_alias,
     },
-    [SELVA_FIELD_TYPE_ALIASES] = {
-        .type = SELVA_FIELD_TYPE_ALIASES,
-        .type2fs = type2fs_aliases,
-    },
     [SELVA_FIELD_TYPE_COLVEC] = {
         .type = SELVA_FIELD_TYPE_COLVEC,
         .type2fs = type2fs_colvec,
@@ -328,19 +315,18 @@ static struct schemabuf_parser {
 
 int schemabuf_get_info(struct schema_info *nfo, const uint8_t *buf, size_t len)
 {
-    uint32_t block_capacity;
+    struct SelvaSchemaHeader head;
 
-    if (len < SCHEMA_MIN_SIZE) {
+    if (len < sizeof(struct SelvaSchemaHeader)) {
         return SELVA_EINVAL;
     }
 
-    memcpy(&block_capacity, buf + SCHEMA_OFF_BLOCK_CAPACITY, sizeof(block_capacity));
-
+    memcpy(&head, buf, sizeof(head));
     *nfo = (struct schema_info){
-        .block_capacity = block_capacity,
-        .nr_fields = buf[SCHEMA_OFF_NR_FIELDS],
-        .nr_fixed_fields = buf[SCHEMA_OFF_NR_FIXED_FIELDS],
-        .nr_virtual_fields = buf[SCHEMA_OFF_NR_VIRTUAL_FIELDS],
+        .block_capacity = head.block_capacity,
+        .nr_fields = head.nr_fields,
+        .nr_fixed_fields = head.nr_fixed_fields,
+        .nr_virtual_fields = head.nr_virtual_fields,
     };
 
     if (nfo->nr_fixed_fields > nfo->nr_fields ||
@@ -399,9 +385,10 @@ static bool has_defaults(struct SelvaFieldsSchema *schema)
     for (size_t i = 0; i < nr_fixed_fields; i++) {
         const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(schema, i);
 
-        if ((fs->type == SELVA_FIELD_TYPE_MICRO_BUFFER && fs->smb.default_off > 0) ||
-            (fs->type == SELVA_FIELD_TYPE_STRING && fs->string.default_off > 0) ||
-            (fs->type == SELVA_FIELD_TYPE_TEXT && fs->string.default_off > 0)) {
+        if ((fs->type == SELVA_FIELD_TYPE_MICRO_BUFFER ||
+             fs->type == SELVA_FIELD_TYPE_STRING ||
+             fs->type == SELVA_FIELD_TYPE_TEXT) &&
+            fs->default_off > 0) {
             return true;
         }
     }
@@ -425,12 +412,12 @@ static void make_fixed_fields_template(struct SelvaFieldsSchema *schema, const u
             const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(schema, i);
             void *field_data = fixed_data_buf + (nfo[i].off << SELVA_FIELDS_OFF);
 
-            if (fs->type == SELVA_FIELD_TYPE_MICRO_BUFFER && fs->smb.default_off > 0) {
-                memcpy(field_data, schema_buf + fs->smb.default_off, fs->smb.len);
-            } else if (fs->type == SELVA_FIELD_TYPE_STRING && fs->string.default_off > 0) {
+            if (fs->type == SELVA_FIELD_TYPE_MICRO_BUFFER && fs->default_off > 0) {
+                memcpy(field_data, schema_buf + fs->default_off, fs->smb.len);
+            } else if (fs->type == SELVA_FIELD_TYPE_STRING && fs->default_off > 0) {
                 if (fs->string.fixed_len > 0) { /* Fixed string needs to be copied here. */
                     struct selva_string *s = (struct selva_string *)field_data;
-                    const void *default_str = schema_buf + fs->string.default_off;
+                    const void *default_str = schema_buf + fs->default_off;
                     size_t default_len = fs->string.default_len;
                     int err;
 
@@ -486,7 +473,7 @@ static int parse2(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *fi
     }
 
     make_field_map_template(fields_schema);
-    make_fixed_fields_template(fields_schema, buf - SCHEMA_MIN_SIZE);
+    make_fixed_fields_template(fields_schema, buf - sizeof(struct SelvaSchemaHeader));
 
     return 0;
 }
@@ -505,23 +492,23 @@ int schemabuf_parse_ns(struct SelvaNodeSchema *ns, const uint8_t *buf, size_t le
         .alias_index = 0,
     };
 
-    if (len < SCHEMA_MIN_SIZE) {
+    if (len < sizeof(struct SelvaSchemaHeader)) {
         return SELVA_EINVAL;
     }
 
     /* We just assume that fields_schema is allocated properly. */
-    ctx.version = buf[SCHEMA_OFF_VERSION];
-    fields_schema->nr_fields = buf[SCHEMA_OFF_NR_FIELDS];
-    fields_schema->nr_fixed_fields = buf[SCHEMA_OFF_NR_FIXED_FIELDS];
+    ctx.version = buf[offsetof(struct SelvaSchemaHeader, sdb_version)];
+    fields_schema->nr_fields = buf[offsetof(struct SelvaSchemaHeader, nr_fields)];
+    fields_schema->nr_fixed_fields = buf[offsetof(struct SelvaSchemaHeader, nr_fixed_fields)];
 
     if (ctx.version > max_version) {
         /* Can't load a schema created with a newer version. */
         return SELVA_ENOTSUP;
     }
 
-    int err = parse2(&ctx, fields_schema, buf + SCHEMA_MIN_SIZE, len - SCHEMA_MIN_SIZE);
-    ns->nr_aliases = ctx.alias_index;
-    ns->nr_colvecs = ctx.colvec_index;
+    int err = parse2(&ctx, fields_schema, buf + sizeof(struct SelvaSchemaHeader), len - sizeof(struct SelvaSchemaHeader));
+    ns->nr_alias_fields = ctx.alias_index;
+    ns->nr_colvec_fields = ctx.colvec_index;
 
     return err;
 }

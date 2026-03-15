@@ -1,16 +1,10 @@
-import { BasedDb, xxHash64 } from '../../src/index.js'
+import { xxHash64 } from '../../src/index.js'
 import { ENCODER } from '../../src/utils/uint8.js'
+import { deepEqual, equal, testDb } from '../shared/index.js'
 import test from '../shared/test.js'
-import { deepEqual, equal } from 'node:assert'
 
 await test('sortCardinality', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       article: {
         derp: 'number',
@@ -55,13 +49,12 @@ await test('sortCardinality', async (t) => {
   })
 
   deepEqual(
-    (
-      await db
-        .query('article')
-        .sort('brazilians', 'desc')
-        .include('count', 'brazilians')
-        .get()
-    ).toObject(),
+    await db
+      .query('article')
+      .sort('brazilians')
+      .order('desc')
+      .include('count', 'brazilians')
+      .get(),
     [
       {
         id: 1,
@@ -78,9 +71,7 @@ await test('sortCardinality', async (t) => {
   )
 
   deepEqual(
-    (
-      await db.query('article').sort('count', 'asc').include('derp').get()
-    ).toObject(),
+    await db.query('article').sort('count').include('derp').get(),
     [
       {
         id: 2,
@@ -101,13 +92,11 @@ await test('sortCardinality', async (t) => {
   await db.drain()
 
   deepEqual(
-    (
-      await db
-        .query('article')
-        .sort('count', 'asc')
-        .include('count', 'brazilians')
-        .get()
-    ).toObject(),
+    await db
+      .query('article')
+      .sort('count')
+      .include('count', 'brazilians')
+      .get(),
     [
       {
         id: 2,
@@ -150,13 +139,9 @@ await test('sortCardinality', async (t) => {
       brazilians: brazos,
     })
 
-    const result = await db
-      .query('article')
-      .filter('id', '=', testRecordId)
-      .get()
-      .toObject()
+    const result = await db.query('article', testRecordId).get()
 
-    const count = Math.abs(result[0].brazilians)
+    const count = Math.abs(result!.brazilians)
     const countError = count - num_brazos
 
     if (countError < num_brazos * 0.02) {
@@ -179,9 +164,12 @@ await test('sortCardinality', async (t) => {
   )
 
   deepEqual(
-    (
-      await db.query('article').sort('count', 'desc').include('count').get()
-    ).toObject(),
+    await db
+      .query('article')
+      .sort('count')
+      .order('desc')
+      .include('count')
+      .get(),
     [
       {
         id: 1,
@@ -200,13 +188,12 @@ await test('sortCardinality', async (t) => {
   await db.drain()
 
   deepEqual(
-    (
-      await db
-        .query('article')
-        .sort('brazilians', 'desc')
-        .include('derp', 'count')
-        .get()
-    ).toObject(),
+    await db
+      .query('article')
+      .sort('brazilians')
+      .order('desc')
+      .include('derp', 'count')
+      .get(),
     [
       {
         id: 2,
@@ -242,10 +229,10 @@ await test('sortCardinality', async (t) => {
   deepEqual(
     await db
       .query('article')
-      .sort('count', 'desc')
+      .sort('count')
+      .order('desc')
       .include('count')
-      .get()
-      .toObject(),
+      .get(),
     [
       { id: 1008, count: 3 },
       { id: 2, count: 2 },
